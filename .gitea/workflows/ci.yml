@@ -1,0 +1,286 @@
+name: HnVue CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+env:
+  CONFIGURATION: Release
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+
+jobs:
+  setup:
+    name: Setup and Cache Dependencies
+    runs-on: [self-hosted, windows]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cache vcpkg packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ env.VCPKG_ROOT }}/downloads
+            ${{ env.VCPKG_ROOT }}/installed
+            build/vcpkg_installed
+          key: vcpkg-${{ hashFiles('vcpkg.json') }}
+          restore-keys: |
+            vcpkg-
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ hashFiles('**/*.csproj', 'Directory.Packages.props') }}
+          restore-keys: |
+            nuget-
+
+      - name: Cache CMake build
+        uses: actions/cache@v3
+        with:
+          path: |
+            build
+            artifacts
+          key: cmake-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'libs/**/CMakeLists.txt', 'src/**/*.csproj') }}
+          restore-keys: |
+            cmake-
+
+  build-cpp:
+    name: Build C++ Libraries
+    runs-on: [self-hosted, windows]
+    needs: setup
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup CMake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '3.25.x'
+
+      - name: Configure CMake
+        run: cmake --preset ci
+
+      - name: Build C++ libraries
+        run: cmake --build --preset ci --target all-libs --config ${{ env.CONFIGURATION }}
+
+      - name: Upload C++ build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: cpp-build-artifacts
+          path: |
+            build/libs/**/*.lib
+            build/libs/**/*.dll
+          retention-days: 90
+
+  build-csharp:
+    name: Build C# Projects
+    runs-on: [self-hosted, windows]
+    needs: setup
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore NuGet packages
+        run: dotnet restore HnVue.sln
+
+      - name: Build C# projects
+        run: dotnet build HnVue.sln -c ${{ env.CONFIGURATION }} --no-restore
+
+      - name: Upload C# build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: csharp-build-artifacts
+          path: |
+            artifacts/bin/**/*.dll
+            artifacts/bin/**/*.exe
+          retention-days: 90
+
+  test-cpp:
+    name: Test C++ (GTest)
+    runs-on: [self-hosted, windows]
+    needs: build-cpp
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup CMake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '3.25.x'
+
+      - name: Download C++ build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: cpp-build-artifacts
+          path: build/
+
+      - name: Run C++ tests
+        run: ctest --preset ci --output-on-failure
+
+      - name: Upload C++ test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: cpp-test-results
+          path: |
+            build/Testing/**/*.xml
+          retention-days: 90
+
+  test-csharp:
+    name: Test C# (xUnit)
+    runs-on: [self-hosted, windows]
+    needs: build-csharp
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Run C# unit tests
+        run: |
+          dotnet test HnVue.sln -c ${{ env.CONFIGURATION }} --no-build `
+            --logger "trx;LogFileName=test-results.trx" `
+            -- DataCollectionRunSettings.DataCollectors="Code Coverage" `
+            --results-directory TestResults
+
+      - name: Upload C# test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: csharp-test-results
+          path: TestResults/**/*.trx
+          retention-days: 90
+
+      - name: Upload C# coverage reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: csharp-coverage-reports
+          path: TestResults/**/coverage.cobertura.xml
+          retention-days: 90
+
+      - name: Verify coverage threshold
+        run: |
+          # SPEC-INFRA-001 FR-INFRA-05.6: 80% coverage requirement
+          $CoverageThreshold = 80.0
+          # Parse coverage from Cobertura XML and verify threshold
+          Write-Host "Coverage threshold: $CoverageThreshold%"
+          # TODO: Implement actual coverage verification logic
+
+  test-integration:
+    name: Integration Tests (Orthanc)
+    runs-on: [self-hosted, windows]
+    needs: build-csharp
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Start Orthanc container
+        run: |
+          docker-compose -f tests/docker/docker-compose.orthanc.yml up -d
+
+      - name: Wait for Orthanc health check
+        run: |
+          $MaxRetries = 12
+          $RetryCount = 0
+          $Healthy = $false
+
+          while (-not $Healthy -and $RetryCount -lt $MaxRetries) {
+            Start-Sleep -Seconds 5
+            try {
+              $Response = Invoke-WebRequest -Uri "http://localhost:8042/" -UseBasicParsing
+              if ($Response.StatusCode -eq 200) {
+                $Healthy = $true
+                Write-Host "Orthanc is healthy"
+              }
+            } catch {
+              Write-Host "Waiting for Orthanc... ($($RetryCount + 1)/$MaxRetries)"
+            }
+            $RetryCount++
+          }
+
+          if (-not $Healthy) {
+            Write-Error "Orthanc failed to become healthy within 60 seconds"
+            exit 1
+          }
+
+      - name: Run integration tests
+        run: |
+          dotnet test tests/integration/HnVue.Integration.Tests/HnVue.Integration.Tests.csproj `
+            -c ${{ env.CONFIGURATION }} --no-build `
+            --logger "trx;LogFileName=integration-test-results.trx"
+
+      - name: Stop Orthanc container
+        if: always()
+        run: |
+          docker-compose -f tests/docker/docker-compose.orthanc.yml down
+
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: integration-test-results
+          path: |
+            TestResults/**/*.trx
+          retention-days: 90
+
+  archive:
+    name: Archive Artifacts
+    runs-on: [self-hosted, windows]
+    needs: [test-cpp, test-csharp, test-integration]
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Generate build summary
+        run: |
+          $Summary = @"
+          # HnVue CI Build Summary
+
+          **Build Configuration**: ${{ env.CONFIGURATION }}
+          **Commit**: ${{ github.sha }}
+          **Branch**: ${{ github.ref_name }}
+
+          ## Build Status
+          - C++ Build: ${{ needs.build-cpp.result }}
+          - C# Build: ${{ needs.build-csharp.result }}
+          - C++ Tests: ${{ needs.test-cpp.result }}
+          - C# Tests: ${{ needs.test-csharp.result }}
+          - Integration Tests: ${{ needs.test-integration.result }}
+
+          ## Artifacts
+          All artifacts archived with 90-day retention per SPEC-INFRA-001 FR-INFRA-03.6
+          "@
+
+          $Summary | Out-File -FilePath build-summary.md
+
+      - name: Upload build summary
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-summary
+          path: build-summary.md
+          retention-days: 90

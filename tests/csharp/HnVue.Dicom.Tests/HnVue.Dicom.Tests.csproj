@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    HnVue.Dicom.Tests - DICOM services unit tests
+    SPEC-INFRA-001: Automated test execution (xUnit)
+  -->
+
+  <PropertyGroup>
+    <AssemblyName>HnVue.Dicom.Tests</AssemblyName>
+    <RootNamespace>HnVue.Dicom.Tests</RootNamespace>
+    <Description>HnVue DICOM Services Unit Tests</Description>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Testing Dependencies (no Version attribute - uses Directory.Packages.props) -->
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\HnVue.Dicom\HnVue.Dicom.csproj" />
+  </ItemGroup>
+
+</Project>

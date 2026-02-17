@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    HnVue.Workflow - Acquisition Workflow
+    SPEC-INFRA-001: IEC 62304 Class B workflow engine
+  -->
+
+  <PropertyGroup>
+    <AssemblyName>HnVue.Workflow</AssemblyName>
+    <RootNamespace>HnVue.Workflow</RootNamespace>
+    <Description>HnVue Workflow Engine - IEC 62304 Class B acquisition workflow</Description>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- MVVM Framework (no Version attribute - uses Directory.Packages.props) -->
+    <PackageReference Include="Prism.Core" />
+
+    <!-- Logging -->
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+
+    <!-- DI -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+
+    <!-- Configuration -->
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,57 @@
+<Project>
+  <!--
+    HnVue Project - MSBuild Shared Properties
+    SPEC-INFRA-001: C# build system with centralized configuration
+  -->
+
+  <PropertyGroup>
+    <!-- Target Framework -->
+    <TargetFramework>net8.0-windows</TargetFramework>
+
+    <!-- Language Version -->
+    <LangVersion>12</LangVersion>
+
+    <!-- Nullable Reference Types -->
+    <Nullable>enable</Nullable>
+
+    <!-- Implicit Usings -->
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Treat Warnings as Errors -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!-- Warning Level -->
+    <WarningLevel>5</WarningLevel>
+
+    <!-- Analysis Level -->
+    <AnalysisLevel>latest</AnalysisLevel>
+
+    <!-- Deterministic Build -->
+    <Deterministic>true</Deterministic>
+
+    <!-- Output Path -->
+    <BaseOutputPath>$(SolutionDir)artifacts\bin\$(MSBuildProjectName)\</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(SolutionDir)artifacts\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+    <OutputPath>$(BaseOutputPath)$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>$(BaseIntermediateOutputPath)$(Configuration)\</IntermediateOutputPath>
+
+    <!-- Generate Documentation File -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <!-- NoWarn -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn> <!-- Missing XML comment -->
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <!-- Optimizations -->
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <!-- Debug Settings -->
+    <Optimize>false</Optimize>
+    <DebugType>full</DebugType>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+</Project>

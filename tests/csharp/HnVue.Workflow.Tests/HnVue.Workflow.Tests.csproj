@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    HnVue.Workflow.Tests - Workflow engine unit tests
+    SPEC-INFRA-001: Automated test execution (xUnit)
+  -->
+
+  <PropertyGroup>
+    <AssemblyName>HnVue.Workflow.Tests</AssemblyName>
+    <RootNamespace>HnVue.Workflow.Tests</RootNamespace>
+    <Description>HnVue Workflow Engine Unit Tests</Description>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\HnVue.Workflow\HnVue.Workflow.csproj" />
+  </ItemGroup>
+
+</Project>

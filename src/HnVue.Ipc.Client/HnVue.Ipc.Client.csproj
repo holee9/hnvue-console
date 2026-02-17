@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    HnVue.Ipc.Client - gRPC Client Stub
+    SPEC-INFRA-001: IPC client for C# GUI layer
+  -->
+
+  <PropertyGroup>
+    <AssemblyName>HnVue.Ipc.Client</AssemblyName>
+    <RootNamespace>HnVue.Ipc.Client</RootNamespace>
+    <Description>HnVue IPC Client - gRPC client for C# GUI layer</Description>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- gRPC Dependencies (no Version attribute - uses Directory.Packages.props) -->
+    <PackageReference Include="Google.Protobuf" />
+    <PackageReference Include="Grpc.Net.Client" />
+    <PackageReference Include="Grpc.Tools" />
+
+    <!-- Logging -->
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <!-- Protobuf Generation -->
+  <ItemGroup>
+    <Protobuf Include="..\..\proto\hnvue_ipc.proto" GrpcServices="Client" Link="Protos\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

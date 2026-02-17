@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    HnVue.Dicom - DICOM Services
+    SPEC-INFRA-001: DICOM protocol stack integration
+  -->
+
+  <PropertyGroup>
+    <AssemblyName>HnVue.Dicom</AssemblyName>
+    <RootNamespace>HnVue.Dicom</RootNamespace>
+    <Description>HnVue DICOM Services - DICOM protocol implementation using fo-dicom</Description>
+    <OutputType>Library</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- DICOM Dependencies (no Version attribute - uses Directory.Packages.props) -->
+    <PackageReference Include="fo-dicom" />
+    <PackageReference Include="fo-dicom.Desktop" />
+
+    <!-- Logging -->
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+
+    <!-- DI -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+  </ItemGroup>
+
+</Project>

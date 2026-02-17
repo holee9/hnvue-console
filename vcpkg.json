@@ -1,0 +1,40 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "hnvue-console",
+  "version-string": "0.1.0",
+  "description": "HnVue Diagnostic Medical Device X-ray GUI Console Software",
+  "dependencies": [
+    {
+      "name": "gtest",
+      "version>=": "1.14.0",
+      "platform": "!emscripten"
+    },
+    {
+      "name": "protobuf",
+      "version>=": "25.0",
+      "platform": "!emscripten"
+    },
+    {
+      "name": "grpc",
+      "version>=": "1.68.0",
+      "platform": "!emscripten"
+    },
+    {
+      "name": "spdlog",
+      "version>=": "1.13.0",
+      "platform": "!emscripten"
+    },
+    {
+      "name": "fmt",
+      "version>=": "10.0.0",
+      "platform": "!emscripten"
+    }
+  ],
+  "builtin-baseline": "97e9c92ba648e30e6ffe7c8bca81ae4c786f8e3a",
+  "vcpkg-configuration": {
+    "default-triplet": "x64-windows",
+    "overlay-triplets": [
+      "triplets"
+    ]
+  }
+}

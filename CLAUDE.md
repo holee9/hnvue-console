@@ -192,13 +192,25 @@ When fixing bugs:
 - Fix the bug with minimal code changes
 - Verify the reproduction test passes after the fix
 
-### Go-Specific Guidelines
+### C++ Guidelines (HAL, IMAGING, IPC)
 
-For Go development:
-- Run `go test -race ./...` for concurrency safety
-- Use table-driven tests for comprehensive coverage
-- Maintain 85%+ test coverage per package
-- Run `go vet` and `golangci-lint` before commits
+For C++ development:
+- Standard: C++17, CMake 3.25+, vcpkg for dependency management
+- Run `ctest --output-on-failure` for test execution
+- Use Google Test with `TEST_F` fixtures for unit tests
+- Run `clang-tidy` and address all warnings before commits
+- Enable ThreadSanitizer (`-fsanitize=thread`) and AddressSanitizer (`-fsanitize=address`) in CI
+- Maintain 85%+ test coverage per library
+
+### C# Guidelines (DICOM, DOSE, WORKFLOW, UI)
+
+For C# development:
+- Standard: C# 12, .NET 8 LTS, WPF for UI
+- Run `dotnet test --collect:"XPlat Code Coverage"` for coverage
+- Use xUnit with `[Theory]` for parameterized tests
+- Run `dotnet format --verify-no-changes` before commits
+- Safety-critical code (WORKFLOW Safety/ namespace): 100% branch coverage required
+- Maintain 85%+ test coverage per project
 
 ---
 
@@ -365,8 +377,70 @@ For complete Agent Teams documentation including team API reference, agent roste
 
 ---
 
-Version: 13.1.0 (Agent Teams Integration)
-Last Updated: 2026-02-10
+## 16. HnVue Project-Specific Rules
+
+### Product Context
+
+- Product: HnVue - Diagnostic Medical Device X-ray GUI Console SW
+- Architecture: Hybrid C++ Core Engine + C# WPF GUI (gRPC IPC)
+- Regulatory: IEC 62304 Class B/C, ISO 14971, ISO 13485
+- 9 SPECs, implementation order: INFRA -> IPC -> HAL -> IMAGING -> DICOM -> DOSE -> WORKFLOW -> UI -> TEST
+
+### Git Commit Convention [HARD]
+
+All commits MUST follow this format:
+```
+<type>(<scope>): <subject>
+
+<body in Korean, technical terms in English>
+
+abyz-lab <hnabyz2023@gmail.com>
+```
+- type: feat, fix, docs, refactor, test, chore
+- scope: infra, ipc, hal, imaging, dicom, dose, workflow, ui, test, spec, review
+- Body language: Korean (technical terms in English)
+- Attribution: abyz-lab (NOT MoAI)
+
+### File Naming Convention
+
+- C# projects: PascalCase (e.g., WorkflowEngine.cs, InterlockChecker.cs)
+- C++ files: snake_case (e.g., detector_driver.cpp, dma_ring_buffer.h)
+- Documents: kebab-case.md (e.g., architecture-design.md)
+- SPEC files: Follow existing pattern (spec.md, plan.md, acceptance.md)
+
+### Document Authorship [HARD]
+
+All MoAI-generated documents MUST be attributed to abyz-lab, not MoAI.
+
+### Immediate Execution Policy [HARD]
+
+After user approval, execute immediately without additional questions. Minimize question frequency.
+
+Prohibited questions:
+- Progress confirmation ("Shall I continue?", "Next step?")
+- File order ("Start with file A?")
+- Style/format (already established in rules)
+- Completion confirmation ("Done. Confirm?")
+- Optional improvements ("Want me to optimize further?")
+- Minor technical decisions (apply best practices automatically)
+
+Allowed questions (minimum only):
+- System destruction / data loss risk (rm -rf, DROP DATABASE)
+- Security breach risk (credentials exposure)
+- Technical impossibility (ambiguous requirements, conflicting constraints)
+- Initial approach selection (architecture, algorithm - first time only)
+
+### Build Tools
+
+- C++ build: CMake 3.25+ with vcpkg manifests
+- C# build: dotnet CLI (.NET 8 SDK)
+- CI/CD: Gitea Actions (self-hosted)
+- Version control: Gitea (primary), GitHub (mirror)
+
+---
+
+Version: 14.0.0 (HnVue Project Customization)
+Last Updated: 2026-02-18
 Language: English
 Core Rule: MoAI is an orchestrator; direct implementation is prohibited
 

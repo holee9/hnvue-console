@@ -25,8 +25,47 @@ mem.prof
 # ===========================================
 build/
 dist/
+artifacts/
 *.egg-info/
 *.egg
+
+# ===========================================
+# C++ Build Artifacts (CMake/vcpkg)
+# ===========================================
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+!CMakePresets.json
+install/
+vcpkg_installed/
+.vcpkg-root/
+
+# ===========================================
+# C# Build Artifacts (MSBuild/NuGet)
+# ===========================================
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.lock.json
+project.lock.json
+!HnVue.sln
+!Directory.Build.props
+!Directory.Packages.props
+
+# ===========================================
+# Protobuf Generated Files
+# ===========================================
+*.pb.h
+*.pb.cc
+*_grpc.pb.h
+*_grpc.pb.cc
+*.cs
+!proto/**/*.proto
 
 # ===========================================
 # Python Cache & Bytecode
@@ -60,6 +99,10 @@ env/
 .coverage
 coverage.json
 htmlcov/
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
 
 # ===========================================
 # IDE & Editors
@@ -74,9 +117,18 @@ htmlcov/
 *.sublime-project
 *.sublime-workspace
 *.njsproj
-*.sln
 *.suo
 .#*
+
+# Visual Studio
+.vs/
+*.user
+*.VC.db
+*.VC.VC.opendb
+
+# Rider
+.idea/
+*.sln.iml
 
 # ===========================================
 # OS Files

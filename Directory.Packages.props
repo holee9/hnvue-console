@@ -1,0 +1,57 @@
+<Project>
+  <!--
+    HnVue Project - Central NuGet Package Management
+    SPEC-INFRA-001: FR-INFRA-02.3 - Central package version enforcement
+    All package versions defined centrally, no inline Version attributes in .csproj files
+  -->
+
+  <ItemGroup>
+    <!-- Core Framework -->
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="8.0.0" />
+
+    <!-- gRPC -->
+    <PackageVersion Include="Google.Protobuf" Version="3.25.2" />
+    <PackageVersion Include="Grpc.Net.Client" Version="2.59.0" />
+    <PackageVersion Include="Grpc.Tools" Version="2.60.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageVersion>
+
+    <!-- DICOM -->
+    <PackageVersion Include="fo-dicom" Version="5.1.1" />
+    <PackageVersion Include="fo-dicom.Desktop" Version="5.1.1" />
+
+    <!-- MVVM Framework -->
+    <PackageVersion Include="Prism.Core" Version="9.0.537" />
+    <PackageVersion Include="Prism.Wpf" Version="9.0.537" />
+
+    <!-- Testing -->
+    <PackageVersion Include="xunit" Version="2.7.0" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.5.6">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageVersion>
+    <PackageVersion Include="xunit.coverlet" Version="2.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageVersion>
+    <PackageVersion Include="Moq" Version="4.20.70" />
+    <PackageVersion Include="FluentAssertions" Version="6.12.0" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageVersion>
+
+    <!-- Code Analysis -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageVersion>
+  </ItemGroup>
+</Project>

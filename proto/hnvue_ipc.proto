@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package hnvue.ipc;
+
+// HnVue IPC Protocol Definitions
+// SPEC-INFRA-001: Shared protobuf definitions for C++/C# IPC
+
+// ============================================
+// Core Messages
+// ============================================
+
+// Empty message for RPCs with no parameters
+message Empty {}
+
+// ============================================
+// Health Check Service
+// ============================================
+
+service HealthCheck {
+  rpc Check(Empty) returns (HealthResponse);
+}
+
+message HealthResponse {
+  bool healthy = 1;
+  string message = 2;
+}
+
+// ============================================
+// TODO: Add more services as needed
+// - Detector Control
+// - Image Acquisition
+// - Dose Monitoring
+// - Workflow State
+// ============================================
