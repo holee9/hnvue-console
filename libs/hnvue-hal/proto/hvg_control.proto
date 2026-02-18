@@ -1,0 +1,134 @@
+// File: libs/hnvue-hal/proto/hvg_control.proto
+// IEC 62304 Class C - Generator control: serious injury risk
+// SPDX-License-Identifier: MIT
+
+syntax = "proto3";
+package hnvue.hal.hvg;
+
+// HVG Standard Service Interface
+// This is the canonical standard interface for HVG integration.
+// All vendor HVG SDK adapters and the internal IGenerator implementation
+// must conform to these message contracts.
+service HvgControl {
+  // Set exposure parameters before arming
+  rpc SetExposureParams(ExposureParams) returns (HvgResponse);
+
+  // Arm and initiate X-ray exposure
+  rpc StartExposure(ExposureRequest) returns (ExposureResult);
+
+  // Abort an in-progress exposure immediately
+  rpc AbortExposure(AbortRequest) returns (HvgResponse);
+
+  // Server-streaming: real-time HVG status at >= 10 Hz
+  rpc StreamStatus(StatusRequest) returns (stream HvgStatus);
+
+  // Server-streaming: alarm events with < 50 ms delivery latency
+  rpc StreamAlarms(AlarmRequest) returns (stream HvgAlarm);
+
+  // Query static HVG device capabilities
+  rpc GetCapabilities(Empty) returns (HvgCapabilities);
+}
+
+// Exposure parameters for X-ray generation
+message ExposureParams {
+  float kvp        = 1;  // kV: range 40.0–150.0
+  float ma         = 2;  // mA: range 0.1–1000.0
+  float ms         = 3;  // Exposure time in milliseconds: 1–10000
+  float mas        = 4;  // mAs (alternative to ma+ms)
+  AecMode aec_mode = 5;
+  string focus     = 6;  // "large" | "small"
+}
+
+// Automatic Exposure Control mode
+enum AecMode {
+  AEC_MODE_UNSPECIFIED = 0;
+  AEC_MANUAL  = 1;
+  AEC_AUTO    = 2;
+}
+
+// Generic HVG response
+message HvgResponse {
+  bool   success   = 1;
+  string error_msg = 2;
+  int32  error_code = 3;
+}
+
+// Request to start exposure
+message ExposureRequest {
+  string request_id = 1;
+}
+
+// Result of exposure operation
+message ExposureResult {
+  bool   success        = 1;
+  float  actual_kvp     = 2;
+  float  actual_ma      = 3;
+  float  actual_ms      = 4;
+  float  actual_mas     = 5;
+  string error_msg      = 6;
+}
+
+// Request to abort exposure
+message AbortRequest {
+  string reason = 1;
+}
+
+// Request for status streaming
+message StatusRequest {}
+
+// Real-time HVG status
+message HvgStatus {
+  float       actual_kvp     = 1;
+  float       actual_ma      = 2;
+  GeneratorState state       = 3;
+  bool        interlock_ok   = 4;
+  int64       timestamp_us   = 5;  // microseconds since epoch
+}
+
+// Generator state enumeration
+enum GeneratorState {
+  GEN_STATE_UNSPECIFIED = 0;
+  GEN_IDLE      = 1;
+  GEN_READY     = 2;
+  GEN_ARMED     = 3;
+  GEN_EXPOSING  = 4;
+  GEN_ERROR     = 5;
+}
+
+// Request for alarm streaming
+message AlarmRequest {}
+
+// Alarm event message
+message HvgAlarm {
+  int32  alarm_code  = 1;
+  string description = 2;
+  AlarmSeverity severity = 3;
+  int64  timestamp_us    = 4;
+}
+
+// Alarm severity levels
+enum AlarmSeverity {
+  ALARM_SEVERITY_UNSPECIFIED = 0;
+  ALARM_INFO     = 1;
+  ALARM_WARNING  = 2;
+  ALARM_ERROR    = 3;
+  ALARM_CRITICAL = 4;
+}
+
+// HVG device capabilities
+message HvgCapabilities {
+  float min_kvp  = 1;
+  float max_kvp  = 2;
+  float min_ma   = 3;
+  float max_ma   = 4;
+  float min_ms   = 5;
+  float max_ms   = 6;
+  bool  has_aec  = 7;
+  bool  has_dual_focus = 8;
+  string vendor_name = 9;
+  string model_name  = 10;
+  string firmware_version = 11;
+}
+
+// Empty message placeholder
+message Empty {}

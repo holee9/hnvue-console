@@ -1,0 +1,104 @@
+// File: libs/hnvue-hal/proto/detector_acquisition.proto
+// IEC 62304 Class B - Detector acquisition
+// SPDX-License-Identifier: MIT
+
+syntax = "proto3";
+package hnvue.hal.detector;
+
+// Detector Acquisition Service Interface
+// This is the canonical integration interface for vendor detector SDK adapter projects.
+// Vendor adapter projects implement this service; this SPEC only defines the contract.
+service DetectorAcquisition {
+  // Server-streaming: deliver raw frames to consumer
+  rpc StreamFrames(AcquisitionConfig) returns (stream RawFrame);
+
+  // Begin acquisition session
+  rpc StartAcquisition(AcquisitionConfig) returns (DetectorResponse);
+
+  // Stop acquisition session
+  rpc StopAcquisition(StopRequest) returns (DetectorResponse);
+
+  // Run flat-field or dark-field calibration
+  rpc RunCalibration(CalibrationType) returns (CalibrationResult);
+
+  // Query static detector properties
+  rpc GetDetectorInfo(Empty) returns (DetectorInfo);
+}
+
+// Acquisition configuration parameters
+message AcquisitionConfig {
+  AcquisitionMode mode        = 1;
+  int32           num_frames  = 2;   // 0 = continuous
+  float           frame_rate  = 3;   // frames per second
+  int32           binning     = 4;   // 1 | 2 | 4
+  string          session_id  = 5;
+}
+
+// Acquisition mode enumeration
+enum AcquisitionMode {
+  ACQUISITION_MODE_UNSPECIFIED = 0;
+  MODE_STATIC     = 1;
+  MODE_CONTINUOUS = 2;
+  MODE_TRIGGERED  = 3;
+}
+
+// Raw detector frame data
+message RawFrame {
+  int64  sequence_number = 1;
+  int64  timestamp_us    = 2;
+  int32  width           = 3;
+  int32  height          = 4;
+  int32  bit_depth       = 5;
+  bytes  pixel_data      = 6;  // row-major, native byte order
+  string session_id      = 7;
+}
+
+// Generic detector response
+message DetectorResponse {
+  bool   success   = 1;
+  string error_msg = 2;
+  int32  error_code = 3;
+}
+
+// Request to stop acquisition
+message StopRequest {
+  string session_id = 1;
+  string reason     = 2;
+}
+
+// Calibration type specification
+message CalibrationType {
+  CalibType type = 1;
+  int32 num_frames = 2;
+}
+
+// Calibration type enumeration
+enum CalibType {
+  CALIB_TYPE_UNSPECIFIED = 0;
+  CALIB_DARK_FIELD  = 1;
+  CALIB_FLAT_FIELD  = 2;
+  CALIB_DEFECT_MAP  = 3;
+}
+
+// Calibration result
+message CalibrationResult {
+  bool   success      = 1;
+  string output_path  = 2;
+  string error_msg    = 3;
+}
+
+// Detector information
+message DetectorInfo {
+  string vendor          = 1;
+  string model           = 2;
+  string serial_number   = 3;
+  int32  pixel_width     = 4;
+  int32  pixel_height    = 5;
+  float  pixel_pitch_um  = 6;
+  int32  max_bit_depth   = 7;
+  float  max_frame_rate  = 8;
+  string firmware_version = 9;
+}
+
+// Empty message placeholder
+message Empty {}
