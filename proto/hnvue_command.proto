@@ -1,0 +1,115 @@
+syntax = "proto3";
+
+package hnvue.ipc;
+import "hnvue_common.proto";
+option csharp_namespace = "HnVue.Ipc";
+
+// Command service: GUI -> Core Engine (unary request/response)
+service CommandService {
+  // Initiate an X-ray exposure sequence
+  rpc StartExposure(StartExposureRequest) returns (StartExposureResponse);
+
+  // Abort an in-progress exposure
+  rpc AbortExposure(AbortExposureRequest) returns (AbortExposureResponse);
+
+  // Move collimator blades to specified position
+  rpc SetCollimator(SetCollimatorRequest) returns (SetCollimatorResponse);
+
+  // Execute calibration routine
+  rpc RunCalibration(RunCalibrationRequest) returns (RunCalibrationResponse);
+
+  // Query current system state (synchronous snapshot)
+  rpc GetSystemState(GetSystemStateRequest) returns (GetSystemStateResponse);
+}
+
+message StartExposureRequest {
+  ExposureParameters parameters = 1;
+  Timestamp request_timestamp = 2;
+}
+
+message ExposureParameters {
+  float kv = 1;             // Kilovoltage (kV)
+  float mas = 2;            // Milliampere-seconds (mAs)
+  uint32 detector_id = 3;   // Target detector panel identifier
+  ImageTransferMode transfer_mode = 4;
+}
+
+enum ImageTransferMode {
+  IMAGE_TRANSFER_MODE_UNSPECIFIED = 0;
+  IMAGE_TRANSFER_MODE_PREVIEW = 1;
+  IMAGE_TRANSFER_MODE_FULL_QUALITY = 2;
+}
+
+message StartExposureResponse {
+  bool success = 1;
+  uint64 acquisition_id = 2;  // Unique ID for this acquisition
+  IpcError error = 3;
+  Timestamp response_timestamp = 4;
+}
+
+message AbortExposureRequest {
+  uint64 acquisition_id = 1;
+  Timestamp request_timestamp = 2;
+}
+
+message AbortExposureResponse {
+  bool success = 1;
+  IpcError error = 2;
+  Timestamp response_timestamp = 3;
+}
+
+message SetCollimatorRequest {
+  CollimatorPosition position = 1;
+  Timestamp request_timestamp = 2;
+}
+
+message CollimatorPosition {
+  float left_mm = 1;
+  float right_mm = 2;
+  float top_mm = 3;
+  float bottom_mm = 4;
+}
+
+message SetCollimatorResponse {
+  bool success = 1;
+  CollimatorPosition actual_position = 2;  // Position after command applied
+  IpcError error = 3;
+  Timestamp response_timestamp = 4;
+}
+
+message RunCalibrationRequest {
+  CalibrationMode mode = 1;
+  Timestamp request_timestamp = 2;
+}
+
+enum CalibrationMode {
+  CALIBRATION_MODE_UNSPECIFIED = 0;
+  CALIBRATION_MODE_DARK_FIELD = 1;
+  CALIBRATION_MODE_FLAT_FIELD = 2;
+  CALIBRATION_MODE_GAIN = 3;
+}
+
+message RunCalibrationResponse {
+  bool success = 1;
+  IpcError error = 2;
+  Timestamp response_timestamp = 3;
+}
+
+message GetSystemStateRequest {
+  Timestamp request_timestamp = 1;
+}
+
+message GetSystemStateResponse {
+  SystemState state = 1;
+  Timestamp response_timestamp = 2;
+}
+
+enum SystemState {
+  SYSTEM_STATE_UNSPECIFIED = 0;
+  SYSTEM_STATE_INITIALIZING = 1;
+  SYSTEM_STATE_READY = 2;
+  SYSTEM_STATE_ACQUIRING = 3;
+  SYSTEM_STATE_CALIBRATING = 4;
+  SYSTEM_STATE_FAULT = 5;
+  SYSTEM_STATE_SHUTTING_DOWN = 6;
+}

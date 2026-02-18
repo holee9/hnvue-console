@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    HnVue.Ipc.Client.Tests - Unit Tests for IPC Client
+    SPEC-IPC-001: xUnit tests for C# gRPC client library
+  -->
+
+  <PropertyGroup>
+    <AssemblyName>HnVue.Ipc.Client.Tests</AssemblyName>
+    <RootNamespace>HnVue.Ipc.Client.Tests</RootNamespace>
+    <Description>Unit tests for HnVue IPC Client</Description>
+    <OutputType>Library</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Project References -->
+    <ProjectReference Include="..\..\src\HnVue.Ipc.Client\HnVue.Ipc.Client.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Testing Framework (no Version attribute - uses Directory.Packages.props) -->
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="coverlet.collector" />
+
+    <!-- Logging for Mocking -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Analyzer -->
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" />
+  </ItemGroup>
+
+</Project>

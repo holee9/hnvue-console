@@ -1,34 +1,27 @@
 syntax = "proto3";
 
 package hnvue.ipc;
+option csharp_namespace = "HnVue.Ipc";
 
 // HnVue IPC Protocol Definitions
-// SPEC-INFRA-001: Shared protobuf definitions for C++/C# IPC
+// SPEC-IPC-001: Inter-Process Communication between C++ Core Engine and C# WPF GUI
+//
+// This is the root proto file that imports all service-specific proto definitions.
+// The proto/ directory is the single source of truth for the IPC interface contract.
+//
+// Service Architecture:
+// - CommandService: GUI -> Core Engine (unary request/response)
+// - ImageService: Core Engine -> GUI (server-streaming)
+// - HealthService: Core Engine -> GUI (server-streaming)
+// - ConfigService: GUI <-> Core Engine (bidirectional unary + streaming)
+//
+// Import order is important: common types must be imported first.
 
-// ============================================
-// Core Messages
-// ============================================
+// Import common types (enums, error messages, timestamps)
+import "hnvue_common.proto";
 
-// Empty message for RPCs with no parameters
-message Empty {}
-
-// ============================================
-// Health Check Service
-// ============================================
-
-service HealthCheck {
-  rpc Check(Empty) returns (HealthResponse);
-}
-
-message HealthResponse {
-  bool healthy = 1;
-  string message = 2;
-}
-
-// ============================================
-// TODO: Add more services as needed
-// - Detector Control
-// - Image Acquisition
-// - Dose Monitoring
-// - Workflow State
-// ============================================
+// Import service definitions
+import "hnvue_command.proto";
+import "hnvue_image.proto";
+import "hnvue_health.proto";
+import "hnvue_config.proto";

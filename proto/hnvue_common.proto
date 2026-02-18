@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package hnvue.ipc;
+option csharp_namespace = "HnVue.Ipc";
+
+// Semantic version of the IPC interface contract.
+// Minor increments: backward compatible additions only.
+// Major increments: breaking changes requiring coordinated deployment.
+message InterfaceVersion {
+  uint32 major = 1;
+  uint32 minor = 2;
+  uint32 patch = 3;
+}
+
+// Standardized error information included in all responses.
+message IpcError {
+  ErrorCode code = 1;
+  string message = 2;  // Human-readable description, English only
+  string detail = 3;   // Optional structured detail (e.g., JSON or key=value)
+}
+
+enum ErrorCode {
+  ERROR_CODE_UNSPECIFIED = 0;
+  ERROR_CODE_OK = 1;
+  ERROR_CODE_INVALID_ARGUMENT = 2;
+  ERROR_CODE_HARDWARE_NOT_READY = 3;
+  ERROR_CODE_ACQUISITION_IN_PROGRESS = 4;
+  ERROR_CODE_CONFIGURATION_REJECTED = 5;
+  ERROR_CODE_INTERNAL = 6;
+  ERROR_CODE_TIMEOUT = 7;
+}
+
+// Monotonic timestamp in microseconds since Core Engine start.
+// Allows latency measurement independent of wall clock sync.
+message Timestamp {
+  uint64 microseconds_since_start = 1;
+}

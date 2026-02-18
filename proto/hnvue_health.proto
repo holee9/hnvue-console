@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package hnvue.ipc;
+import "hnvue_common.proto";
+import "hnvue_command.proto";
+option csharp_namespace = "HnVue.Ipc";
+
+// Health service: Core Engine -> GUI (server-streaming)
+service HealthService {
+  // Subscribe to continuous health and status updates.
+  // Core Engine streams at a configured interval (default: 1Hz).
+  rpc SubscribeHealth(HealthSubscribeRequest) returns (stream HealthEvent);
+}
+
+message HealthSubscribeRequest {
+  // Requested event types. Empty means subscribe to all.
+  repeated HealthEventType event_type_filter = 1;
+}
+
+message HealthEvent {
+  HealthEventType event_type = 1;
+  Timestamp event_timestamp = 2;
+
+  oneof payload {
+    HeartbeatPayload heartbeat = 3;
+    HardwareStatusPayload hardware_status = 4;
+    FaultPayload fault = 5;
+    SystemStateChangePayload state_change = 6;
+  }
+}
+
+enum HealthEventType {
+  HEALTH_EVENT_TYPE_UNSPECIFIED = 0;
+  HEALTH_EVENT_TYPE_HEARTBEAT = 1;
+  HEALTH_EVENT_TYPE_HARDWARE_STATUS = 2;
+  HEALTH_EVENT_TYPE_FAULT = 3;
+  HEALTH_EVENT_TYPE_STATE_CHANGE = 4;
+}
+
+message HeartbeatPayload {
+  uint64 sequence_number = 1;
+  float cpu_usage_percent = 2;
+  float memory_usage_mb = 3;
+}
+
+message HardwareStatusPayload {
+  uint32 component_id = 1;
+  string component_name = 2;
+  HardwareComponentStatus status = 3;
+  string detail = 4;
+}
+
+enum HardwareComponentStatus {
+  HARDWARE_STATUS_UNSPECIFIED = 0;
+  HARDWARE_STATUS_ONLINE = 1;
+  HARDWARE_STATUS_OFFLINE = 2;
+  HARDWARE_STATUS_DEGRADED = 3;
+  HARDWARE_STATUS_FAULT = 4;
+}
+
+message FaultPayload {
+  uint32 fault_code = 1;
+  string fault_description = 2;
+  FaultSeverity severity = 3;
+  bool requires_operator_action = 4;
+}
+
+enum FaultSeverity {
+  FAULT_SEVERITY_UNSPECIFIED = 0;
+  FAULT_SEVERITY_WARNING = 1;
+  FAULT_SEVERITY_ERROR = 2;
+  FAULT_SEVERITY_CRITICAL = 3;
+}
+
+message SystemStateChangePayload {
+  SystemState previous_state = 1;
+  SystemState new_state = 2;
+  string reason = 3;
+}
+

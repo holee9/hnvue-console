@@ -23,18 +23,19 @@ if(BUILD_TESTING)
     include(CTest)
 endif()
 
-# TODO: Add subdirectories as they are created
-# add_subdirectory(proto)
-# add_subdirectory(libs/hnvue-infra)
-# add_subdirectory(libs/hnvue-hal)
-# add_subdirectory(libs/hnvue-ipc)
-# add_subdirectory(libs/hnvue-imaging)
+# Add subdirectories in dependency order
+add_subdirectory(proto)
+# add_subdirectory(libs/hnvue-infra)  # TODO: Enable when implemented
+# add_subdirectory(libs/hnvue-hal)     # TODO: Enable when implemented
+add_subdirectory(libs/hnvue-ipc)
+# add_subdirectory(libs/hnvue-imaging) # TODO: Enable when implemented
 
 # Add test directories if enabled
 if(BUILD_TESTING)
     add_subdirectory(tests/cpp/hnvue-infra.Tests)
+    # IPC tests now have sources, enable them
+    add_subdirectory(tests/cpp/hnvue-ipc.Tests)
     # TODO: Enable as test sources are added
     # add_subdirectory(tests/cpp/hnvue-hal.Tests)
-    # add_subdirectory(tests/cpp/hnvue-ipc.Tests)
     # add_subdirectory(tests/cpp/hnvue-imaging.Tests)
 endif()

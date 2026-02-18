@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package hnvue.ipc;
+import "hnvue_common.proto";
+option csharp_namespace = "HnVue.Ipc";
+
+// Configuration service: GUI <-> Core Engine (bidirectional unary)
+service ConfigService {
+  // Read current configuration from Core Engine
+  rpc GetConfiguration(GetConfigRequest) returns (GetConfigResponse);
+
+  // Write (update) configuration on Core Engine
+  rpc SetConfiguration(SetConfigRequest) returns (SetConfigResponse);
+
+  // Subscribe to configuration change notifications (Core -> GUI push)
+  rpc SubscribeConfigChanges(ConfigChangeSubscribeRequest)
+      returns (stream ConfigChangeEvent);
+}
+
+message GetConfigRequest {
+  repeated string parameter_keys = 1;  // Empty means fetch all parameters
+  Timestamp request_timestamp = 2;
+}
+
+message GetConfigResponse {
+  map<string, ConfigValue> parameters = 1;
+  Timestamp response_timestamp = 2;
+  IpcError error = 3;
+}
+
+message SetConfigRequest {
+  map<string, ConfigValue> parameters = 1;
+  Timestamp request_timestamp = 2;
+}
+
+message SetConfigResponse {
+  bool success = 1;
+  map<string, ConfigValue> applied_parameters = 2;
+  repeated string rejected_keys = 3;  // Keys that failed validation
+  IpcError error = 4;
+  Timestamp response_timestamp = 5;
+}
+
+message ConfigChangeSubscribeRequest {
+  repeated string parameter_keys = 1;  // Empty means watch all parameters
+}
+
+message ConfigChangeEvent {
+  string parameter_key = 1;
+  ConfigValue old_value = 2;
+  ConfigValue new_value = 3;
+  ConfigChangeSource source = 4;
+  Timestamp change_timestamp = 5;
+}
+
+enum ConfigChangeSource {
+  CONFIG_CHANGE_SOURCE_UNSPECIFIED = 0;
+  CONFIG_CHANGE_SOURCE_GUI = 1;       // Change initiated by GUI
+  CONFIG_CHANGE_SOURCE_CORE = 2;      // Change initiated by Core Engine internally
+  CONFIG_CHANGE_SOURCE_STARTUP = 3;   // Applied during initialization
+}
+
+message ConfigValue {
+  oneof value {
+    bool bool_value = 1;
+    int64 int_value = 2;
+    double double_value = 3;
+    string string_value = 4;
+    bytes bytes_value = 5;
+  }
+}

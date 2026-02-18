@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package hnvue.ipc;
+import "hnvue_common.proto";
+import "hnvue_command.proto";
+option csharp_namespace = "HnVue.Ipc";
+
+// Image service: Core Engine -> GUI (server-streaming)
+service ImageService {
+  // Stream image data after acquisition completes.
+  // Core Engine initiates streaming; GUI subscribes.
+  rpc SubscribeImageStream(ImageStreamRequest) returns (stream ImageChunk);
+}
+
+message ImageStreamRequest {
+  // Subscription filter: zero means subscribe to all acquisitions
+  uint64 acquisition_id_filter = 1;
+  ImageTransferMode preferred_mode = 2;
+}
+
+message ImageChunk {
+  uint64 acquisition_id = 1;
+  ImageMetadata metadata = 2;    // Present only in first chunk (sequence_number == 0)
+  uint32 sequence_number = 3;    // Zero-indexed chunk sequence
+  uint32 total_chunks = 4;       // Total number of chunks for this image
+  bytes pixel_data = 5;          // Raw 16-bit little-endian grayscale pixels, chunk slice
+  bool is_last_chunk = 6;
+  IpcError error = 7;            // Non-zero if transfer failed
+  Timestamp chunk_timestamp = 8;
+}
+
+message ImageMetadata {
+  uint32 width_pixels = 1;
+  uint32 height_pixels = 2;
+  uint32 bits_per_pixel = 3;     // Always 16 for diagnostic images
+  float pixel_pitch_mm = 4;
+  ImageTransferMode transfer_mode = 5;
+  Timestamp acquisition_timestamp = 6;
+  float kv_actual = 7;
+  float mas_actual = 8;
+  uint32 detector_id = 9;
+}

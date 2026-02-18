@@ -23,7 +23,13 @@
   </ItemGroup>
 
   <!-- Protobuf Generation -->
+  <!-- SPEC-IPC-001: All proto files from shared directory -->
   <ItemGroup>
+    <Protobuf Include="..\..\proto\hnvue_common.proto" GrpcServices="Client" Link="Protos\%(Filename)%(Extension)" />
+    <Protobuf Include="..\..\proto\hnvue_command.proto" GrpcServices="Client" Link="Protos\%(Filename)%(Extension)" />
+    <Protobuf Include="..\..\proto\hnvue_image.proto" GrpcServices="Client" Link="Protos\%(Filename)%(Extension)" />
+    <Protobuf Include="..\..\proto\hnvue_health.proto" GrpcServices="Client" Link="Protos\%(Filename)%(Extension)" />
+    <Protobuf Include="..\..\proto\hnvue_config.proto" GrpcServices="Client" Link="Protos\%(Filename)%(Extension)" />
     <Protobuf Include="..\..\proto\hnvue_ipc.proto" GrpcServices="Client" Link="Protos\%(Filename)%(Extension)" />
   </ItemGroup>
 
