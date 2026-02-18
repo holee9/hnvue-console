@@ -9,10 +9,11 @@
 | SPEC ID       | SPEC-IMAGING-001                               |
 | Title         | HnVue Image Processing Pipeline               |
 | Product       | HnVue - Diagnostic Medical Device X-ray GUI Console SW |
-| Status        | Planned                                        |
+| Status        | Completed                                      |
 | Priority      | High                                           |
 | Safety Class  | IEC 62304 Class B                              |
 | Created       | 2026-02-17                                     |
+| Completed     | 2026-02-18                                     |
 | Domain        | IMAGING                                        |
 
 ---
@@ -584,3 +585,72 @@ The following items are explicitly out of scope for SPEC-IMAGING-001:
 | SPEC-WORKFLOW-001                  | Acquisition workflow, triggers image acquisition for this pipeline |
 | SPEC-UI-001                        | Diagnostic viewer (WPF GUI), consumes processed frames from this pipeline |
 | SPEC-IMAGING-001 (this document)   | Calibration data lifecycle is managed internally by CalibrationManager (Section 4.4) |
+
+---
+
+## 7. Implementation Notes
+
+### 7.1 Implementation Summary
+
+**Status**: COMPLETED (2026-02-18)
+
+All requirements from SPEC-IMAGING-001 have been implemented.
+
+### 7.2 Files Created
+
+| File | Description |
+|------|-------------|
+| `libs/hnvue-imaging/include/hnvue/imaging/ImagingTypes.h` | Core data structures (ImageBuffer, CalibrationData, DefectMap, etc.) |
+| `libs/hnvue-imaging/include/hnvue/imaging/IImageProcessingEngine.h` | Pluggable engine interface |
+| `libs/hnvue-imaging/include/hnvue/imaging/DefaultImageProcessingEngine.h` | Default engine header |
+| `libs/hnvue-imaging/src/DefaultImageProcessingEngine.cpp` | Default engine implementation (OpenCV + FFTW) |
+| `libs/hnvue-imaging/include/hnvue/imaging/CalibrationManager.h` | Calibration manager header |
+| `libs/hnvue-imaging/src/CalibrationManager.cpp` | Calibration manager implementation |
+| `libs/hnvue-imaging/src/EngineFactory.cpp` | Engine factory for plugin loading |
+| `libs/hnvue-imaging/engines/default-engine/DefaultEnginePlugin.cpp` | Plugin DLL exports |
+| `libs/hnvue-imaging/CMakeLists.txt` | Build configuration |
+| `tests/cpp/hnvue-imaging.Tests/src/` | Google Test unit tests (8 files) |
+
+### 7.3 Features Implemented
+
+All functional requirements (FR-IMG-01 through FR-IMG-11) have been implemented:
+
+- ✅ **FR-IMG-01**: Offset Correction (Dark Frame Subtraction) - OpenCV in-place subtraction
+- ✅ **FR-IMG-02**: Gain Correction (Flat-Field Normalization) - OpenCV in-place multiplication
+- ✅ **FR-IMG-03**: Defect Pixel Mapping - Three interpolation methods (Bilinear, Nearest Neighbor, Median 3x3)
+- ✅ **FR-IMG-04**: Scatter Correction (Virtual Grid) - FFTW frequency-domain high-pass filter
+- ✅ **FR-IMG-05**: Window/Level with Display LUT - Reentrant, non-destructive
+- ✅ **FR-IMG-06**: Noise Reduction - Gaussian, Median, Bilateral filters
+- ✅ **FR-IMG-07**: Image Flattening - Background normalization
+- ✅ **FR-IMG-08**: Pluggable Engine Architecture - IImageProcessingEngine interface
+- ✅ **FR-IMG-09**: External Processing Module Integration - Timeout-based fallback
+- ✅ **FR-IMG-10**: Calibration Data Management - Load, validate, hot-reload
+- ✅ **FR-IMG-11**: Raw Image Preservation - RawBuffer preserved alongside processed output
+
+### 7.4 Testing
+
+Comprehensive unit tests written using Google Test:
+- Data structure tests
+- Interface tests
+- Default engine algorithm tests
+- Calibration manager tests
+- Factory tests
+- Plugin DLL tests
+- Full pipeline integration tests
+- Performance tests (NFR-IMG-01, NFR-IMG-02)
+
+### 7.5 Known Limitations
+
+1. **Build Environment**: Requires CMake 3.25+, C++17 compiler, OpenCV 4.x, FFTW 3.x, Google Test
+2. **Platform**: Initial implementation targets Windows 10/11 64-bit
+3. **GPU Acceleration**: Not implemented (NFR out of scope)
+4. **Calibration Acquisition**: Out of scope (separate workflow)
+
+### 7.6 Dependencies
+
+- OpenCV 4.x (image processing)
+- FFTW 3.x (scatter correction FFT)
+- Google Test (unit testing)
+- CMake 3.20+ (build system)
+
+---
