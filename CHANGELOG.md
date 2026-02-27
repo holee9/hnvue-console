@@ -7,6 +7,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2026-02-28
 
+### Added - SPEC-IMAGING-001: Image Processing Pipeline
+
+Complete implementation of medical X-ray image processing pipeline for diagnostic quality image correction and enhancement.
+
+#### Core Pipeline Stages
+- **Offset Correction**: Dark frame subtraction for sensor offset removal
+- **Gain Correction**: Flat-field normalization for gain uniformity
+- **Defect Pixel Mapping**: 3 interpolation methods (nearest, bilinear, bicubic)
+- **Scatter Correction**: Virtual grid scatter removal via FFTW
+- **Window/Level**: Display LUT application for contrast adjustment
+- **Noise Reduction**: Gaussian, median, bilateral filtering options
+- **Image Flattening**: Background normalization for even illumination
+
+#### Pluggable Engine Architecture
+- **IImageProcessingEngine**: Abstract interface for engine plugins
+- **EngineFactory**: Runtime plugin loading (default-engine.dll)
+- **Hot-reload support**: Engine replacement without application restart
+- **Plugin ABI contract**: Binary-compatible engine loading
+
+#### Calibration Management
+- **CalibrationManager**: Hot-reload calibration data support
+- Dark frame, gain map, defect pixel calibration loading
+- Validation before application
+- Audit trail for calibration changes
+
+#### Data Structures (ImagingTypes.h)
+- **ImageBuffer**: 16-bit grayscale image container
+- **ProcessedImage**: Corrected output image
+- **CalibrationData**: Offset, gain, defect pixel maps
+- **ProcessingParams**: Configurable pipeline parameters
+
+#### Image Processing Algorithms
+- Dark frame subtraction: `output = input - dark_frame`
+- Gain normalization: `output = input / gain_map`
+- Defect interpolation: 3 methods for bad pixel replacement
+- Scatter grid removal: FFT-based virtual grid suppression
+- Window/Level: Display LUT for contrast stretching
+- Noise filters: Gaussian (smooth), Median (salt-pepper), Bilateral (edge-preserving)
+- Background flattening: Gradient-based normalization
+
+#### Performance Optimization
+- Multi-threaded processing support
+- SIMD-friendly memory layout
+- Lock-free calibration data access
+- Engine state caching for repeated operations
+
+#### Testing (TDD Applied)
+- 8 test files covering all pipeline stages
+- Calibration manager tests (hot-reload, validation)
+- Default engine tests (all correction stages)
+- Engine interface tests (plugin loading)
+- Integration pipeline tests (end-to-end)
+- Error handling tests (exception safety)
+- Performance benchmarks (latency targets)
+- Imaging types tests (data structure validation)
+
+#### Technical Details
+- **Platform**: C++17, Windows 10/11
+- **Libraries**: OpenCV 4.x, FFTW 3.x
+- **Safety**: IEC 62304 Class B (diagnostic quality)
+- **Files**: 20 files, 6629+ lines
+
+---
+
 ### Added - SPEC-HAL-001: Hardware Abstraction Layer
 
 Complete implementation of Hardware Abstraction Layer (HAL) for medical X-ray device control, providing unified interfaces for generator, detector, and safety systems.
