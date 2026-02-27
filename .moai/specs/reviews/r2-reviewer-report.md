@@ -4,7 +4,7 @@
 
 | Field | Value |
 |-------|-------|
-| Reviewer | team-quality |
+| Reviewer | abyz-lab |
 | Date | 2026-02-18 |
 | Round | R2 (completeness-focused) |
 | Scope | All 9 SPECs (15 files: 9 spec.md + 3 plan.md + 3 acceptance.md) |

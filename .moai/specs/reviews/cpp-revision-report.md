@@ -82,4 +82,4 @@
 
 ---
 
-*C++ Layer Revision Report v1.0 | 2026-02-17 | Reviewer: backend-dev (team-backend-dev)*
+*C++ Layer Revision Report v1.0 | 2026-02-17 | Reviewer: abyz-lab*

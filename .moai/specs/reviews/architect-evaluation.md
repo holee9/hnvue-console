@@ -4,7 +4,7 @@
 
 | Field | Value |
 |-------|-------|
-| Evaluator | Lead Architect |
+| Evaluator | abyz-lab |
 | Date | 2026-02-17 |
 | Scope | Post-revision evaluation of 9 SPECs (15 files) |
 

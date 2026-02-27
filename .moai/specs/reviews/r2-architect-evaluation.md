@@ -4,7 +4,7 @@
 
 | Field | Value |
 |-------|-------|
-| Evaluator | Lead Architect |
+| Evaluator | abyz-lab |
 | Round | R2 (Completeness) |
 | Date | 2026-02-18 |
 | Prior Round | R1 (Correctness/Consistency) - 2026-02-17 |
