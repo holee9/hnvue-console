@@ -1,21 +1,47 @@
 using FluentAssertions;
+using HnVue.Dicom.Configuration;
 using HnVue.Dicom.Mpps;
-using Moq;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace HnVue.Dicom.Tests.Mpps;
 
 /// <summary>
-/// Unit tests for IMppsScu - Modality Performed Procedure Step N-CREATE/N-SET operations.
+/// Unit tests for the actual MppsScu implementation class.
 /// SPEC-DICOM-001 AC-04: MPPS Reporting.
+/// Network tests use a closed port (fast failure); dataset tests use in-memory data.
 /// </summary>
 public class MppsScuTests
 {
-    private readonly Mock<IMppsScu> _mppsScu;
+    private readonly DicomServiceOptions _optionsWithScp;
+    private readonly DicomServiceOptions _optionsWithoutScp;
 
     public MppsScuTests()
     {
-        _mppsScu = new Mock<IMppsScu>();
+        _optionsWithScp = new DicomServiceOptions
+        {
+            CallingAeTitle = "HNVUE_TEST",
+            MppsScp = new DicomDestination
+            {
+                AeTitle = "MPPS_SCP",
+                Host = "127.0.0.1",
+                Port = 19994  // closed port - fast connection refused
+            }
+        };
+
+        _optionsWithoutScp = new DicomServiceOptions
+        {
+            CallingAeTitle = "HNVUE_TEST",
+            MppsScp = null
+        };
+    }
+
+    private MppsScu CreateSut(DicomServiceOptions? options = null)
+    {
+        return new MppsScu(
+            Options.Create(options ?? _optionsWithScp),
+            NullLogger<MppsScu>.Instance);
     }
 
     private static MppsData CreateValidMppsData(MppsStatus status = MppsStatus.InProgress)
@@ -34,162 +60,125 @@ public class MppsScuTests
                 : Array.Empty<ExposureData>());
     }
 
-    // AC-04 Scenario 4.1 - MPPS IN PROGRESS on Procedure Start
+    // Constructor injection: MppsScu initializes correctly
     [Fact]
-    public async Task CreateProcedureStepAsync_ValidData_ReturnsSopInstanceUid()
+    public void Constructor_WithValidOptions_DoesNotThrow()
     {
-        // Arrange
-        var data = CreateValidMppsData(MppsStatus.InProgress);
-        var expectedSopUid = "1.2.3.4.5.500";
-
-        _mppsScu
-            .Setup(s => s.CreateProcedureStepAsync(
-                It.IsAny<MppsData>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync(expectedSopUid);
-
         // Act
-        var sopInstanceUid = await _mppsScu.Object.CreateProcedureStepAsync(data);
+        Action act = () => CreateSut();
 
         // Assert
-        sopInstanceUid.Should().NotBeNullOrEmpty(
-            "N-CREATE must return the SOP Instance UID of the created MPPS object");
-        sopInstanceUid.Should().Be(expectedSopUid);
+        act.Should().NotThrow("all required dependencies are provided");
     }
 
-    // AC-04 Scenario 4.1 - Verify IN PROGRESS N-CREATE succeeds
+    // CreateProcedureStepAsync throws when MppsScp is null
     [Fact]
-    public async Task SetInProgressAsync_ValidSopInstanceUid_Succeeds()
+    public async Task CreateProcedureStepAsync_WithNullMppsScp_ThrowsInvalidOperationException()
     {
         // Arrange
-        var sopInstanceUid = "1.2.3.4.5.501";
+        var sut = CreateSut(_optionsWithoutScp);
         var data = CreateValidMppsData(MppsStatus.InProgress);
 
-        _mppsScu
-            .Setup(s => s.SetProcedureStepInProgressAsync(
-                It.IsAny<string>(),
-                It.IsAny<MppsData>(),
-                It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        // Act
-        Func<Task> act = () => _mppsScu.Object.SetProcedureStepInProgressAsync(sopInstanceUid, data);
-
-        // Assert
-        await act.Should().NotThrowAsync(
-            "N-SET IN PROGRESS with valid SOP Instance UID must succeed");
+        // Act & Assert
+        await sut.Invoking(s => s.CreateProcedureStepAsync(data))
+            .Should().ThrowAsync<InvalidOperationException>(
+                "MppsScp must be configured before sending MPPS N-CREATE requests");
     }
 
-    // AC-04 Scenario 4.2 - MPPS COMPLETED on Procedure End
+    // SetProcedureStepInProgressAsync throws when MppsScp is null
     [Fact]
-    public async Task CompleteProcedureStepAsync_ValidSopInstanceUid_Succeeds()
+    public async Task SetProcedureStepInProgressAsync_WithNullMppsScp_ThrowsInvalidOperationException()
     {
         // Arrange
-        var sopInstanceUid = "1.2.3.4.5.502";
-        var completionData = CreateValidMppsData(MppsStatus.Completed);
+        var sut = CreateSut(_optionsWithoutScp);
+        var data = CreateValidMppsData(MppsStatus.InProgress);
 
-        _mppsScu
-            .Setup(s => s.CompleteProcedureStepAsync(
-                It.IsAny<string>(),
-                It.IsAny<MppsData>(),
-                It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        // Act
-        Func<Task> act = () => _mppsScu.Object.CompleteProcedureStepAsync(sopInstanceUid, completionData);
-
-        // Assert
-        await act.Should().NotThrowAsync(
-            "N-SET COMPLETED with valid SOP Instance UID and exposure data must succeed");
+        // Act & Assert
+        await sut.Invoking(s => s.SetProcedureStepInProgressAsync("1.2.3.4.5.500", data))
+            .Should().ThrowAsync<InvalidOperationException>(
+                "MppsScp must be configured before sending MPPS N-SET requests");
     }
 
-    // AC-04 Scenario 4.2 - Completed data must include series references
+    // CompleteProcedureStepAsync throws when MppsScp is null
     [Fact]
-    public void MppsData_WithCompleted_MustIncludeExposureData()
+    public async Task CompleteProcedureStepAsync_WithNullMppsScp_ThrowsInvalidOperationException()
     {
         // Arrange
+        var sut = CreateSut(_optionsWithoutScp);
+        var data = CreateValidMppsData(MppsStatus.Completed);
+
+        // Act & Assert
+        await sut.Invoking(s => s.CompleteProcedureStepAsync("1.2.3.4.5.500", data))
+            .Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    // DiscontinueProcedureStepAsync throws when MppsScp is null
+    [Fact]
+    public async Task DiscontinueProcedureStepAsync_WithNullMppsScp_ThrowsInvalidOperationException()
+    {
+        // Arrange
+        var sut = CreateSut(_optionsWithoutScp);
+
+        // Act & Assert
+        await sut.Invoking(s => s.DiscontinueProcedureStepAsync("1.2.3.4.5.500", "patient refused"))
+            .Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    // CreateProcedureStepAsync with unreachable SCP propagates network exception
+    [Fact]
+    public async Task CreateProcedureStepAsync_WithUnreachableScp_ThrowsNetworkException()
+    {
+        // Arrange: closed port forces immediate connection refused
+        var sut = CreateSut(_optionsWithScp);
+        var data = CreateValidMppsData(MppsStatus.InProgress);
+
+        // Act & Assert
+        await sut.Invoking(s => s.CreateProcedureStepAsync(data))
+            .Should().ThrowAsync<Exception>(
+                "unreachable MPPS SCP causes a network exception to propagate to the caller");
+    }
+
+    // MppsData with Completed status must include ExposureData and EndDateTime
+    [Fact]
+    public void MppsData_WithCompleted_MustIncludeExposureDataAndEndTime()
+    {
+        // Arrange & Act
         var completionData = CreateValidMppsData(MppsStatus.Completed);
 
         // Assert
         completionData.Status.Should().Be(MppsStatus.Completed);
         completionData.ExposureData.Should().NotBeEmpty(
-            "COMPLETED MPPS must include Performed Series Sequence with image references");
+            "COMPLETED MPPS must include Performed Series Sequence with image references per FR-DICOM-04");
         completionData.EndDateTime.Should().NotBeNull(
             "COMPLETED MPPS must have an end date/time");
     }
 
-    // AC-04 Scenario 4.3 - MPPS DISCONTINUED on Procedure Abort
+    // MppsData with InProgress status has no EndDateTime and no ExposureData
     [Fact]
-    public async Task DiscontinueProcedureStepAsync_WithReason_Succeeds()
+    public void MppsData_WithInProgress_HasNoEndTimeAndNoExposureData()
     {
-        // Arrange
-        var sopInstanceUid = "1.2.3.4.5.503";
-        var reason = "Patient refused procedure";
-
-        _mppsScu
-            .Setup(s => s.DiscontinueProcedureStepAsync(
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        // Act
-        Func<Task> act = () => _mppsScu.Object.DiscontinueProcedureStepAsync(sopInstanceUid, reason);
+        // Arrange & Act
+        var inProgressData = CreateValidMppsData(MppsStatus.InProgress);
 
         // Assert
-        await act.Should().NotThrowAsync(
-            "N-SET DISCONTINUED with a reason must succeed");
-
-        _mppsScu.Verify(
-            s => s.DiscontinueProcedureStepAsync(sopInstanceUid, reason, default),
-            Times.Once);
+        inProgressData.Status.Should().Be(MppsStatus.InProgress);
+        inProgressData.EndDateTime.Should().BeNull("IN PROGRESS MPPS has not completed yet");
+        inProgressData.ExposureData.Should().BeEmpty("IN PROGRESS MPPS has no exposure data yet");
     }
 
-    // AC-04 Scenario 4.3 - Discontinuation without reason also accepted
-    [Fact]
-    public async Task DiscontinueProcedureStepAsync_WithEmptyReason_Succeeds()
+    // MppsStatus enum defines all three values required by DICOM PS3.3
+    [Theory]
+    [InlineData(MppsStatus.InProgress)]
+    [InlineData(MppsStatus.Completed)]
+    [InlineData(MppsStatus.Discontinued)]
+    public void MppsStatus_AllValues_AreDefinedInEnum(MppsStatus status)
     {
-        // Arrange
-        var sopInstanceUid = "1.2.3.4.5.504";
-        var emptyReason = string.Empty;
-
-        _mppsScu
-            .Setup(s => s.DiscontinueProcedureStepAsync(
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        // Act
-        Func<Task> act = () => _mppsScu.Object.DiscontinueProcedureStepAsync(sopInstanceUid, emptyReason);
-
         // Assert
-        await act.Should().NotThrowAsync();
+        Enum.IsDefined(typeof(MppsStatus), status).Should().BeTrue(
+            $"MppsStatus.{status} must be defined per DICOM PS3.3 MPPS state machine");
     }
 
-    // AC-04 Scenario 4.4 - MPPS N-CREATE Failure Is Logged and Surfaced
-    [Fact]
-    public async Task CreateProcedureStepAsync_WithUnreachableScp_ThrowsDicomMppsException()
-    {
-        // Arrange
-        var data = CreateValidMppsData(MppsStatus.InProgress);
-        var failureStatusCode = (ushort)0xA700;
-
-        _mppsScu
-            .Setup(s => s.CreateProcedureStepAsync(
-                It.IsAny<MppsData>(),
-                It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new DicomMppsException(failureStatusCode, "Out of resources - connection refused"));
-
-        // Act & Assert
-        Func<Task> act = () => _mppsScu.Object.CreateProcedureStepAsync(data);
-
-        await act.Should().ThrowAsync<DicomMppsException>()
-            .Where(ex => ex.StatusCode == failureStatusCode,
-                "failure must be surfaced with the SCP status code for operator notification");
-    }
-
-    // DicomMppsException carries status code
+    // DicomMppsException carries the DICOM status code
     [Fact]
     public void DicomMppsException_WithStatusCode_StoresStatusCodeCorrectly()
     {
@@ -201,14 +190,19 @@ public class MppsScuTests
         exception.Message.Should().Be("Out of resources");
     }
 
-    // MppsData record - validate enum values
-    [Theory]
-    [InlineData(MppsStatus.InProgress)]
-    [InlineData(MppsStatus.Completed)]
-    [InlineData(MppsStatus.Discontinued)]
-    public void MppsStatus_AllValues_AreDefinedInEnum(MppsStatus status)
+    // ExposureData record fields are accessible
+    [Fact]
+    public void ExposureData_WithValidValues_FieldsAreAccessible()
     {
+        // Arrange & Act
+        var exposure = new ExposureData(
+            SeriesInstanceUid: "1.2.3.4.5.101",
+            SopClassUid: "1.2.840.10008.5.1.4.1.1.1.1",
+            SopInstanceUid: "1.2.3.4.5.102");
+
         // Assert
-        Enum.IsDefined(typeof(MppsStatus), status).Should().BeTrue();
+        exposure.SeriesInstanceUid.Should().Be("1.2.3.4.5.101");
+        exposure.SopClassUid.Should().Be("1.2.840.10008.5.1.4.1.1.1.1");
+        exposure.SopInstanceUid.Should().Be("1.2.3.4.5.102");
     }
 }
