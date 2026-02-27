@@ -14,8 +14,10 @@ MoAI is the Strategic Orchestrator for Claude Code. All tasks must be delegated 
 - [HARD] Multi-File Decomposition: Split work when modifying 3+ files (See Section 7)
 - [HARD] Post-Implementation Review: List potential issues and suggest tests after coding (See Section 7)
 - [HARD] Reproduction-First Bug Fix: Write reproduction test before fixing bugs (See Section 7)
+- [HARD] No Refusal: Never refuse explicit user requests or argue bugs are "by design" (See Section 7)
+- [HARD] No Autonomous Work: Do not start unrequested analysis, optimization, or refactoring (See Section 7)
 
-Core principles (1-4) are defined in @.claude/rules/moai/core/moai-constitution.md. Development safeguards (5-8) are detailed in Section 7.
+Core principles (1-4) are defined in @.claude/rules/moai/core/moai-constitution.md. Development safeguards (5-10) are detailed in Section 7.
 
 ### Recommendations
 
@@ -46,7 +48,8 @@ Core Skills (load when needed):
 Route request based on command type:
 
 - **Workflow Subcommands**: /moai project, /moai plan, /moai run, /moai sync
-- **Utility Subcommands**: /moai (default), /moai fix, /moai loop
+- **Utility Subcommands**: /moai (default), /moai fix, /moai loop, /moai clean, /moai mx
+- **Quality Subcommands**: /moai review, /moai coverage, /moai e2e, /moai codemaps
 - **Feedback Subcommand**: /moai feedback
 - **Direct Agent Requests**: Immediate delegation when user explicitly requests an agent
 
@@ -73,7 +76,7 @@ Integrate and report results:
 
 Definition: Single entry point for all MoAI development workflows.
 
-Subcommands: plan, run, sync, project, fix, loop, feedback
+Subcommands: plan, run, sync, project, fix, loop, mx, feedback, review, clean, codemaps, coverage, e2e
 Default (natural language): Routes to autonomous workflow (plan -> run -> sync pipeline)
 
 Allowed Tools: Full access (Task, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, TaskGet, Bash, Read, Write, Edit, Glob, Grep)
@@ -94,9 +97,9 @@ Allowed Tools: Full access (Task, AskUserQuestion, TaskCreate, TaskUpdate, TaskL
 
 spec, ddd, tdd, docs, quality, project, strategy, git
 
-### Expert Agents (8)
+### Expert Agents (9)
 
-backend, frontend, security, devops, performance, debug, testing, refactoring
+backend, frontend, security, devops, performance, debug, testing, refactoring, chrome-extension
 
 ### Builder Agents (3)
 
@@ -108,18 +111,18 @@ researcher, analyst, architect, designer, backend-dev, frontend-dev, tester, qua
 
 Both `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` env var AND `workflow.team.enabled: true` in `.moai/config/sections/workflow.yaml` are required.
 
-For detailed agent descriptions, capabilities, and creation guidelines, see @.claude/rules/moai/development/agent-authoring.md.
+For detailed agent descriptions, see the Agent Catalog section above. For agent creation guidelines, use the builder-agent subagent or see `.claude/rules/moai/development/agent-authoring.md`.
 
 ---
 
 ## 5. SPEC-Based Workflow
 
-MoAI uses DDD (Domain-Driven Development) as its development methodology.
+MoAI uses DDD and TDD as its development methodologies, selected via quality.yaml.
 
 ### MoAI Command Flow
 
 - /moai plan "description" → manager-spec subagent
-- /moai run SPEC-XXX → manager-ddd subagent (ANALYZE-PRESERVE-IMPROVE)
+- /moai run SPEC-XXX → manager-ddd or manager-tdd subagent (per quality.yaml development_mode)
 - /moai sync SPEC-XXX → manager-docs subagent
 
 For detailed workflow specifications, see @.claude/rules/moai/workflow/spec-workflow.md
@@ -133,7 +136,23 @@ For detailed workflow specifications, see @.claude/rules/moai/workflow/spec-work
 - Phase 5: manager-quality → ensure quality standards
 - Phase 6: manager-docs → create documentation
 
-For team-based parallel execution of these phases, see @.claude/skills/moai/workflows/team-plan.md and @.claude/skills/moai/workflows/team-run.md.
+### MX Tag Integration
+
+All phases include @MX code annotation management:
+
+- **plan**: Identify MX tag targets (high fan_in, danger zones)
+- **run**: Create/update @MX:NOTE, @MX:WARN, @MX:ANCHOR, @MX:TODO tags
+- **sync**: Validate MX tags, add missing annotations
+
+MX Tag Types:
+- `@MX:NOTE` - Context and intent delivery
+- `@MX:WARN` - Danger zone (requires @MX:REASON)
+- `@MX:ANCHOR` - Invariant contract (high fan_in functions)
+- `@MX:TODO` - Incomplete work (resolved in GREEN phase)
+
+For MX protocol details, see @.claude/rules/moai/workflow/mx-tag-protocol.md
+
+For team-based parallel execution of these phases, see @.claude/skills/moai/team/plan.md and @.claude/skills/moai/team/run.md.
 
 ---
 
@@ -156,9 +175,9 @@ MoAI-ADK implements LSP-based quality gates:
 
 ## 7. Safe Development Protocol
 
-### Development Safeguards (4 HARD Rules)
+### Development Safeguards (6 HARD Rules)
 
-These rules ensure code quality and prevent regressions in the project codebase.
+These rules ensure code quality, prevent regressions, and maintain predictable AI behavior.
 
 **Rule 1: Approach-First Development**
 
@@ -192,25 +211,20 @@ When fixing bugs:
 - Fix the bug with minimal code changes
 - Verify the reproduction test passes after the fix
 
-### C++ Guidelines (HAL, IMAGING, IPC)
+**Rule 5: No Refusal of Explicit Requests**
 
-For C++ development:
-- Standard: C++17, CMake 3.25+, vcpkg for dependency management
-- Run `ctest --output-on-failure` for test execution
-- Use Google Test with `TEST_F` fixtures for unit tests
-- Run `clang-tidy` and address all warnings before commits
-- Enable ThreadSanitizer (`-fsanitize=thread`) and AddressSanitizer (`-fsanitize=address`) in CI
-- Maintain 85%+ test coverage per library
+When the user reports a bug or requests a specific fix:
+- Make the requested change first
+- Explain concerns or alternatives separately after the fix
+- Never argue that a reported bug is "by design"
+- Never refuse an explicit implementation request
 
-### C# Guidelines (DICOM, DOSE, WORKFLOW, UI)
+**Rule 6: No Autonomous Work Without Request**
 
-For C# development:
-- Standard: C# 12, .NET 8 LTS, WPF for UI
-- Run `dotnet test --collect:"XPlat Code Coverage"` for coverage
-- Use xUnit with `[Theory]` for parameterized tests
-- Run `dotnet format --verify-no-changes` before commits
-- Safety-critical code (WORKFLOW Safety/ namespace): 100% branch coverage required
-- Maintain 85%+ test coverage per project
+- Do NOT start autonomous work (analysis, optimization, refactoring) unless explicitly requested
+- Wait for user instructions before acting
+- After /clear or session resume, do NOT analyze or optimize anything autonomously
+- Exceptions: Quality gate enforcement, hook-triggered validation
 
 ---
 
@@ -375,72 +389,123 @@ TeammateIdle (exit 2 = keep working), TaskCompleted (exit 2 = reject completion)
 
 For complete Agent Teams documentation including team API reference, agent roster, file ownership strategy, team workflows, and configuration, see @.claude/rules/moai/workflow/spec-workflow.md and @.moai/config/sections/workflow.yaml.
 
----
+### CG Mode (Claude + GLM Cost Optimization)
 
-## 16. HnVue Project-Specific Rules
+MoAI-ADK supports CG Mode for 60-70% cost reduction on implementation-heavy tasks via tmux Agent Teams:
 
-### Product Context
-
-- Product: HnVue - Diagnostic Medical Device X-ray GUI Console SW
-- Architecture: Hybrid C++ Core Engine + C# WPF GUI (gRPC IPC)
-- Regulatory: IEC 62304 Class B/C, ISO 14971, ISO 13485
-- 9 SPECs, implementation order: INFRA -> IPC -> HAL -> IMAGING -> DICOM -> DOSE -> WORKFLOW -> UI -> TEST
-
-### Git Commit Convention [HARD]
-
-All commits MUST follow this format:
 ```
-<type>(<scope>): <subject>
-
-<body in Korean, technical terms in English>
-
-abyz-lab <hnabyz2023@gmail.com>
+┌─────────────────────────────────────────────────────────────┐
+│  LEADER (Claude, current tmux pane)                         │
+│  - Orchestrates workflow (no GLM env)                        │
+│  - Delegates tasks via Agent Teams                           │
+│  - Reviews results                                           │
+└──────────────────────┬──────────────────────────────────────┘
+                       │ Agent Teams (tmux panes)
+                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│  TEAMMATES (GLM, new tmux panes)                            │
+│  - Inherit GLM env from tmux session                        │
+│  - Execute implementation tasks                              │
+│  - Full access to codebase                                   │
+└─────────────────────────────────────────────────────────────┘
 ```
-- type: feat, fix, docs, refactor, test, chore
-- scope: infra, ipc, hal, imaging, dicom, dose, workflow, ui, test, spec, review
-- Body language: Korean (technical terms in English)
-- Attribution: abyz-lab (NOT MoAI)
 
-### File Naming Convention
+**Activation**: `moai cg` (requires tmux). Uses tmux session-level env isolation.
 
-- C# projects: PascalCase (e.g., WorkflowEngine.cs, InterlockChecker.cs)
-- C++ files: snake_case (e.g., detector_driver.cpp, dma_ring_buffer.h)
-- Documents: kebab-case.md (e.g., architecture-design.md)
-- SPEC files: Follow existing pattern (spec.md, plan.md, acceptance.md)
+**When to use**:
+- Implementation-heavy SPECs (run phase)
+- Code generation tasks
+- Test writing
+- Documentation generation
 
-### Document Authorship [HARD]
-
-All MoAI-generated documents MUST be attributed to abyz-lab, not MoAI.
-
-### Immediate Execution Policy [HARD]
-
-After user approval, execute immediately without additional questions. Minimize question frequency.
-
-Prohibited questions:
-- Progress confirmation ("Shall I continue?", "Next step?")
-- File order ("Start with file A?")
-- Style/format (already established in rules)
-- Completion confirmation ("Done. Confirm?")
-- Optional improvements ("Want me to optimize further?")
-- Minor technical decisions (apply best practices automatically)
-
-Allowed questions (minimum only):
-- System destruction / data loss risk (rm -rf, DROP DATABASE)
-- Security breach risk (credentials exposure)
-- Technical impossibility (ambiguous requirements, conflicting constraints)
-- Initial approach selection (architecture, algorithm - first time only)
-
-### Build Tools
-
-- C++ build: CMake 3.25+ with vcpkg manifests
-- C# build: dotnet CLI (.NET 8 SDK)
-- CI/CD: Gitea Actions (self-hosted)
-- Version control: Gitea (primary), GitHub (mirror)
+**When NOT to use**:
+- Planning/architecture decisions (needs Opus reasoning)
+- Security reviews (needs Claude's security training)
+- Complex debugging (needs advanced reasoning)
 
 ---
 
-Version: 14.0.0 (HnVue Project Customization)
-Last Updated: 2026-02-18
+## 16. Session Continuity
+
+When resuming work from a previous session, provide structured context to avoid re-exploration.
+
+### Resume Prompt Pattern
+
+Include the following in your first message when continuing previous work:
+
+```
+Continuing [SPEC-ID or task description].
+Previous session completed: [what was done]
+Remaining work: [what needs to be done]
+Modified files: [list of files changed]
+Start from: [specific starting point]
+```
+
+### When to Use
+
+- Continuing a SPEC implementation across multiple sessions
+- Resuming after rate limit interruption
+- Picking up after /clear was executed between phases
+
+### Context Sources
+
+When context is needed from previous sessions:
+1. Check SPEC document at `.moai/specs/SPEC-XXX/spec.md` for requirements
+2. Check git log for recent changes: `git log --oneline -20`
+3. Check MX scan progress: `.moai/cache/mx-scan-progress.json`
+4. Read task list if team mode was active
+
+### Token Budget
+
+- Maximum 5,000 tokens for injected context
+- Summarize lengthy previous work into key decisions and outcomes
+- Prefer referencing files over copying content
+
+---
+
+## Troubleshooting
+
+### Debugging MoAI Sessions
+
+When MoAI workflows behave unexpectedly, use Claude Code's built-in debug tools:
+
+```bash
+# Enable hook debugging
+claude --debug "hooks"
+
+# Enable API + hook debugging
+claude --debug "api,hooks"
+
+# Enable MCP debugging
+claude --debug "mcp"
+```
+
+Or use the `/debug` command inside a session to inspect current session state, hook execution logs, and tool traces.
+
+### Common Issues
+
+| Symptom | Cause | Solution |
+|---------|-------|---------|
+| TeammateIdle hook blocks teammate | LSP errors exceed threshold | Fix errors, or set `enforce_quality: false` in quality.yaml |
+| Agent Teams messages not delivered | Session was resumed after interrupt | Spawn new teammates; old teammates are orphaned |
+| `moai hook subagent-stop` fails | Binary not in PATH | Run `which moai` to verify installation |
+| settings.json not updated after `moai update` | Conflict with user modifications | Run `moai update -t` for template-only sync |
+
+### Reading Large PDFs
+
+When agents need to analyze large PDF files (>10 pages), use the `pages` parameter:
+
+```
+Read /path/to/doc.pdf
+pages: "1-20"
+```
+
+Large PDFs (>10 pages) return a lightweight reference when @-mentioned. Always specify page ranges for PDFs over 50 pages to avoid token waste.
+
+---
+
+Version: 13.2.0 (Usage Data Driven Improvements)
+Last Updated: 2026-02-22
 Language: English
 Core Rule: MoAI is an orchestrator; direct implementation is prohibited
 

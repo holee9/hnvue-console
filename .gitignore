@@ -25,47 +25,8 @@ mem.prof
 # ===========================================
 build/
 dist/
-artifacts/
 *.egg-info/
 *.egg
-
-# ===========================================
-# C++ Build Artifacts (CMake/vcpkg)
-# ===========================================
-CMakeCache.txt
-CMakeFiles/
-cmake_install.cmake
-Makefile
-*.cmake
-!CMakeLists.txt
-!CMakePresets.json
-install/
-vcpkg_installed/
-.vcpkg-root/
-
-# ===========================================
-# C# Build Artifacts (MSBuild/NuGet)
-# ===========================================
-bin/
-obj/
-*.user
-*.suo
-*.cache
-*.lock.json
-project.lock.json
-!HnVue.sln
-!Directory.Build.props
-!Directory.Packages.props
-
-# ===========================================
-# Protobuf Generated Files
-# ===========================================
-*.pb.h
-*.pb.cc
-*_grpc.pb.h
-*_grpc.pb.cc
-*.cs
-!proto/**/*.proto
 
 # ===========================================
 # Python Cache & Bytecode
@@ -99,10 +60,6 @@ env/
 .coverage
 coverage.json
 htmlcov/
-TestResults/
-*.trx
-*.coverage
-*.coveragexml
 
 # ===========================================
 # IDE & Editors
@@ -117,18 +74,9 @@ TestResults/
 *.sublime-project
 *.sublime-workspace
 *.njsproj
+*.sln
 *.suo
 .#*
-
-# Visual Studio
-.vs/
-*.user
-*.VC.db
-*.VC.VC.opendb
-
-# Rider
-.idea/
-*.sln.iml
 
 # ===========================================
 # OS Files
@@ -210,23 +158,11 @@ secret-*.*
 # ===========================================
 # Claude Code Configuration
 # ===========================================
-# Entire Claude Code directory (user-specific configuration)
-.claude/
-
-# ===========================================
-# MoAI-ADK Generated Files (HnVue-specific)
-# ===========================================
-# Template hash tracking (auto-generated)
-.moai/manifest.json
-
-# Generated reports
-.moai/reports/
-
-# Temporary plan files
-.moai/plans/
-
-# Backup directories
-.moai/backups/
+.claude/settings.local.json
+.claude/settings.local.*.json
+.claude/.env.local*
+.claude/local/
+.claude/plans/
 
 # Skill-specific credentials
 .claude/skills/*/.env*
@@ -259,3 +195,44 @@ dist-ssr/
 .vercel/
 .netlify/
 .firebase/
+
+# User Custom Patterns (preserved by moai update)
+artifacts/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+!CMakePresets.json
+install/
+vcpkg_installed/
+.vcpkg-root/
+obj/
+*.user
+*.cache
+*.lock.json
+project.lock.json
+!HnVue.sln
+!Directory.Build.props
+!Directory.Packages.props
+*.pb.h
+*.pb.cc
+*_grpc.pb.h
+*_grpc.pb.cc
+*.cs
+!proto/**/*.proto
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+.vs/
+*.user
+*.VC.db
+*.VC.VC.opendb
+*.sln.iml
+.claude/
+.moai/manifest.json
+.moai/reports/
+.moai/plans/
+.moai/backups/
