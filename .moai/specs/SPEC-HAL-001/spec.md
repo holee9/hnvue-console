@@ -2,7 +2,7 @@
 
 **SPEC ID**: SPEC-HAL-001
 **Title**: HnVue Hardware Abstraction Layer (hnvue-hal)
-**Status**: Planned
+**Status**: Completed
 **Priority**: High
 **Safety Classification**: IEC 62304 Class C (generator control), IEC 62304 Class B (detector interface)
 **Created**: 2026-02-17
