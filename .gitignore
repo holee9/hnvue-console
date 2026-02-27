@@ -220,7 +220,7 @@ project.lock.json
 *.pb.cc
 *_grpc.pb.h
 *_grpc.pb.cc
-*.cs
+*.pb.cs
 !proto/**/*.proto
 TestResults/
 *.trx
