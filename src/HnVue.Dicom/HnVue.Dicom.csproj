@@ -13,8 +13,8 @@
 
   <ItemGroup>
     <!-- DICOM Dependencies (no Version attribute - uses Directory.Packages.props) -->
+    <!-- Note: Using fo-dicom 4.x core package (cross-platform for .NET 8) -->
     <PackageReference Include="fo-dicom" />
-    <PackageReference Include="fo-dicom.Desktop" />
 
     <!-- Logging -->
     <PackageReference Include="Microsoft.Extensions.Logging" />
@@ -23,6 +23,8 @@
     <!-- DI -->
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
   </ItemGroup>
 
 </Project>

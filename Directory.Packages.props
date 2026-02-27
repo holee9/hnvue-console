@@ -12,6 +12,7 @@
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="8.0.0" />
 
     <!-- gRPC -->
@@ -23,8 +24,9 @@
     </PackageVersion>
 
     <!-- DICOM -->
-    <PackageVersion Include="fo-dicom" Version="5.1.1" />
-    <PackageVersion Include="fo-dicom.Desktop" Version="5.1.1" />
+    <!-- Note: Using fo-dicom 4.x core (cross-platform) for .NET 8 -->
+    <!-- TODO: Upgrade to FellowOakDicom 5.x when available on public NuGet -->
+    <PackageVersion Include="fo-dicom" Version="4.0.8" />
 
     <!-- MVVM Framework -->
     <PackageVersion Include="Prism.Core" Version="9.0.537" />
