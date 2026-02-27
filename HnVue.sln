@@ -1,30 +1,26 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.0
 MinimumVisualStudioVersion = 17.0.0
-
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{B1E7B9A1-9C3D-4E2F-A5D0-1C2B3A4D5E6F}"
 EndProject
-
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{C2F8C0B2-0D4E-5F3G-B6E1-2D3C4E5F6A7B}"
 EndProject
-
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HnVue.Ipc.Client", "src\HnVue.Ipc.Client\HnVue.Ipc.Client.csproj", "{D3G9D1C3-1E5F-6G4H-C7F2-3E4G5H6I7J8K}"
 EndProject
-
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HnVue.Dicom", "src\HnVue.Dicom\HnVue.Dicom.csproj", "{E4H0E2D4-2F6G-7H5I-D8G3-4F5H6I7J8K9L}"
 EndProject
-
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HnVue.Dose", "src\HnVue.Dose\HnVue.Dose.csproj", "{F5I1F3E5-3G7H-8I6J-E9H4-5G6I7J8K9L0M}"
 EndProject
-
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HnVue.Workflow", "src\HnVue.Workflow\HnVue.Workflow.csproj", "{G6J2G4F6-4H8I-9J7K-F0I5-6H7I8J9K0L1M}"
 EndProject
-
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HnVue.Console", "src\HnVue.Console\HnVue.Console.csproj", "{H7K3H5G7-5I9J-F0K8-G1J6-7I8J9K0L1M2N}"
 EndProject
-
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "csharp", "csharp", "{0FE664E4-CEB2-470A-A040-71372EF9CE5F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HnVue.Dicom.IntegrationTests", "tests\csharp\HnVue.Dicom.IntegrationTests\HnVue.Dicom.IntegrationTests.csproj", "{83FECA6B-65CB-4FBA-85E9-F233AF1D8D0D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,5 +47,13 @@ Global
 		{H7K3H5G7-5I9J-F0K8-G1J6-7I8J9K0L1M2N}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{H7K3H5G7-5I9J-F0K8-G1J6-7I8J9K0L1M2N}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{H7K3H5G7-5I9J-F0K8-G1J6-7I8J9K0L1M2N}.Release|Any CPU.Build.0 = Release|Any CPU
+		{83FECA6B-65CB-4FBA-85E9-F233AF1D8D0D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{83FECA6B-65CB-4FBA-85E9-F233AF1D8D0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{83FECA6B-65CB-4FBA-85E9-F233AF1D8D0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{83FECA6B-65CB-4FBA-85E9-F233AF1D8D0D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{0FE664E4-CEB2-470A-A040-71372EF9CE5F} = {C2F8C0B2-0D4E-5F3G-B6E1-2D3C4E5F6A7B}
+		{83FECA6B-65CB-4FBA-85E9-F233AF1D8D0D} = {0FE664E4-CEB2-470A-A040-71372EF9CE5F}
 	EndGlobalSection
 EndGlobal

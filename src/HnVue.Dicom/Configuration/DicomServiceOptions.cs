@@ -61,6 +61,11 @@ public class DicomServiceOptions
     public DicomDestination? MppsScp { get; set; }
 
     /// <summary>
+    /// Gets or sets the Query/Retrieve SCP configuration.
+    /// </summary>
+    public DicomDestination? QueryRetrieveScp { get; set; }
+
+    /// <summary>
     /// Gets or sets the minimum log level for DICOM operations.
     /// </summary>
     public LogLevel MinimumLogLevel { get; set; } = LogLevel.Information;

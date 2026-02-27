@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    HnVue.Dicom.IntegrationTests - DICOM services integration tests
+    SPEC-DICOM-001: Integration tests using real Orthanc DICOM SCP via Testcontainers
+  -->
+
+  <PropertyGroup>
+    <AssemblyName>HnVue.Dicom.IntegrationTests</AssemblyName>
+    <RootNamespace>HnVue.Dicom.IntegrationTests</RootNamespace>
+    <Description>HnVue DICOM Services Integration Tests</Description>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Testing Dependencies (no Version attribute - uses Directory.Packages.props) -->
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Testcontainers" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\HnVue.Dicom\HnVue.Dicom.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Embed test DICOM files as resources -->
+    <EmbeddedResource Include="TestData\**\*.dcm" />
+  </ItemGroup>
+
+</Project>

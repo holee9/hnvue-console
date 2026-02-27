@@ -55,5 +55,9 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
+
+    <!-- Performance Benchmarking -->
+    <PackageVersion Include="BenchmarkDotNet" Version="0.13.12" />
+    <PackageVersion Include="Testcontainers" Version="3.7.0" />
   </ItemGroup>
 </Project>

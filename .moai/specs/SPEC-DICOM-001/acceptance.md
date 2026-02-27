@@ -447,6 +447,12 @@ Then the validation result contains zero Critical violations
 2. **OQ-01 through OQ-05**: Open questions documented in spec.md to be resolved during deployment phase.
 3. **Conformance Statement**: Full DICOM PS 3.2 conformant document generated at `src/HnVue.Dicom/Conformance/DicomConformanceStatement.md`.
 4. **IHE Integration**: SWF, PIR, REM profiles fully implemented and validated.
+5. **Additional Testing (2026-02-28)**: Comprehensive test suite implementation completed
+   - **Integration Tests**: 7 files using Testcontainers with Orthanc Docker
+   - **DVTK Validation**: DvtkValidator.cs, DvtkValidationTests.cs (17 tests)
+   - **Conformance Tests**: 46 tests across 4 files (100% pass)
+   - **Performance Benchmarks**: Cstore/Worklist/Mpps benchmarks with BenchmarkDotNet
+   - **PHI Log Audit**: ILogCapture.cs, LogCapture.cs, PhiLogAuditTests.cs (NFR-SEC-01)
 
 ---
 
