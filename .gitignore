@@ -216,6 +216,21 @@ secret-*.*
 .claude/local/
 .claude/plans/
 
+# ===========================================
+# MoAI-ADK Generated Files (HnVue-specific)
+# ===========================================
+# Template hash tracking (auto-generated)
+.moai/manifest.json
+
+# Generated reports
+.moai/reports/
+
+# Temporary plan files
+.moai/plans/
+
+# Backup directories
+.moai/backups/
+
 # Skill-specific credentials
 .claude/skills/*/.env*
 .claude/skills/*/secrets/
