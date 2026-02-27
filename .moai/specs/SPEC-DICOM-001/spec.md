@@ -7,7 +7,7 @@
 | SPEC ID      | SPEC-DICOM-001                             |
 | Title        | HnVue DICOM Communication Services        |
 | Product      | HnVue - Diagnostic Medical Device X-ray GUI Console SW |
-| Status       | Planned                                    |
+| Status       | Completed                                  |
 | Priority     | High                                       |
 | Safety Class | IEC 62304 Class B (Data Integrity)         |
 | Created      | 2026-02-17                                 |
