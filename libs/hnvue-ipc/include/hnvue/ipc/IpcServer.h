@@ -27,6 +27,16 @@ class HealthServiceImpl;
 class ConfigServiceImpl;
 
 /**
+ * @brief Interface version constants (SPEC-IPC-001 Section 4.5)
+ */
+struct IpcInterfaceVersion
+{
+    static constexpr uint32_t kMajor = 1;
+    static constexpr uint32_t kMinor = 0;
+    static constexpr uint32_t kPatch = 0;
+};
+
+/**
  * @class IpcServer
  * @brief Manages gRPC server lifecycle for HnVue IPC
  *
@@ -144,6 +154,12 @@ private:
      * Logs bound address and InterfaceVersion per SPEC-IPC-001 Section 4.3.1.
      */
     void LogStartupInfo();
+
+public:
+    // Interface version constants for access from main.cpp
+    static constexpr uint32_t kInterfaceVersionMajor = IpcInterfaceVersion::kMajor;
+    static constexpr uint32_t kInterfaceVersionMinor = IpcInterfaceVersion::kMinor;
+    static constexpr uint32_t kInterfaceVersionPatch = IpcInterfaceVersion::kPatch;
 };
 
 } // namespace hnvue::ipc

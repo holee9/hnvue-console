@@ -1,18 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!--
-    HnVue.Integration.Tests - End-to-end integration tests
-    SPEC-INFRA-001: Integration test execution with Orthanc
+    HnVue.Integration.Tests - Cross-language integration tests
+    SPEC-IPC-001: Integration tests for C++ gRPC server + C# gRPC client
   -->
 
   <PropertyGroup>
     <AssemblyName>HnVue.Integration.Tests</AssemblyName>
     <RootNamespace>HnVue.Integration.Tests</RootNamespace>
-    <Description>HnVue Integration Tests</Description>
+    <Description>HnVue Integration Tests - IPC Cross-Language Testing</Description>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Testing Framework -->
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="coverlet.collector" />
@@ -22,8 +25,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\HnVue.Dicom\HnVue.Dicom.csproj" />
+    <!-- Project References -->
     <ProjectReference Include="..\..\..\src\HnVue.Ipc.Client\HnVue.Ipc.Client.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Test Settings -->
+    <None Update="xunit.runner.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

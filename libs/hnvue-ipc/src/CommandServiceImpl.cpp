@@ -5,7 +5,6 @@
  */
 
 #include "hnvue/ipc/CommandServiceImpl.h"
-#include <fmt/format.h>
 
 namespace hnvue::ipc {
 

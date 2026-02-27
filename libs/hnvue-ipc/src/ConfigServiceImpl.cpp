@@ -5,7 +5,8 @@
  */
 
 #include "hnvue/ipc/ConfigServiceImpl.h"
-#include <fmt/format.h>
+#include <thread>
+#include <chrono>
 
 namespace hnvue::ipc {
 

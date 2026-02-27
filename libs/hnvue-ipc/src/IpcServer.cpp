@@ -107,10 +107,9 @@ const std::string& IpcServer::GetServerAddress() const {
 }
 
 std::string IpcServer::GetInterfaceVersion() const {
-    return fmt::format("{}.{}.{}",
-        IPC_INTERFACE_VERSION_MAJOR,
-        IPC_INTERFACE_VERSION_MINOR,
-        IPC_INTERFACE_VERSION_PATCH);
+    return std::to_string(IPC_INTERFACE_VERSION_MAJOR) + "." +
+           std::to_string(IPC_INTERFACE_VERSION_MINOR) + "." +
+           std::to_string(IPC_INTERFACE_VERSION_PATCH);
 }
 
 void IpcServer::RegisterServices(grpc::ServerBuilder& builder) {

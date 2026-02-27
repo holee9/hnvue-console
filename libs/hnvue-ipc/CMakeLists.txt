@@ -75,6 +75,24 @@ if(UNIX AND NOT APPLE)
     target_link_libraries(${PROJECT_NAME} PUBLIC pthread)
 endif()
 
+# Standalone server executable (for integration testing)
+add_executable(hnvue-ipc-server
+    src/main.cpp
+)
+
+target_link_libraries(hnvue-ipc-server PRIVATE
+    HnVue::ipc
+    gRPC::grpc++
+    protobuf::libprotobuf
+    spdlog::spdlog
+)
+
+# Platform-specific libraries for executable
+if(UNIX AND NOT APPLE)
+    target_link_libraries(hnvue-ipc-server PRIVATE pthread)
+endif()
+
 # Install rules (optional, for future packaging)
 # install(TARGETS ${PROJECT_NAME} EXPORT HnVueTargets)
 # install(FILES ${IPC_SERVER_HEADERS} DESTINATION include/hnvue/ipc)
+# install(TARGETS hnvue-ipc-server DESTINATION bin)

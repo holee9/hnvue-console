@@ -5,7 +5,6 @@
  */
 
 #include "hnvue/ipc/ImageServiceImpl.h"
-#include <fmt/format.h>
 
 namespace hnvue::ipc {
 

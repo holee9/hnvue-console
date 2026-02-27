@@ -5,9 +5,9 @@
  */
 
 #include "hnvue/ipc/HealthServiceImpl.h"
-#include <fmt/format.h>
 #include <thread>
 #include <chrono>
+#include <unordered_map>
 
 #ifdef _WIN32
 #include <windows.h>

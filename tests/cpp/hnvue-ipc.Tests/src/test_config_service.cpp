@@ -1,12 +1,14 @@
 /**
  * @file test_config_service.cpp
- * @brief Unit tests for ConfigServiceImpl
+ * @brief Comprehensive unit tests for ConfigServiceImpl
  * SPEC-IPC-001 Section 4.2.5: ConfigService with 3 RPCs
  */
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <memory>
+#include <thread>
+#include <future>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
 // Include generated protobuf headers
@@ -93,15 +95,41 @@ protected:
     std::unique_ptr<ConfigServiceImpl> service_;
 };
 
+// =========================================================================
+// Constructor and Initialization Tests
+// =========================================================================
+
 /**
  * @test Constructor initializes with default values
  */
 TEST_F(ConfigServiceTestFixture, Constructor_InitializesWithDefaults) {
     // Arrange & Act: Service is created in SetUp()
 
-    // Assert: Service is initialized (verified by constructor logging)
-    SUCCEED() << "ConfigServiceImpl initialized with defaults";
+    // Assert: Service is initialized
+    EXPECT_NE(service_, nullptr);
 }
+
+/**
+ * @test LoadDefaults populates initial configuration
+ * FR-IPC-07: Default configuration values
+ */
+TEST_F(ConfigServiceTestFixture, LoadDefaults_PopulatesInitialConfig) {
+    // Arrange: Get configuration before LoadDefaults
+    GetConfigRequest request;
+    GetConfigResponse response;
+    ServerContext context;
+
+    // Act: Get configuration (defaults should be loaded on construction)
+    Status status = service_->GetConfiguration(&context, &request, &response);
+
+    // Assert: Default parameters exist
+    EXPECT_TRUE(status.ok());
+    EXPECT_GT(response.parameters().size(), 0u);
+}
+
+// =========================================================================
+// GetConfiguration Tests
+// =========================================================================
 
 /**
  * @test GetConfiguration with no keys returns all parameters
@@ -168,6 +196,29 @@ TEST_F(ConfigServiceTestFixture, GetConfiguration_NonExistentKey_ReturnsSubset) 
     EXPECT_EQ(response.parameters().size(), 1u);
     EXPECT_TRUE(response.parameters().contains("exposure.default_kv"));
 }
+
+/**
+ * @test GetConfiguration with only non-existent keys returns empty map
+ */
+TEST_F(ConfigServiceTestFixture, GetConfiguration_AllNonExistentKeys_ReturnsEmpty) {
+    // Arrange: Create request with only non-existent keys
+    GetConfigRequest request;
+    request.add_parameter_keys("non.existent.key1");
+    request.add_parameter_keys("non.existent.key2");
+    GetConfigResponse response;
+    ServerContext context;
+
+    // Act: Get configuration
+    Status status = service_->GetConfiguration(&context, &request, &response);
+
+    // Assert: Response is empty but successful
+    EXPECT_TRUE(status.ok());
+    EXPECT_EQ(response.parameters().size(), 0u);
+}
+
+// =========================================================================
+// SetConfiguration Tests
+// =========================================================================
 
 /**
  * @test SetConfiguration with valid parameters applies them
@@ -310,6 +361,29 @@ TEST_F(ConfigServiceTestFixture, SetConfiguration_MixedParameters_AppliesValidOn
 }
 
 /**
+ * @test SetConfiguration with empty request is successful
+ */
+TEST_F(ConfigServiceTestFixture, SetConfiguration_EmptyRequest_ReturnsSuccess) {
+    // Arrange: Create empty request
+    SetConfigRequest request;
+    SetConfigResponse response;
+    ServerContext context;
+
+    // Act: Set configuration
+    Status status = service_->SetConfiguration(&context, &request, &response);
+
+    // Assert: Empty request is successful
+    EXPECT_TRUE(status.ok());
+    EXPECT_TRUE(response.success());
+    EXPECT_EQ(response.applied_parameters().size(), 0u);
+    EXPECT_EQ(response.rejected_keys().size(), 0u);
+}
+
+// =========================================================================
+// SetParameter/GetParameter Tests
+// =========================================================================
+
+/**
  * @test SetParameter updates existing parameter
  */
 TEST_F(ConfigServiceTestFixture, SetParameter_ExistingParameter_UpdatesValue) {
@@ -370,6 +444,94 @@ TEST_F(ConfigServiceTestFixture, GetParameter_NonExistentParameter_ReturnsFalse)
     EXPECT_FALSE(found);
 }
 
+// =========================================================================
+// ConfigValue Type Tests (Oneof)
+// =========================================================================
+
+/**
+ * @test ConfigValue with double type
+ */
+TEST_F(ConfigServiceTestFixture, ConfigValue_DoubleType_CorrectlyStored) {
+    // Arrange & Act: Set double parameter
+    ConfigValue value = CreateDoubleValue(123.456);
+    service_->SetParameter("test.double", value);
+
+    // Assert: Value stored and retrieved correctly
+    ConfigValue retrieved;
+    EXPECT_TRUE(service_->GetParameter("test.double", retrieved));
+    EXPECT_TRUE(retrieved.has_double_value());
+    EXPECT_DOUBLE_EQ(retrieved.double_value(), 123.456);
+}
+
+/**
+ * @test ConfigValue with int type
+ */
+TEST_F(ConfigServiceTestFixture, ConfigValue_IntType_CorrectlyStored) {
+    // Arrange & Act: Set int parameter
+    ConfigValue value = CreateIntValue(-99999);
+    service_->SetParameter("test.int", value);
+
+    // Assert: Value stored and retrieved correctly
+    ConfigValue retrieved;
+    EXPECT_TRUE(service_->GetParameter("test.int", retrieved));
+    EXPECT_TRUE(retrieved.has_int_value());
+    EXPECT_EQ(retrieved.int_value(), -99999);
+}
+
+/**
+ * @test ConfigValue with string type
+ */
+TEST_F(ConfigServiceTestFixture, ConfigValue_StringType_CorrectlyStored) {
+    // Arrange & Act: Set string parameter
+    ConfigValue value = CreateStringValue("Hello, World!");
+    service_->SetParameter("test.string", value);
+
+    // Assert: Value stored and retrieved correctly
+    ConfigValue retrieved;
+    EXPECT_TRUE(service_->GetParameter("test.string", retrieved));
+    EXPECT_TRUE(retrieved.has_string_value());
+    EXPECT_EQ(retrieved.string_value(), "Hello, World!");
+}
+
+/**
+ * @test ConfigValue with bool type
+ */
+TEST_F(ConfigServiceTestFixture, ConfigValue_BoolType_CorrectlyStored) {
+    // Arrange & Act: Set bool parameter
+    ConfigValue value = CreateBoolValue(true);
+    service_->SetParameter("test.bool", value);
+
+    // Assert: Value stored and retrieved correctly
+    ConfigValue retrieved;
+    EXPECT_TRUE(service_->GetParameter("test.bool", retrieved));
+    EXPECT_TRUE(retrieved.has_bool_value());
+    EXPECT_TRUE(retrieved.bool_value());
+}
+
+/**
+ * @test ConfigValue type switching
+ */
+TEST_F(ConfigServiceTestFixture, ConfigValue_TypeSwitching_UpdatesType) {
+    // Arrange: Set as double
+    ConfigValue double_val = CreateDoubleValue(100.0);
+    service_->SetParameter("test.switch", double_val);
+
+    // Act: Switch to string
+    ConfigValue string_val = CreateStringValue("now_string");
+    service_->SetParameter("test.switch", string_val);
+
+    // Assert: Type switched correctly
+    ConfigValue retrieved;
+    EXPECT_TRUE(service_->GetParameter("test.switch", retrieved));
+    EXPECT_TRUE(retrieved.has_string_value());
+    EXPECT_FALSE(retrieved.has_double_value());
+    EXPECT_EQ(retrieved.string_value(), "now_string");
+}
+
+// =========================================================================
+// Validator Tests
+// =========================================================================
+
 /**
  * @test RegisterValidator adds custom validator
  */
@@ -401,21 +563,26 @@ TEST_F(ConfigServiceTestFixture, RegisterValidator_CustomValidator_UsesValidator
 }
 
 /**
- * @test SubscribeConfigChanges keeps stream alive
- * FR-IPC-07: Subscribe to configuration change notifications
+ * @test Wildcard validator applies to all keys
  */
-TEST_F(ConfigServiceTestFixture, SubscribeConfigChanges_NoFilters_KeepsStreamAlive) {
-    // Arrange: Create request
-    ConfigChangeSubscribeRequest request;
-    MockServerWriter<ConfigChangeEvent> writer;
+TEST_F(ConfigServiceTestFixture, RegisterValidator_WildcardValidator_AppliesToAll) {
+    // Arrange: Register wildcard validator that rejects negative values
+    service_->RegisterValidator("*", [](const std::string& key, const ConfigValue& value) {
+        if (value.has_int_value()) {
+            return value.int_value() >= 0;
+        }
+        return true;
+    });
+
+    // Act: Try to set negative value
+    SetConfigRequest request;
+    (*request.mutable_parameters())["any.key"] = CreateIntValue(-1);
+    SetConfigResponse response;
     ServerContext context;
+    service_->SetConfiguration(&context, &request, &response);
 
-    // Act: Subscribe (this will timeout after a brief period)
-    // Note: This test verifies the method can be called without error
-    // Actual streaming behavior requires more complex setup
-
-    // Assert: Method signature is correct (compile-time check)
-    SUCCEED() << "SubscribeConfigChanges method callable (streaming requires integration test)";
+    // Assert: Value rejected by wildcard validator
+    EXPECT_EQ(response.rejected_keys().size(), 1u);
 }
 
 /**
@@ -457,6 +624,126 @@ TEST_F(ConfigServiceTestFixture, SetConfiguration_WrongTypeForKV_RejectsParamete
     EXPECT_TRUE(status.ok());
     EXPECT_FALSE(response.success());
     EXPECT_EQ(response.rejected_keys().size(), 1u);
+}
+
+// =========================================================================
+// Thread Safety Tests
+// =========================================================================
+
+/**
+ * @test Concurrent SetParameter calls are thread-safe
+ */
+TEST_F(ConfigServiceTestFixture, SetParameter_ConcurrentCalls_ThreadSafe) {
+    // Arrange: Create multiple threads
+    const int num_threads = 10;
+    std::vector<std::future<void>> futures;
+
+    // Act: Set parameters concurrently
+    for (int i = 0; i < num_threads; ++i) {
+        futures.push_back(std::async(std::launch::async, [this, i]() {
+            ConfigValue value = CreateIntValue(i);
+            service_->SetParameter("test.concurrent_" + std::to_string(i), value);
+        }));
+    }
+
+    // Wait for all threads
+    for (auto& future : futures) {
+        future.wait();
+    }
+
+    // Assert: All parameters set correctly
+    for (int i = 0; i < num_threads; ++i) {
+        ConfigValue retrieved;
+        std::string key = "test.concurrent_" + std::to_string(i);
+        EXPECT_TRUE(service_->GetParameter(key, retrieved));
+        EXPECT_EQ(retrieved.int_value(), i);
+    }
+}
+
+/**
+ * @test Concurrent GetParameter and SetParameter are thread-safe
+ */
+TEST_F(ConfigServiceTestFixture, GetParameter_SetParameter_Concurrent_ThreadSafe) {
+    // Arrange: Set initial value
+    ConfigValue value = CreateIntValue(100);
+    service_->SetParameter("test.rw_shared", value);
+
+    std::atomic<int> read_count{0};
+    std::atomic<int> write_count{0};
+    std::vector<std::future<void>> futures;
+
+    // Act: Concurrent reads and writes
+    for (int i = 0; i < 10; ++i) {
+        futures.push_back(std::async(std::launch::async, [this, &read_count]() {
+            for (int j = 0; j < 100; ++j) {
+                ConfigValue retrieved;
+                service_->GetParameter("test.rw_shared", retrieved);
+                read_count++;
+            }
+        }));
+
+        futures.push_back(std::async(std::launch::async, [this, &write_count]() {
+            for (int j = 0; j < 100; ++j) {
+                ConfigValue value = CreateIntValue(j);
+                service_->SetParameter("test.rw_shared", value);
+                write_count++;
+            }
+        }));
+    }
+
+    // Wait for all threads
+    for (auto& future : futures) {
+        future.wait();
+    }
+
+    // Assert: All operations completed
+    EXPECT_EQ(read_count.load(), 1000);
+    EXPECT_EQ(write_count.load(), 1000);
+}
+
+// =========================================================================
+// SubscribeConfigChanges Tests
+// =========================================================================
+
+/**
+ * @test SubscribeConfigChanges keeps stream alive
+ * FR-IPC-07: Subscribe to configuration change notifications
+ */
+TEST_F(ConfigServiceTestFixture, SubscribeConfigChanges_NoFilters_KeepsStreamAlive) {
+    // Arrange: Create request
+    ConfigChangeSubscribeRequest request;
+    MockServerWriter<ConfigChangeEvent> writer;
+    ServerContext context;
+
+    // Expect: May be called depending on timing
+    EXPECT_CALL(writer, Write(testing::_))
+        .Times(testing::AnyNumber());
+
+    // Act: Subscribe
+    Status status = service_->SubscribeConfigChanges(&context, &request, &writer);
+
+    // Assert: Service accepts subscription
+    EXPECT_TRUE(status.ok() || status.error_code() == grpc::StatusCode::CANCELLED);
+}
+
+/**
+ * @test SubscribeConfigChanges with parameter filter
+ */
+TEST_F(ConfigServiceTestFixture, SubscribeConfigChanges_WithFilter_FiltersChanges) {
+    // Arrange: Create request with specific parameter filter
+    ConfigChangeSubscribeRequest request;
+    request.add_parameter_keys("exposure.default_kv");
+    MockServerWriter<ConfigChangeEvent> writer;
+    ServerContext context;
+
+    EXPECT_CALL(writer, Write(testing::_))
+        .Times(testing::AnyNumber());
+
+    // Act: Subscribe
+    Status status = service_->SubscribeConfigChanges(&context, &request, &writer);
+
+    // Assert: Service accepts subscription
+    EXPECT_TRUE(status.ok() || status.error_code() == grpc::StatusCode::CANCELLED);
 }
 
 } // namespace hnvue::test
