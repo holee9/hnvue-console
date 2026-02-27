@@ -236,3 +236,4 @@ TestResults/
 .moai/reports/
 .moai/plans/
 .moai/backups/
+.worktrees/
