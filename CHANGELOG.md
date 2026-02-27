@@ -7,6 +7,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2026-02-28
 
+### Added - SPEC-INFRA-001: Project Infrastructure
+
+Complete implementation of HnVue project build infrastructure, CI/CD pipeline, and development environment setup.
+
+#### Dual-Language Build System (FR-INFRA-01)
+- CMake 3.25+ based C++ build system with CMakePresets.json
+- MSBuild 17 + .NET 8 LTS C# build system
+- Unified build entry point via `scripts/build-all.ps1`
+- Independent module compilation support
+- Incremental build optimization
+
+#### Package Management (FR-INFRA-02)
+- vcpkg manifest mode with pinned baseline commit
+- NuGet central package management via `Directory.Packages.props`
+- SOUP register for IEC 62304 compliance
+- Reproducible dependency resolution
+
+#### CI/CD Pipeline (FR-INFRA-03)
+- Gitea Actions workflow with 7 stages
+- Automated C++ (CMake) and C# (MSBuild) builds
+- Automated test execution (GTest, xUnit)
+- Integration test environment with Orthanc DICOM server
+- Artifact retention (90 days)
+- Build time target: ≤15 minutes
+
+#### Version Control (FR-INFRA-04)
+- Self-hosted Gitea VCS configuration
+- Branch protection rules for `main` and `develop`
+- Conventional Commits format enforcement
+- Feature/hotfix/release branch conventions
+
+#### Automated Testing (FR-INFRA-05)
+- C++ unit tests with Google Test (GTest)
+- C# unit tests with xUnit
+- Code coverage collection (LLVM/gcov, Coverlet)
+- Coverage gate: ≥80% for new code
+- Local test runner script
+
+#### DICOM Test Environment (FR-INFRA-06)
+- Orthanc DICOM server on Docker
+- Pinned image version (jodogne/orthanc:24.1.2)
+- Health check and automated lifecycle management
+- C-STORE, C-FIND, C-MOVE support
+- Test fixture management
+
+#### Repository Structure
+- Canonical layout with 39 files created
+- C++ libraries: hnvue-infra, hnvue-hal, hnvue-ipc, hnvue-imaging
+- C# projects: Ipc.Client, Dicom, Dose, Workflow, Console
+- Protobuf definitions in `proto/`
+- Test structure for both language stacks
+
+#### Regulatory Compliance
+- IEC 62304 alignment (Class B)
+- ISO 13485 document control
+- SOUP register with risk assessments
+- Deterministic build requirements
+
+### Technical Details
+- **C++**: CMake 3.25+, vcpkg, MSVC 2022
+- **C#**: .NET 8 LTS, MSBuild 17, C# 12
+- **CI/CD**: Gitea Actions (Forgejo)
+- **Containers**: Docker Desktop (Orthanc)
+- **Safety Class**: IEC 62304 Class B
+
+---
+
 ### Added - SPEC-DICOM-001: DICOM Communication Services
 
 Complete implementation of DICOM SCU (Service Class User) communication services for medical imaging integration.
