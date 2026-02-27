@@ -9,6 +9,8 @@
     <RootNamespace>HnVue.Dicom</RootNamespace>
     <Description>HnVue DICOM Services - DICOM protocol implementation using fo-dicom</Description>
     <OutputType>Library</OutputType>
+    <!-- Override net8.0-windows from Directory.Build.props: DICOM library has no WPF dependency -->
+    <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>

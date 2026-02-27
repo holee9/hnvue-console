@@ -10,6 +10,8 @@
     <Description>HnVue DICOM Services Unit Tests</Description>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <!-- Override net8.0-windows from Directory.Build.props: DICOM tests have no WPF dependency -->
+    <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
