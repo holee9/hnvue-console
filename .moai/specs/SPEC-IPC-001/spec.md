@@ -1,8 +1,9 @@
 # SPEC-IPC-001: HnVue Inter-Process Communication
 
 <!-- TAG: SPEC-IPC-001 -->
-<!-- STATUS: Planned -->
+<!-- STATUS: Completed -->
 <!-- CREATED: 2026-02-17 -->
+<!-- COMPLETED: 2026-02-28 -->
 <!-- PRIORITY: High -->
 
 ---
@@ -14,7 +15,7 @@
 | SPEC ID | SPEC-IPC-001 |
 | Title | HnVue Inter-Process Communication |
 | Product | HnVue - Diagnostic Medical Device X-ray GUI Console SW |
-| Status | Planned |
+| Status | Completed |
 | Priority | High |
 | Lifecycle Level | spec-anchored |
 | Regulatory Context | IEC 62304 Software Safety Classification |

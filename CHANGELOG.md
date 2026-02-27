@@ -7,6 +7,86 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2026-02-28
 
+### Added - SPEC-IPC-001: gRPC Inter-Process Communication
+
+Complete implementation of gRPC-based IPC communication between C++ Core Engine and C# WPF GUI processes.
+
+#### Protocol Buffer Definitions (FR-IPC-03)
+- `hnvue_common.proto` - Shared types (InterfaceVersion, IpcError, ErrorCode, Timestamp)
+- `hnvue_command.proto` - CommandService (StartExposure, AbortExposure, SetCollimator, RunCalibration, GetSystemState)
+- `hnvue_image.proto` - ImageService (SubscribeImageStream with chunked streaming)
+- `hnvue_health.proto` - HealthService (SubscribeHealth with heartbeat, hardware status, fault events)
+- `hnvue_config.proto` - ConfigService (GetConfiguration, SetConfiguration, SubscribeConfigChanges)
+
+#### C++ Core Engine Server Implementation
+- **IpcServer**: gRPC server lifecycle management (localhost:50051, service registration)
+- **CommandServiceImpl**: GUI-to-Core command channel with validation
+- **ImageServiceImpl**: Server-streaming image transfer with chunking (PREVIEW/FULL_QUALITY modes)
+- **HealthServiceImpl**: Continuous health monitoring (1Hz heartbeat, hardware status, fault reporting)
+- **ConfigServiceImpl**: Configuration synchronization with parameter validation
+
+#### C++ Test Coverage (TDD Applied)
+- IpcServer: 8 tests (lifecycle, version reporting, start/stop cycles)
+- CommandService: 25+ tests (all RPCs, validation, state management)
+- ImageService: 12 tests (chunking, streaming, error handling)
+- HealthService: 18 tests (heartbeat, hardware events, fault reporting)
+- ConfigService: 15 tests (get/set, validation, change notifications)
+- Integration Tests: 40+ test cases covering end-to-end scenarios
+
+#### Connection Management (FR-IPC-04, NFR-IPC-04)
+- Connection lifecycle: DISCONNECTED → CONNECTING → CONNECTED → RECONNECTING → FAULT
+- Automatic reconnection with exponential backoff (500ms to 30s max)
+- Heartbeat-based disconnect detection (3000ms timeout)
+- Graceful shutdown with SYSTEM_STATE_SHUTTING_DOWN event
+
+#### Image Data Transfer (FR-IPC-05)
+- Chunked streaming for large images (9MP support)
+- Transfer modes: PREVIEW (downsampled), FULL_QUALITY (16-bit diagnostic)
+- Progressive rendering support
+- Error chunk handling for failed transfers
+
+#### Configuration Synchronization (FR-IPC-07)
+- Initial config sync on connection (FR-IPC-07a)
+- Bidirectional parameter access (Get/Set)
+- Server-streaming change notifications
+- Extensible parameter validation system
+
+#### Protocol Buffer Schema Versioning (NFR-IPC-07)
+- InterfaceVersion message for compatibility verification
+- Semantic versioning: minor additions backward compatible
+- Major version bump required for breaking changes
+- Version negotiation on connection (GetSystemState)
+
+#### Non-Functional Requirements
+- NFR-IPC-01: Image transfer latency target <50ms
+- NFR-IPC-02: Command round-trip latency target <10ms
+- NFR-IPC-03: Crash isolation (process boundary enforced)
+- NFR-IPC-05: Concurrent independent streams (no head-of-line blocking)
+- NFR-IPC-06: IEC 62304 auditability (structured logging)
+
+#### Build System Integration
+- CMakeLists.txt for C++ server library
+- protoc integration for C++ stub generation
+- MSBuild .csproj for C# client stub generation
+- gRPC++ v1.68+, Protocol Buffers v3 dependencies
+
+#### Known Limitations
+- C# client implementation pending (next phase)
+- HAL integration mock (requires SPEC-HAL-001)
+- Image downsampling placeholder
+- Proto-generated types require protoc build step
+
+### Technical Details
+- **Transport**: gRPC over HTTP/2 (localhost)
+- **Serialization**: Protocol Buffers v3
+- **C++ Runtime**: C++17, gRPC++ v1.68+
+- **C# Runtime**: .NET 8 LTS, Grpc.Core v2.67+
+- **Port**: 50051 (default, configurable)
+- **Test Framework**: Google Test (GTest) for C++
+- **Safety Class**: IEC 62304 Class B (Process Isolation)
+
+---
+
 ### Added - SPEC-INFRA-001: Project Infrastructure
 
 Complete implementation of HnVue project build infrastructure, CI/CD pipeline, and development environment setup.
