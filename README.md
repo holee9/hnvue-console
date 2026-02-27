@@ -28,7 +28,7 @@ INFRA → IPC → HAL/IMAGING → DICOM → DOSE → WORKFLOW → UI
 | SPEC-IPC-001 | gRPC IPC (C++ Server + C# Client) | ✅ 완료 | 100% |
 | SPEC-HAL-001 | Hardware Abstraction Layer | ✅ 완료 | 100% |
 | SPEC-IMAGING-001 | Image Processing Pipeline | ✅ 완료 | 100% |
-| SPEC-DICOM-001 | DICOM Service | ✅ 완료 | 100% |
+| SPEC-DICOM-001 | DICOM Communication Services (Storage/Worklist/MPPS/Commitment/QR) | ✅ 완료 | 100% |
 | SPEC-DOSE-001 | Dose Monitoring Service | ❌ 미완료 | 0% |
 | SPEC-WORKFLOW-001 | Workflow Engine (Class C Safety) | ❌ 미완료 | 0% |
 | SPEC-UI-001 | WPF Console UI | ❌ 미완료 | 0% |
