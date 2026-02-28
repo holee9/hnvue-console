@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\HnVue.Dose\HnVue.Dose.csproj" />
+    <ProjectReference Include="..\..\..\src\HnVue.Dicom\HnVue.Dicom.csproj" />
   </ItemGroup>
 
 </Project>
