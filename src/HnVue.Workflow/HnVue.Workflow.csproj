@@ -25,6 +25,9 @@
     <!-- Configuration -->
     <PackageReference Include="Microsoft.Extensions.Configuration" />
     <PackageReference Include="Microsoft.Extensions.Options" />
+
+    <!-- Database -->
+    <PackageReference Include="Microsoft.Data.Sqlite" />
   </ItemGroup>
 
 </Project>

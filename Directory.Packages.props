@@ -56,6 +56,9 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
 
+    <!-- Database -->
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="8.0.0" />
+
     <!-- Performance Benchmarking -->
     <PackageVersion Include="BenchmarkDotNet" Version="0.13.12" />
     <PackageVersion Include="Testcontainers" Version="3.7.0" />

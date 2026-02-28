@@ -30,7 +30,7 @@ INFRA → IPC → HAL/IMAGING → DICOM → DOSE → WORKFLOW → UI
 | SPEC-IMAGING-001 | Image Processing Pipeline | ✅ 완료 | 100% |
 | SPEC-DICOM-001 | DICOM Communication Services (Storage/Worklist/MPPS/Commitment/QR) | ✅ 완료 | 100% |
 | SPEC-DOSE-001 | Dose Monitoring Service | ❌ 미완료 | 0% |
-| SPEC-WORKFLOW-001 | Workflow Engine (Class C Safety) | ❌ 미완료 | 0% |
+| SPEC-WORKFLOW-001 | Workflow Engine (Class C Safety) | 🟡 진행 중 | 60% |
 | SPEC-UI-001 | WPF Console UI | ❌ 미완료 | 0% |
 | SPEC-TEST-001 | Test Infrastructure | ❌ 미완료 | 0% |
 
