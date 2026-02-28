@@ -410,4 +410,90 @@ Complete implementation of DICOM SCU (Service Class User) communication services
 
 ---
 
+### Added - SPEC-DOSE-001: Radiation Dose Management
+
+Complete implementation of Radiation Dose Management component for medical X-ray imaging systems, providing dose calculation, recording, display, and RDSR generation capabilities.
+
+#### Core Features (FR-DOSE-01 ~ FR-DOSE-08)
+- **DAP Calculation**: HVG parameter-based Dose-Area Product calculation with calibration support
+- **Cumulative Tracking**: Study-level cumulative dose tracking with exposure counting
+- **Real-time Display**: IObservable dose update publisher for GUI layer integration
+- **DRL Comparison**: Dose Reference Level comparison with threshold alerting
+- **Parameter Logging**: Complete HVG exposure parameter logging per event
+- **RDSR Data Provider**: Integration with HnVue.Dicom.Rdsr for DICOM RDSR document generation
+- **Audit Trail**: SHA-256 hash chain audit trail for tamper evidence (FDA 21 CFR Part 11)
+
+#### Calculation Engine (FR-DOSE-01)
+- **IDoseCalculator**: DAP calculation interface with calibration support
+- **DapCalculator**: HVG parameter-based calculation with SID² correction
+- **CalibrationManager**: Site-specific calibration coefficient management (k_factor, n exponent)
+- **DoseModelParameters**: HVG tube model parameters
+- **ExposureParameters**: HVG parameter record (kVp, mAs, filtration, SID)
+
+#### Recording & Persistence (FR-DOSE-03, NFR-DOSE-02)
+- **IDoseRecordRepository**: Atomic persistence interface
+- **DoseRecordRepository**: File-based atomic persistence with temp+rename pattern
+- **StudyDoseAccumulator**: Cumulative dose tracking per patient per study
+- **DoseRecordAlias**: Type alias for HnVue.Dicom.Rdsr.DoseRecord (infrastructure reuse)
+
+#### Acquisition & Alerting (FR-DOSE-05, FR-DOSE-06)
+- **ExposureParameterReceiver**: HVG parameter acquisition interface
+- **DrlComparer**: DRL comparison with threshold exceedance detection
+- **DrlConfiguration**: DRL threshold configuration per examination type
+
+#### Display Integration (FR-DOSE-04)
+- **IDoseDisplayNotifier**: GUI notification interface (IObservable pattern)
+- **DoseDisplayNotifier**: Real-time dose update publisher
+- Updates within 1 second of exposure completion per IEC 60601-2-54
+
+#### Audit Trail (NFR-DOSE-04)
+- **AuditTrailWriter**: Immutable audit trail with SHA-256 hash chain
+- **AuditVerificationResult**: Verification with tamper detection
+- Well-known initialization vector for chain root
+- Thread-safe concurrent write support
+- Verification utility for integrity checking
+
+#### RDSR Integration (FR-DOSE-02, FR-DOSE-07)
+- **IRdsrDataProvider**: Integration interface for HnVue.Dicom.Rdsr
+- **RdsrDataProvider**: Data provider implementation for RDSR document generation
+- **StudyDoseSummary**: Study-level dose summary for RDSR TID 10001/10003 mapping
+
+#### Non-Functional Requirements
+- **NFR-DOSE-01**: Calculation within 1 second (background thread)
+- **NFR-DOSE-02**: Atomic persistence (no data loss on crash)
+- **NFR-DOSE-03**: Accuracy within ±5% of measured DAP
+- **NFR-DOSE-04**: Full audit trail with tamper evidence (SHA-256 hash chain)
+
+#### Testing (TDD Applied)
+- 222 unit tests, all passing
+- >85% code coverage achieved
+- Test files covering all components
+- Hash chain integrity verification tests
+- Concurrent write safety tests
+- Atomic persistence crash recovery tests
+- DRL threshold comparison tests
+- Cumulative dose tracking tests
+
+#### Regulatory Compliance
+- **IEC 62304 Class B**: Medical device software safety classification
+- **IEC 60601-2-54**: Dose display requirements (update within 1 second)
+- **FDA 21 CFR Part 11**: Audit trail with tamper evidence
+- **IHE REM Profile**: RDSR generation via HnVue.Dicom integration
+- **MFDS**: South Korean dose reporting guidelines
+
+#### Architecture Decisions
+- **RDSR Infrastructure Reuse**: Integrated with HnVue.Dicom.Rdsr instead of duplicating RDSR building logic
+- **Type Aliasing**: Used `using DoseRecord = HnVue.Dicom.Rdsr.DoseRecord;` for clean API
+- **Atomic Persistence**: Temp file + rename pattern for crash-safe writes
+- **Hash Chain Audit**: SHA-256 hash chain with initialization vector for tamper evidence
+
+### Technical Details
+- **Platform**: .NET 8 LTS, C# 12
+- **Package**: HnVue.Dose (class library)
+- **Integration**: HnVue.Dicom.Rdsr for RDSR document generation
+- **Safety Class**: IEC 62304 Class B
+- **Files**: 20 source files, 12 test files, ~5000+ lines
+
+---
+
 [1.0.0]: https://github.com/abyz-lab/hnvue-console/releases/tag/v1.0.0

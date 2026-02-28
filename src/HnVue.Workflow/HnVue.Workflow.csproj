@@ -25,6 +25,14 @@
     <!-- Configuration -->
     <PackageReference Include="Microsoft.Extensions.Configuration" />
     <PackageReference Include="Microsoft.Extensions.Options" />
+
+    <!-- Database -->
+    <PackageReference Include="Microsoft.Data.Sqlite" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Project References -->
+    <ProjectReference Include="..\HnVue.Dicom\HnVue.Dicom.csproj" />
   </ItemGroup>
 
 </Project>
