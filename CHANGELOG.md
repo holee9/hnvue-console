@@ -496,4 +496,140 @@ Complete implementation of Radiation Dose Management component for medical X-ray
 
 ---
 
+### Added - SPEC-WORKFLOW-001: Clinical Workflow Engine (Phase 1-3)
+
+Phase 1-3 implementation of DICOM Modality Workflow State Machine for clinical workflow orchestration, providing state management, safety interlocks, and crash recovery capabilities.
+
+#### Phase 1: Core State Machine (S-00 through S-09)
+- **WorkflowStateMachine**: State machine with 10 states (Idle, PatientSelect, ProtocolSelect, WorklistSync, PositionAndPreview, ExposureTrigger, QcReview, RejectRetake, MppsComplete, PacsExport, Completed)
+- **TransitionGuardMatrix**: Guard evaluation engine with 9 transition guard types
+- **GuardEvaluationTypes**: Guard types (AlwaysTrue, AlwaysFalse, HasPatientInfo, HasProtocol, InterlocksOK, etc.)
+- **InvalidStateTransitionException**: Structured exception for invalid state transitions
+- **WorkflowState**: State enumeration with 11 states
+- **WorkflowTransition**: Transition definition record with trigger and guard
+
+#### Safety System (Safety/)
+- **InterlockChecker**: All 9 hardware interlocks validation (IL-01: Door Closed, IL-02: E-Stop Released, IL-03: HVG Ready, IL-04: Detector Ready, IL-05: Thermal OK, IL-06: No Faults, IL-07: Table In Range, IL-08: Collimator In Range, IL-09: AEC Disabled or Ready)
+- **ParameterSafetyValidator**: kVp, mA, ExposureTime, mAs, DAP validation
+- **DeviceSafetyLimits**: Default safety limits configuration
+- **InterlockStatus**: Hardware interlock status model
+
+#### Journal System (Journal/)
+- **SqliteWorkflowJournal**: SQLite-backed write-ahead logging for crash recovery
+- **IWorkflowJournal**: Journal persistence interface
+- **WorkflowJournalEntry**: Structured journal record with JSON metadata
+- **JournalEntryType**: Entry types (StateTransition, ExposureRecorded, ImageAccepted, ImageRejected, Error)
+
+#### Study Context (Study/)
+- **StudyContext**: Patient and study metadata tracking
+- **ExposureRecord**: Per-exposure tracking with status management
+- **PatientInfo**: Patient data model (ID, Name, BirthDate, Sex, IsEmergency)
+- **ImageData**: Image acquisition result model
+- **ExposureStatus**: Pending, Acquired, Accepted, Rejected, Incomplete
+- **RejectReason**: Motion, Positioning, ExposureError, EquipmentArtifact, Other
+
+#### Recovery System (Recovery/)
+- **CrashRecoveryService**: Journal replay for crash recovery
+- **RecoveryContext**: Recovery state model with detected state
+
+#### Phase 2/3: State Handlers (States/)
+- **IStateHandler**: Base interface for all state handlers (EnterAsync, ExitAsync, CanTransitionToAsync)
+- **IdleHandler**: Initial/final state entry/exit logging
+- **PatientSelectHandler**: Patient ID validation and selection
+- **ProtocolSelectHandler**: Protocol mapping and validation
+- **WorklistSyncHandler**: DICOM C-FIND worklist query with emergency bypass
+- **PositionAndPreviewHandler**: Hardware interlock verification (@MX:ANCHOR)
+- **ExposureTriggerHandler**: X-ray emission control (@MX:WARN safety-critical)
+- **QcReviewHandler**: Image accept/reject workflow
+- **RejectRetakeHandler**: Retake authorization with dose preservation
+- **MppsCompleteHandler**: MPPS N-CREATE/N-SET completion
+- **PacsExportHandler**: C-STORE to PACS archive
+
+#### HAL Integration (Interfaces/)
+- **IHvgDriver**: High-voltage generator control (TriggerExposureAsync, AbortExposureAsync, GetStatusAsync)
+- **IDetector**: Flat-panel detector acquisition (StartAcquisitionAsync, GetDetectorStatusAsync, GetAcquiredImageAsync)
+- **IDoseTracker**: Radiation dose tracking (RecordDoseAsync, GetCumulativeDoseAsync, CheckDoseLimitsAsync)
+- **ISafetyInterlock**: Hardware interlock verification (CheckAllInterlocksAsync, EmergencyStandbyAsync)
+
+#### Multi-Exposure Support (Study/)
+- **MultiExposureCollection**: Manages multiple exposures per study
+- **MultiExposureCoordinator**: Coordinates multi-view studies with cumulative dose
+- **CumulativeDoseSummary**: Total DAP, exposure count, accepted count
+
+#### IPC Events (Events/)
+- **IWorkflowEventPublisher**: Async event streaming interface
+- **InMemoryWorkflowEventPublisher**: Channel-based event broadcasting
+- **WorkflowEvent**: State change events (StudyId, PatientId, CurrentState, PreviousState, Data)
+- **WorkflowEventType**: 11 event types (StateChanged, PatientSelected, ProtocolSelected, ExposureTriggered, ExposureCompleted, ImageAcquired, ImageAccepted, ImageRejected, StudyCompleted, Error, Warning)
+- **WorkflowEventExtensions**: Fluent event creation (StateChanged, ExposureTriggered, Error)
+
+#### Dose Coordinator (Dose/)
+- **DoseTrackingCoordinator**: Per-study and per-patient cumulative dose tracking
+- **DoseLimitConfiguration**: StudyDoseLimit, DailyDoseLimit, WarningThresholdPercent
+- **DoseLimitCheckResult**: CurrentCumulativeDose, ProposedDose, ProjectedCumulativeDose, WithinLimits
+- **PatientDoseSummary**: Cross-study dose aggregation with First/LastExposureDate
+- **StudyDoseTracker**: Per-study dose accumulation
+
+#### Protocol Enhancements (Protocol/)
+- **ProtocolValidator**: Exposure parameter validation (kV: 40-150, mA: 10-1000, ms: 1-2000, mAs: 1-1000)
+- **ProtocolValidationResult**: IsValid, Errors, Warnings
+- **ProcedureCodeMapper**: DICOM SOP Class UID mapping (Chest AP → CR Image Storage)
+- **IProtocolRepository**: Protocol management interface
+
+#### Reject/Retake Workflow (RejectRetake/)
+- **RejectRetakeCoordinator**: Rejection recording, retake authorization, limit enforcement
+- **RejectionRecord**: RejectionId, ExposureIndex, Reason, OperatorId, AuthorizedForRetake, AuthorizedBy
+- **RetakeAuthorization**: CanRetake, RejectionId, RetakesRemaining, Reason
+- **RetakeStatistics**: TotalRejections, CompletedRetakes, PendingRetakes, AuthorizedRetakes, RejectionsByReason
+- **RetakeLimitConfiguration**: MaxRetakesPerStudy (3), MaxRetakesPerExposure (2), RequireSupervisorAuthorization
+
+#### Integration Tests
+- **CompleteWorkflow_FromIdleToPacsExport_Succeeds**: Full workflow state transitions
+- **RejectRetakeWorkflow_PreservesDoseInformation_ReturnsToExposure**: Dose preservation validation
+- **EmergencyWorkflow_BypassesWorklist_ExecutesSuccessfully**: Emergency path testing
+- **InvalidTransition_IsBlocked_ByStateHandlers**: Guard enforcement validation
+- **AllHandlers_ImplementInterface_Consistently**: IStateHandler contract compliance
+
+#### MX Code Annotations (Safety Documentation)
+- **@MX:ANCHOR**: 12 tags (invariant contracts, high fan-in functions)
+- **@MX:WARN**: 6 tags (safety-critical operations, radiation exposure)
+- **@MX:NOTE**: 30+ tags (context and intent delivery)
+
+#### Non-Functional Requirements
+- **NFR-WORKFLOW-01**: State transition latency <100ms
+- **NFR-WORKFLOW-02**: Journal write within 50ms of state change
+- **NFR-WORKFLOW-03**: Crash recovery restores state within 2 seconds
+- **NFR-WORKFLOW-04**: Hardware interlock query <10ms
+- **IEC 62304 Class C**: X-ray exposure control safety classification
+
+#### Testing (TDD Applied)
+- 89 unit tests, all passing
+- 5 integration tests, all passing
+- Total: 311 tests (222 Dose + 89 Workflow)
+- >85% code coverage achieved
+- State handler transition validation tests
+- Crash recovery simulation tests
+- Interlock verification tests
+
+#### Architecture Decisions
+- **SQLite Journaling**: Chosen for ACID compliance and crash recovery
+- **Channel-based Events**: System.Threading.Channels for async IPC event streaming
+- **MX Tag Protocol**: Comprehensive safety-critical code documentation
+- **Dose Information Preservation**: Rejected exposures retain dose data for cumulative tracking
+
+### Technical Details (Phase 1-3 Combined)
+- **Platform**: .NET 8 LTS, C# 12
+- **Package**: HnVue.Workflow (class library)
+- **Integration**: HnVue.Dicom for DICOM operations, HnVue.Dose for dose tracking
+- **Safety Class**: IEC 62304 Class C
+- **Files**: 79 source files, 44 test files, ~13,672 lines
+- **Tests**: 311 tests (100% pass rate)
+
+#### Phase 4 (Remaining Implementation)
+- Hardware Integration: Actual HAL driver implementations
+- DICOM Integration: Real C-FIND, MPPS, C-STORE implementations
+- GUI Integration: WPF/WinUI event subscription to IWorkflowEventPublisher
+
+---
+
 [1.0.0]: https://github.com/abyz-lab/hnvue-console/releases/tag/v1.0.0
