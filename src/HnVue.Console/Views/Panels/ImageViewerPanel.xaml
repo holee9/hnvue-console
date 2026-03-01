@@ -1,0 +1,202 @@
+<UserControl x:Class="HnVue.Console.Views.Panels.ImageViewerPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="800">
+
+    <Border Style="{StaticResource CardStyle}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Toolbar -->
+            <Border Grid.Row="0"
+                    Background="{StaticResource HeaderBrush}"
+                    Padding="{StaticResource MediumPadding}"
+                    CornerRadius="{StaticResource SmallCornerRadius}"
+                    Margin="{StaticResource SmallMargin}">
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                    <StackPanel Orientation="Horizontal">
+                        <!-- Window/Level Controls -->
+                        <TextBlock Text="W/L: "
+                                   Style="{StaticResource BodyTextStyle}"
+                                   Foreground="{StaticResource WhiteBrush}"
+                                   VerticalAlignment="Center"/>
+                        <Button Content="W+" Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding IncreaseWindowCommand}"
+                                Width="40" Margin="{StaticResource SmallLeftMargin}"/>
+                        <Button Content="W-" Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding DecreaseWindowCommand}"
+                                Width="40" Margin="{StaticResource SmallLeftMargin}"/>
+                        <Button Content="L+" Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding IncreaseLevelCommand}"
+                                Width="40" Margin="{StaticResource SmallLeftMargin}"/>
+                        <Button Content="L-" Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding DecreaseLevelCommand}"
+                                Width="40" Margin="{StaticResource SmallLeftMargin}"/>
+                        <Button Content="Reset" Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding ResetWindowLevelCommand}"
+                                Width="50" Margin="{StaticResource SmallLeftMargin}"/>
+
+                        <TextBlock Text="  " Style="{StaticResource BodyTextStyle}"/>
+
+                        <!-- Zoom Controls -->
+                        <TextBlock Text="Zoom: "
+                                   Style="{StaticResource BodyTextStyle}"
+                                   Foreground="{StaticResource WhiteBrush}"
+                                   VerticalAlignment="Center"/>
+                        <Button Content="+" Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding ZoomInCommand}"
+                                Width="40" Margin="{StaticResource SmallLeftMargin}"/>
+                        <Button Content="-" Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding ZoomOutCommand}"
+                                Width="40" Margin="{StaticResource SmallLeftMargin}"/>
+                        <Button Content="Fit" Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding ResetZoomCommand}"
+                                Width="40" Margin="{StaticResource SmallLeftMargin}"/>
+
+                        <TextBlock Text="  " Style="{StaticResource BodyTextStyle}"/>
+
+                        <!-- Orientation Controls -->
+                        <Button Content="⟲" Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding RotateLeftCommand}"
+                                Width="40" Margin="{StaticResource SmallLeftMargin}"/>
+                        <Button Content="⟳" Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding RotateRightCommand}"
+                                Width="40" Margin="{StaticResource SmallLeftMargin}"/>
+                        <Button Content="↔" Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding FlipHorizontalCommand}"
+                                Width="40" Margin="{StaticResource SmallLeftMargin}"/>
+                        <Button Content="↕" Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding FlipVerticalCommand}"
+                                Width="40" Margin="{StaticResource SmallLeftMargin}"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Image Display Area -->
+            <Border Grid.Row="1"
+                    Background="Black"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource SmallCornerRadius}"
+                    Margin="{StaticResource SmallMargin}"
+                    ClipToBounds="True">
+                <Grid>
+                    <!-- Transform Group for Zoom/Pan -->
+                    <Grid RenderTransformOrigin="0.5, 0.5">
+                        <Grid.RenderTransform>
+                            <ScaleTransform ScaleX="{Binding ZoomFactor}" ScaleY="{Binding ZoomFactor}"
+                                         CenterX="0.5" CenterY="0.5"/>
+                        </Grid.RenderTransform>
+
+                        <!-- Image -->
+                        <Image Source="{Binding Bitmap}"
+                               Stretch="Uniform"
+                               RenderOptions.BitmapScalingMode="NearestNeighbor"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Margin="{StaticResource MediumPadding}">
+                            <Image.LayoutTransform>
+                                <!-- Apply orientation transform -->
+                                <MultiBinding Converter="{StaticResource OrientationTransformConverter}">
+                                    <Binding Path="Orientation"/>
+                                    <Binding Path="Bitmap" Mode="OneTime"/>
+                                </MultiBinding>
+                            </Image.LayoutTransform>
+                        </Image>
+
+                        <!-- Measurement Overlay Canvas -->
+                        <Canvas IsHitTestVisible="True" MouseLeftButtonDown="OnCanvasClick">
+                            <!-- Render measurements using ItemsControl -->
+                            <ItemsControl ItemsSource="{Binding Measurements}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Canvas>
+                                            <!-- Lines connecting measurement points -->
+                                            <Polyline Points="{Binding Points, Converter={StaticResource PointsToPolylineConverter}}"
+                                                     Stroke="Yellow"
+                                                     StrokeThickness="2"/>
+
+                                            <!-- Measurement points -->
+                                            <ItemsControl ItemsSource="{Binding Points}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Ellipse Width="8" Height="8"
+                                                                Fill="Red"
+                                                                Stroke="White"
+                                                                StrokeThickness="1"
+                                                                Canvas.Left="{Binding X, Converter={StaticResource CenterCanvasConverter}}"
+                                                                Canvas.Top="{Binding Y, Converter={StaticResource CenterCanvasConverter}}"/>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+
+                                            <!-- Measurement label -->
+                                            <TextBlock Text="{Binding DisplayValue}"
+                                                       Foreground="Yellow"
+                                                       FontSize="12"
+                                                       FontWeight="Bold"
+                                                       Canvas.Left="{Binding Points[0].X, Converter={StaticResource OffsetCanvasConverter}, ConverterParameter=10}"
+                                                       Canvas.Top="{Binding Points[0].Y, Converter={StaticResource OffsetCanvasConverter}, ConverterParameter=-20}"/>
+                                        </Canvas>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Canvas>
+                    </Grid>
+
+                    <!-- No Image Indicator -->
+                    <TextBlock Text="No Image Loaded"
+                               Style="{StaticResource TitleTextStyle}"
+                               Foreground="{StaticResource WhiteBrush}"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Visibility="{Binding IsImageLoaded, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
+                </Grid>
+            </Border>
+
+            <!-- Status Bar -->
+            <Border Grid.Row="2"
+                    Background="{StaticResource BackgroundBrush}"
+                    Padding="{StaticResource MediumPadding}"
+                    Margin="{StaticResource SmallMargin}"
+                    CornerRadius="{StaticResource SmallCornerRadius}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Window/Level Display -->
+                    <TextBlock Grid.Column="0">
+                        <Run Text="W/L: " FontWeight="SemiBold"/>
+                        <Run Text="{Binding WindowCenter, Mode=OneWay}"/>
+                        <Run Text="/"/>
+                        <Run Text="{Binding WindowWidth, Mode=OneWay}"/>
+                    </TextBlock>
+
+                    <!-- Zoom Display -->
+                    <TextBlock Grid.Column="1"
+                               Margin="{StaticResource MediumLeftMargin}">
+                        <Run Text="Zoom: " FontWeight="SemiBold"/>
+                        <Run Text="{Binding ZoomFactor, StringFormat={}{0:F1}x, Mode=OneWay}"/>
+                    </TextBlock>
+
+                    <!-- Orientation Display -->
+                    <TextBlock Grid.Column="2"
+                               Margin="{StaticResource MediumLeftMargin}">
+                        <Run Text="Orientation: " FontWeight="SemiBold"/>
+                        <Run Text="{Binding Orientation, Converter={StaticResource OrientationToStringConverter}}"/>
+                    </TextBlock>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

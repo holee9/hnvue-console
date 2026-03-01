@@ -1,0 +1,158 @@
+<UserControl x:Class="HnVue.Console.Views.PatientView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="1000">
+
+    <Border Style="{StaticResource CardStyle}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <TextBlock Grid.Row="0"
+                       Text="Patient Management"
+                       Style="{StaticResource TitleTextStyle}"
+                       Margin="{StaticResource MediumPadding}"/>
+
+            <!-- Search Bar -->
+            <Border Grid.Row="1"
+                    Background="{StaticResource HeaderBrush}"
+                    Padding="{StaticResource MediumPadding}"
+                    Margin="{StaticResource MediumPadding}"
+                    CornerRadius="{StaticResource MediumCornerRadius}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Search Box -->
+                    <TextBox Grid.Column="0"
+                             Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource BaseTextBoxStyle}"
+                             VerticalContentAlignment="Center"
+                             Margin="{StaticResource SmallRightMargin}">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Return" Command="{Binding SearchCommand}"/>
+                        </TextBox.InputBindings>
+                    </TextBox>
+
+                    <!-- Search Button -->
+                    <Button Grid.Column="1"
+                            Content="Search"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Command="{Binding SearchCommand}"
+                            Margin="{StaticResource SmallRightMargin}"
+                            MinWidth="80"/>
+
+                    <!-- Register Button -->
+                    <Button Grid.Column="2"
+                            Content="Register"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding RegisterCommand}"
+                            Margin="{StaticResource SmallRightMargin}"
+                            MinWidth="80"/>
+
+                    <!-- Emergency Register Button -->
+                    <Button Grid.Column="3"
+                            Content="Emergency"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding EmergencyRegisterCommand}"
+                            MinWidth="80"/>
+
+                    <!-- Loading Indicator -->
+                    <StackPanel Grid.Column="0"
+                                Grid.ColumnSpan="4"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Center"
+                                Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"
+                                Margin="{StaticResource SmallTopMargin}">
+                        <ProgressBar Width="200" Height="4" IsIndeterminate="True"/>
+                        <TextBlock Text="Loading..."
+                                   Style="{StaticResource BodyTextStyle}"
+                                   Margin="{StaticResource SmallLeftMargin}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Patient List -->
+            <Border Grid.Row="2"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource MediumCornerRadius}"
+                    Margin="{StaticResource MediumPadding}"
+                    Padding="{StaticResource SmallPadding}">
+                <DataGrid ItemsSource="{Binding Patients}"
+                          SelectedItem="{Binding SelectedPatient}"
+                          Style="{StaticResource BaseDataGridStyle}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          SelectionMode="Single">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Patient ID"
+                                          Binding="{Binding PatientId}"
+                                          Width="120"/>
+                        <DataGridTextColumn Header="Patient Name"
+                                          Binding="{Binding PatientName}"
+                                          Width="*"/>
+                        <DataGridTextColumn Header="Date of Birth"
+                                          Binding="{Binding DateOfBirth, StringFormat=yyyy-MM-dd}"
+                                          Width="100"/>
+                        <DataGridTextColumn Header="Sex"
+                                          Binding="{Binding Sex}"
+                                          Width="80"/>
+                        <DataGridTextColumn Header="Accession #"
+                                          Binding="{Binding AccessionNumber}"
+                                          Width="100"/>
+                        <DataGridTemplateColumn Header="Actions" Width="100">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="Edit"
+                                            Style="{StaticResource SecondaryButtonStyle}"
+                                            Command="{Binding DataContext.EditPatientCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"
+                                            Padding="{StaticResource SmallPadding}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="Select" Width="80">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="Select"
+                                            Style="{StaticResource PrimaryButtonStyle}"
+                                            Command="{Binding DataContext.SelectPatientCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"
+                                            Padding="{StaticResource SmallPadding}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+            <!-- Status Bar -->
+            <Border Grid.Row="3"
+                    Background="{StaticResource BackgroundBrush}"
+                    Padding="{StaticResource MediumPadding}"
+                    Margin="{StaticResource MediumPadding}"
+                    CornerRadius="{StaticResource MediumCornerRadius}">
+                <TextBlock>
+                    <Run Text="Patients: " FontWeight="SemiBold"/>
+                    <Run Text="{Binding Patients.Count, Mode=OneWay}"/>
+                    <Run Text="  |  "/>
+                    <Run Text="Selected: " FontWeight="SemiBold"/>
+                    <Run Text="{Binding SelectedPatient.PatientName, Mode=OneWay, FallbackValue='(none)'}"/>
+                </TextBlock>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

@@ -1,0 +1,338 @@
+<UserControl x:Class="HnVue.Console.Views.ConfigurationView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="1000">
+    <Border Style="{StaticResource CardStyle}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <TextBlock Grid.Row="0"
+                       Text="System Configuration"
+                       Style="{StaticResource TitleTextStyle}"
+                       Margin="{StaticResource MediumPadding}"/>
+
+            <!-- User Role Indicator -->
+            <Border Grid.Row="1"
+                    Background="{StaticResource HeaderBrush}"
+                    Padding="{StaticResource MediumPadding}"
+                    Margin="{StaticResource MediumPadding}"
+                    CornerRadius="{StaticResource MediumCornerRadius}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Role Display -->
+                    <TextBlock Grid.Column="0">
+                        <Run Text="Current Role: " FontWeight="SemiBold"/>
+                        <Run Text="{Binding CurrentUserRole, Mode=OneWay}"/>
+                    </TextBlock>
+
+                    <!-- Status Message -->
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding StatusMessage, Mode=OneWay}"
+                               Style="{StaticResource BodyTextStyle}"
+                               Foreground="{StaticResource SecondaryTextBrush}"/>
+                </Grid>
+            </Border>
+
+            <!-- Tabbed Configuration -->
+            <TabControl Grid.Row="2"
+                        SelectedIndex="{Binding SelectedTabIndex}"
+                        Margin="{StaticResource MediumPadding}"
+                        Background="Transparent">
+
+                <!-- Calibration Tab (Service Engineer+) -->
+                <TabItem Header="Calibration"
+                         Visibility="{Binding IsCalibrationVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="{StaticResource MediumPadding}">
+                            <TextBlock Text="Calibration Status"
+                                       Style="{StaticResource SubtitleTextStyle}"
+                                       Margin="{StaticResource SmallBottomMargin}"/>
+
+                            <!-- Last Calibration Date -->
+                            <Border Background="{StaticResource BackgroundBrush}"
+                                    Padding="{StaticResource SmallPadding}"
+                                    Margin="{StaticResource SmallBottomMargin}"
+                                    CornerRadius="{StaticResource SmallCornerRadius}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="Last Calibration:"
+                                               Style="{StaticResource BodyTextStyle}"/>
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding Config.Calibration.LastCalibrationDate, StringFormat='yyyy-MM-dd HH:mm'}"
+                                               Style="{StaticResource BodyTextStyle}"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Next Calibration Due -->
+                            <Border Background="{StaticResource BackgroundBrush}"
+                                    Padding="{StaticResource SmallPadding}"
+                                    Margin="{StaticResource SmallBottomMargin}"
+                                    CornerRadius="{StaticResource SmallCornerRadius}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="Next Due:"
+                                               Style="{StaticResource BodyTextStyle}"/>
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding Config.Calibration.NextCalibrationDueDate, StringFormat='yyyy-MM-dd'}"
+                                               Style="{StaticResource BodyTextStyle}"
+                                               FontWeight="SemiBold"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Calibration Status -->
+                            <Border Background="{StaticResource BackgroundBrush}"
+                                    Padding="{StaticResource SmallPadding}"
+                                    Margin="{StaticResource MediumBottomMargin}"
+                                    CornerRadius="{StaticResource SmallCornerRadius}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="Status:"
+                                               Style="{StaticResource BodyTextStyle}"/>
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding Config.Calibration.Status}"
+                                               Style="{StaticResource BodyTextStyle}"
+                                               FontWeight="SemiBold"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Start Calibration Button -->
+                            <Button Content="Start Calibration"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    Command="{Binding StartCalibrationCommand}"
+                                    HorizontalAlignment="Left"
+                                    MinWidth="150"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <!-- Network Tab (Supervisor+) -->
+                <TabItem Header="Network"
+                         Visibility="{Binding IsNetworkVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="{StaticResource MediumPadding}">
+                            <TextBlock Text="DICOM Network Configuration"
+                                       Style="{StaticResource SubtitleTextStyle}"
+                                       Margin="{StaticResource SmallBottomMargin}"/>
+
+                            <!-- DICOM AE Title -->
+                            <Border Background="{StaticResource BackgroundBrush}"
+                                    Padding="{StaticResource SmallPadding}"
+                                    Margin="{StaticResource SmallBottomMargin}"
+                                    CornerRadius="{StaticResource SmallCornerRadius}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="AE Title:"
+                                               Style="{StaticResource BodyTextStyle}"
+                                               VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1"
+                                             Text="{Binding Config.Network.DicomAeTitle}"
+                                             Style="{StaticResource BaseTextBoxStyle}"
+                                             IsReadOnly="True"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- DICOM Port -->
+                            <Border Background="{StaticResource BackgroundBrush}"
+                                    Padding="{StaticResource SmallPadding}"
+                                    Margin="{StaticResource SmallBottomMargin}"
+                                    CornerRadius="{StaticResource SmallCornerRadius}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="DICOM Port:"
+                                               Style="{StaticResource BodyTextStyle}"
+                                               VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1"
+                                             Text="{Binding Config.Network.DicomPort}"
+                                             Style="{StaticResource BaseTextBoxStyle}"
+                                             IsReadOnly="True"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- PACS Host -->
+                            <Border Background="{StaticResource BackgroundBrush}"
+                                    Padding="{StaticResource SmallPadding}"
+                                    Margin="{StaticResource SmallBottomMargin}"
+                                    CornerRadius="{StaticResource SmallCornerRadius}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="PACS Host:"
+                                               Style="{StaticResource BodyTextStyle}"
+                                               VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1"
+                                             Text="{Binding Config.Network.PacsHostName}"
+                                             Style="{StaticResource BaseTextBoxStyle}"
+                                             IsReadOnly="True"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- PACS Port -->
+                            <Border Background="{StaticResource BackgroundBrush}"
+                                    Padding="{StaticResource SmallPadding}"
+                                    Margin="{StaticResource MediumBottomMargin}"
+                                    CornerRadius="{StaticResource SmallCornerRadius}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="PACS Port:"
+                                               Style="{StaticResource BodyTextStyle}"
+                                               VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1"
+                                             Text="{Binding Config.Network.PacsPort}"
+                                             Style="{StaticResource BaseTextBoxStyle}"
+                                             IsReadOnly="True"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- MWL Enabled -->
+                            <CheckBox Content="Enable Modality Worklist"
+                                      IsChecked="{Binding Config.Network.MwlEnabled}"
+                                      Style="{StaticResource BaseCheckBoxStyle}"
+                                      IsEnabled="False"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <!-- Users Tab (Administrator+) -->
+                <TabItem Header="Users"
+                         Visibility="{Binding IsUsersVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="{StaticResource MediumPadding}">
+                            <TextBlock Text="User Management"
+                                       Style="{StaticResource SubtitleTextStyle}"
+                                       Margin="{StaticResource SmallBottomMargin}"/>
+
+                            <TextBlock Text="User management functionality"
+                                       Style="{StaticResource BodyTextStyle}"
+                                       Foreground="{StaticResource SecondaryTextBrush}"
+                                       Margin="{StaticResource MediumBottomMargin}"/>
+
+                            <TextBlock Text="Note: User creation, editing, and deactivation will be implemented in a future update."
+                                       Style="{StaticResource CaptionTextStyle}"
+                                       Foreground="{StaticResource WarningBrush}"
+                                       TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+
+                <!-- Logging Tab (Supervisor+) -->
+                <TabItem Header="Logging"
+                         Visibility="{Binding IsLoggingVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Margin="{StaticResource MediumPadding}">
+                            <TextBlock Text="Logging Configuration"
+                                       Style="{StaticResource SubtitleTextStyle}"
+                                       Margin="{StaticResource SmallBottomMargin}"/>
+
+                            <!-- Minimum Log Level -->
+                            <Border Background="{StaticResource BackgroundBrush}"
+                                    Padding="{StaticResource SmallPadding}"
+                                    Margin="{StaticResource SmallBottomMargin}"
+                                    CornerRadius="{StaticResource SmallCornerRadius}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="Minimum Level:"
+                                               Style="{StaticResource BodyTextStyle}"
+                                               VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1"
+                                             Text="{Binding Config.Logging.MinimumLogLevel}"
+                                             Style="{StaticResource BaseTextBoxStyle}"
+                                             IsReadOnly="True"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Retention Days -->
+                            <Border Background="{StaticResource BackgroundBrush}"
+                                    Padding="{StaticResource SmallPadding}"
+                                    Margin="{StaticResource SmallBottomMargin}"
+                                    CornerRadius="{StaticResource SmallCornerRadius}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="Retention (days):"
+                                               Style="{StaticResource BodyTextStyle}"
+                                               VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1"
+                                             Text="{Binding Config.Logging.RetentionDays}"
+                                             Style="{StaticResource BaseTextBoxStyle}"
+                                             IsReadOnly="True"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Remote Logging -->
+                            <CheckBox Content="Enable Remote Logging"
+                                      IsChecked="{Binding Config.Logging.EnableRemoteLogging}"
+                                      Style="{StaticResource BaseCheckBoxStyle}"
+                                      IsEnabled="False"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+            </TabControl>
+
+            <!-- Action Buttons -->
+            <Border Grid.Row="3"
+                    Background="{StaticResource BackgroundBrush}"
+                    Padding="{StaticResource MediumPadding}"
+                    Margin="{StaticResource MediumPadding}"
+                    CornerRadius="{StaticResource MediumCornerRadius}">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Content="Refresh"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding RefreshCommand}"
+                            MinWidth="80"
+                            Margin="{StaticResource SmallRightMargin}"/>
+                    <Button Content="Save Changes"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Command="{Binding SaveCommand}"
+                            MinWidth="100"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

@@ -1,0 +1,45 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- Padding Values (based on 4px grid) -->
+    <Thickness x:Key="NoPadding">0</Thickness>
+    <Thickness x:Key="XXSmallPadding">2</Thickness>
+    <Thickness x:Key="XSmallPadding">4</Thickness>
+    <Thickness x:Key="SmallPadding">8</Thickness>
+    <Thickness x:Key="MediumPadding">16</Thickness>
+    <Thickness x:Key="LargePadding">24</Thickness>
+    <Thickness x:Key="XLargePadding">32</Thickness>
+    <Thickness x:Key="XXLargePadding">48</Thickness>
+
+    <!-- Margin Values -->
+    <Thickness x:Key="NoMargin">0</Thickness>
+    <Thickness x:Key="XXSmallMargin">2</Thickness>
+    <Thickness x:Key="XSmallMargin">4</Thickness>
+    <Thickness x:Key="SmallMargin">8</Thickness>
+    <Thickness x:Key="MediumMargin">16</Thickness>
+    <Thickness x:Key="LargeMargin">24</Thickness>
+    <Thickness x:Key="XLargeMargin">32</Thickness>
+
+    <!-- Direction-Specific Margins -->
+    <Thickness x:Key="SmallLeftMargin">8,0,0,0</Thickness>
+    <Thickness x:Key="SmallRightMargin">0,8,0,0</Thickness>
+    <Thickness x:Key="SmallTopMargin">0,0,8,0</Thickness>
+    <Thickness x:Key="SmallBottomMargin">0,0,0,8</Thickness>
+    <Thickness x:Key="SmallLeftRightMargin">8,0,8,0</Thickness>
+    <Thickness x:Key="MediumLeftMargin">16,0,0,0</Thickness>
+    <Thickness x:Key="MediumRightMargin">0,16,0,0</Thickness>
+    <Thickness x:Key="MediumTopMargin">0,0,16,0</Thickness>
+    <Thickness x:Key="MediumBottomMargin">0,0,0,16</Thickness>
+
+    <!-- CornerRadius Values -->
+    <CornerRadius x:Key="SmallCornerRadius">2</CornerRadius>
+    <CornerRadius x:Key="MediumCornerRadius">4</CornerRadius>
+    <CornerRadius x:Key="LargeCornerRadius">8</CornerRadius>
+
+    <!-- Grid/Column Spacing -->
+    <sys:Double x:Key="SmallColumnSpacing">8</sys:Double>
+    <sys:Double x:Key="MediumColumnSpacing">16</sys:Double>
+    <sys:Double x:Key="LargeColumnSpacing">24</sys:Double>
+
+</ResourceDictionary>

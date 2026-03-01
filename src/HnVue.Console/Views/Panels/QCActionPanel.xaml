@@ -1,0 +1,113 @@
+<UserControl x:Class="HnVue.Console.Views.Panels.QCActionPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:models="clr-namespace:HnVue.Console.Models"
+             mc:Ignorable="d"
+             d:DesignHeight="300" d:DesignWidth="400">
+
+    <Border Style="{StaticResource CardStyle}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <TextBlock Grid.Row="0"
+                       Text="Quality Control"
+                       Style="{StaticResource SubtitleTextStyle}"
+                       Margin="{StaticResource MediumPadding}"/>
+
+            <!-- QC Actions -->
+            <ScrollViewer Grid.Row="1"
+                          VerticalScrollBarVisibility="Auto"
+                          Margin="{StaticResource MediumPadding}">
+                <StackPanel>
+                    <!-- Accept Button -->
+                    <Button Content="✅ Accept Image"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Command="{Binding AcceptImageCommand}"
+                            HorizontalAlignment="Stretch"
+                            Padding="{StaticResource MediumPadding}"
+                            Margin="{StaticResource SmallBottomMargin}">
+                        <Button.ToolTip>
+                            <ToolTip Content="Accept this image as diagnostically adequate"/>
+                        </Button.ToolTip>
+                    </Button>
+
+                    <!-- Reject Section -->
+                    <Border BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="{StaticResource SmallCornerRadius}"
+                            Padding="{StaticResource SmallPadding}"
+                            Margin="{StaticResource SmallBottomMargin}">
+                        <StackPanel>
+                            <TextBlock Text="Reject Reason:"
+                                       Style="{StaticResource BodyTextStyle}"
+                                       FontWeight="SemiBold"
+                                       Margin="{StaticResource SmallBottomMargin}"/>
+
+                            <ComboBox ItemsSource="{Binding RejectionReasons}"
+                                      SelectedItem="{Binding SelectedRejectionReason}"
+                                      Style="{StaticResource BaseComboBoxStyle}"
+                                      Margin="{StaticResource SmallBottomMargin}"/>
+
+                            <TextBox Text="{Binding QCNotes}"
+                                     Style="{StaticResource BaseTextBoxStyle}"
+                                     Margin="{StaticResource SmallBottomMargin}"/>
+
+                            <Button Content="❌ Reject Image"
+                                    Style="{StaticResource WarningButtonStyle}"
+                                    Command="{Binding RejectImageCommand}"
+                                    HorizontalAlignment="Stretch"
+                                    Padding="{StaticResource MediumPadding}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Separator -->
+                    <Border BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="0,1,0,0"
+                            Margin="{StaticResource SmallMargin}"/>
+
+                    <!-- Reprocess Button -->
+                    <Button Content="🔄 Request Reprocess"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding ReprocessImageCommand}"
+                            HorizontalAlignment="Stretch"
+                            Padding="{StaticResource MediumPadding}">
+                        <Button.ToolTip>
+                            <ToolTip Content="Request image reprocessing (e.g., adjust exposure)"/>
+                        </Button.ToolTip>
+                    </Button>
+
+                    <!-- Rejection Reasons Reference -->
+                    <Border Background="{StaticResource BackgroundBrush}"
+                            BorderBrush="{StaticResource BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="{StaticResource SmallCornerRadius}"
+                            Padding="{StaticResource SmallPadding}"
+                            Margin="{StaticResource MediumTopMargin}">
+                        <StackPanel>
+                            <TextBlock Text="Rejection Codes:"
+                                       Style="{StaticResource CaptionTextStyle}"
+                                       FontWeight="SemiBold"/>
+                            <ItemsControl ItemsSource="{Binding RejectionReasons}"
+                                          Margin="{StaticResource SmallTopMargin}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Margin="{StaticResource SmallLeftMargin}">
+                                            <Run Text="• "/>
+                                            <Run Text="{Binding Converter={StaticResource RejectionReasonToStringConverter}}"/>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Border>
+</UserControl>

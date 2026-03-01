@@ -1,0 +1,237 @@
+<UserControl x:Class="HnVue.Console.Views.AuditLogView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="1200">
+    <Border Style="{StaticResource CardStyle}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <TextBlock Grid.Row="0"
+                       Text="Audit Log"
+                       Style="{StaticResource TitleTextStyle}"
+                       Margin="{StaticResource MediumPadding}"/>
+
+            <!-- Filter Panel -->
+            <Border Grid.Row="1"
+                    Background="{StaticResource HeaderBrush}"
+                    Padding="{StaticResource MediumPadding}"
+                    Margin="{StaticResource MediumPadding}"
+                    CornerRadius="{StaticResource MediumCornerRadius}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Date Range -->
+                    <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Margin="{StaticResource SmallRightMargin}">
+                        <TextBlock Text="From:"
+                                   Style="{StaticResource BodyTextStyle}"
+                                   VerticalAlignment="Center"
+                                   Margin="{StaticResource SmallRightMargin}"/>
+                        <DatePicker SelectedDate="{Binding FilterStartDate}"
+                                    Style="{StaticResource BaseComboBoxStyle}"
+                                    Width="120"
+                                    Margin="{StaticResource SmallRightMargin}"/>
+                        <TextBlock Text="To:"
+                                   Style="{StaticResource BodyTextStyle}"
+                                   VerticalAlignment="Center"
+                                   Margin="{StaticResource SmallLeftRightMargin}"/>
+                        <DatePicker SelectedDate="{Binding FilterEndDate}"
+                                    Style="{StaticResource BaseComboBoxStyle}"
+                                    Width="120"/>
+                    </StackPanel>
+
+                    <!-- Event Type Filter -->
+                    <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Margin="{StaticResource SmallRightMargin}">
+                        <TextBlock Text="Event Type:"
+                                   Style="{StaticResource BodyTextStyle}"
+                                   VerticalAlignment="Center"
+                                   Margin="{StaticResource SmallRightMargin}"/>
+                        <ComboBox SelectedItem="{Binding FilterEventType}"
+                                  Style="{StaticResource BaseComboBoxStyle}"
+                                  Width="150"
+                                  DisplayMemberPath="Name"/>
+                    </StackPanel>
+
+                    <!-- Outcome Filter -->
+                    <StackPanel Grid.Row="0" Grid.Column="2" Orientation="Horizontal">
+                        <TextBlock Text="Outcome:"
+                                   Style="{StaticResource BodyTextStyle}"
+                                   VerticalAlignment="Center"
+                                   Margin="{StaticResource SmallRightMargin}"/>
+                        <ComboBox SelectedItem="{Binding FilterOutcome}"
+                                  Style="{StaticResource BaseComboBoxStyle}"
+                                  Width="120"
+                                  DisplayMemberPath="Name"/>
+                    </StackPanel>
+
+                    <!-- Action Buttons -->
+                    <StackPanel Grid.Row="0" Grid.Column="3" Orientation="Horizontal">
+                        <Button Content="Search"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                Command="{Binding SearchCommand}"
+                                MinWidth="80"
+                                Margin="{StaticResource SmallRightMargin}"/>
+                        <Button Content="Clear"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding ClearFilterCommand}"
+                                MinWidth="80"
+                                Margin="{StaticResource SmallRightMargin}"/>
+                        <Button Content="Export"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding ExportCommand}"
+                                MinWidth="80"/>
+                    </StackPanel>
+
+                    <!-- Additional Filters -->
+                    <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4" Orientation="Horizontal" Margin="{StaticResource SmallTopMargin}">
+                        <TextBox Text="{Binding FilterUserId, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource BaseTextBoxStyle}"
+                                 Width="150"
+                                 Margin="{StaticResource SmallRightMargin}">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Return" Command="{Binding SearchCommand}"/>
+                            </TextBox.InputBindings>
+                        </TextBox>
+                        <TextBlock Text="User ID"
+                                   Style="{StaticResource CaptionTextStyle}"
+                                   VerticalAlignment="Center"
+                                   Margin="{StaticResource SmallRightMargin}"
+                                   Foreground="{StaticResource SecondaryTextBrush}"/>
+
+                        <TextBox Text="{Binding FilterPatientId, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource BaseTextBoxStyle}"
+                                 Width="150"
+                                 Margin="{StaticResource SmallLeftRightMargin}">
+                            <TextBox.InputBindings>
+                                <KeyBinding Key="Return" Command="{Binding SearchCommand}"/>
+                            </TextBox.InputBindings>
+                        </TextBox>
+                        <TextBlock Text="Patient ID"
+                                   Style="{StaticResource CaptionTextStyle}"
+                                   VerticalAlignment="Center"
+                                   Foreground="{StaticResource SecondaryTextBrush}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Data Grid -->
+            <Border Grid.Row="2"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource MediumCornerRadius}"
+                    Margin="{StaticResource MediumPadding}"
+                    Padding="{StaticResource SmallPadding}">
+                <DataGrid ItemsSource="{Binding LogEntries}"
+                          Style="{StaticResource BaseDataGridStyle}"
+                          AutoGenerateColumns="False"
+                          IsReadOnly="True"
+                          SelectionMode="Single">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Timestamp"
+                                          Binding="{Binding Timestamp, StringFormat='yyyy-MM-dd HH:mm:ss'}"
+                                          Width="140"/>
+                        <DataGridTextColumn Header="Event Type"
+                                          Binding="{Binding EventType}"
+                                          Width="140"/>
+                        <DataGridTextColumn Header="User"
+                                          Binding="{Binding UserName}"
+                                          Width="120"/>
+                        <DataGridTextColumn Header="Description"
+                                          Binding="{Binding EventDescription}"
+                                          Width="*"/>
+                        <DataGridTextColumn Header="Patient ID"
+                                          Binding="{Binding PatientId}"
+                                          Width="100"/>
+                        <DataGridTextColumn Header="Outcome"
+                                          Binding="{Binding Outcome}"
+                                          Width="80">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
+                                    <Setter Property="Foreground" Value="{Binding Outcome, Converter={StaticResource OutcomeToBrushConverter}}"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Border>
+
+            <!-- Pagination Controls -->
+            <Border Grid.Row="3"
+                    Background="{StaticResource BackgroundBrush}"
+                    Padding="{StaticResource MediumPadding}"
+                    Margin="{StaticResource MediumPadding}"
+                    CornerRadius="{StaticResource MediumCornerRadius}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Status Text -->
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding StatusMessage}"
+                               Style="{StaticResource BodyTextStyle}"
+                               VerticalAlignment="Center"/>
+
+                    <!-- Page Navigation -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button Content="&lt; Previous"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding PreviousPageCommand}"
+                                MinWidth="80"
+                                Margin="{StaticResource SmallRightMargin}"/>
+                        <TextBlock Text="{Binding CurrentPage, StringFormat='Page {0}'}"
+                                   Style="{StaticResource BodyTextStyle}"
+                                   VerticalAlignment="Center"
+                                   Margin="{StaticResource SmallLeftRightMargin}"/>
+                        <TextBlock Text="of"
+                                   Style="{StaticResource BodyTextStyle}"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding TotalPages}"
+                                   Style="{StaticResource BodyTextStyle}"
+                                   VerticalAlignment="Center"
+                                   Margin="{StaticResource SmallLeftRightMargin}"/>
+                        <Button Content="Next &gt;"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding NextPageCommand}"
+                                MinWidth="80"
+                                Margin="{StaticResource SmallLeftMargin}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Loading Indicator -->
+            <Border Grid.Row="4"
+                    Background="{StaticResource BackgroundBrush}"
+                    Padding="{StaticResource MediumPadding}"
+                    Margin="{StaticResource MediumPadding}"
+                    CornerRadius="{StaticResource MediumCornerRadius}"
+                    Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <ProgressBar Width="200" Height="4" IsIndeterminate="True"/>
+                    <TextBlock Text="Loading..."
+                               Style="{StaticResource BodyTextStyle}"
+                               Margin="{StaticResource SmallLeftMargin}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

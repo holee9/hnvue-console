@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    HnVue.Console.Tests - Console UI ViewModels unit tests
+    SPEC-UI-001: MVVM infrastructure with 85% coverage requirement.
+  -->
+
+  <PropertyGroup>
+    <AssemblyName>HnVue.Console.Tests</AssemblyName>
+    <RootNamespace>HnVue.Console.Tests</RootNamespace>
+    <Description>HnVue Console ViewModels Unit Tests</Description>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <TargetFramework>net8.0-windows</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Testing Framework -->
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+
+    <!-- Required Dependencies -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Project References -->
+    <ProjectReference Include="..\..\..\src\HnVue.Console\HnVue.Console.csproj" />
+    <ProjectReference Include="..\..\..\src\HnVue.Dicom\HnVue.Dicom.csproj" />
+    <ProjectReference Include="..\..\..\src\HnVue.Dose\HnVue.Dose.csproj" />
+    <ProjectReference Include="..\..\..\src\HnVue.Workflow\HnVue.Workflow.csproj" />
+    <ProjectReference Include="..\..\..\src\HnVue.Ipc.Client\HnVue.Ipc.Client.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Code Coverage Settings -->
+    <CoverletSettings Include="coverlet.runsettings" />
+  </ItemGroup>
+
+</Project>

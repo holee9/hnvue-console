@@ -1,0 +1,176 @@
+<UserControl x:Class="HnVue.Console.Views.SystemStatusView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:converters="clr-namespace:HnVue.Console.Converters"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="1000">
+    <UserControl.Resources>
+        <converters:ComponentHealthToBrushConverter x:Key="HealthToBrushConverter"/>
+        <converters:ComponentHealthToStringConverter x:Key="HealthToStringConverter"/>
+    </UserControl.Resources>
+
+    <Border Style="{StaticResource CardStyle}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <TextBlock Grid.Row="0"
+                       Text="System Status"
+                       Style="{StaticResource TitleTextStyle}"
+                       Margin="{StaticResource MediumPadding}"/>
+
+            <!-- Overall Status Bar -->
+            <Border Grid.Row="1"
+                    Background="{StaticResource HeaderBrush}"
+                    Padding="{StaticResource MediumPadding}"
+                    Margin="{StaticResource MediumPadding}"
+                    CornerRadius="{StaticResource MediumCornerRadius}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Overall Health Indicator -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <Ellipse Width="20" Height="20"
+                                 Fill="{Binding OverallHealthBrushKey, Source={StaticResource HealthToBrushConverter}}"
+                                 Stroke="{StaticResource BorderBrush}"
+                                 StrokeThickness="1"
+                                 VerticalAlignment="Center"/>
+                        <TextBlock Text="System Health:"
+                                   Style="{StaticResource SubtitleTextStyle}"
+                                   Margin="{StaticResource SmallLeftMargin}"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding OverallHealth, Converter={StaticResource HealthToStringConverter}}"
+                                   Style="{StaticResource SubtitleTextStyle}"
+                                   FontWeight="SemiBold"
+                                   Margin="{StaticResource SmallLeftMargin}"
+                                   VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Status Message -->
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding OverallStatus.ActiveAlerts, Converter={StaticResource AlertsToStringConverter}}"
+                               Style="{StaticResource BodyTextStyle}"
+                               Margin="{StaticResource MediumLeftMargin}"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"/>
+
+                    <!-- Refresh Button -->
+                    <Button Grid.Column="2"
+                            Content="Refresh"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding RefreshCommand}"
+                            MinWidth="80"/>
+                </Grid>
+            </Border>
+
+            <!-- Component Status Tiles -->
+            <ItemsControl Grid.Row="2"
+                          ItemsSource="{Binding ComponentStatuses}"
+                          Margin="{StaticResource MediumPadding}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Width="200"
+                                Height="120"
+                                Margin="{StaticResource SmallMargin}"
+                                Background="{StaticResource CardBrush}"
+                                BorderBrush="{Binding Health, Converter={StaticResource HealthToBrushConverter}}"
+                                BorderThickness="2"
+                                CornerRadius="{StaticResource MediumCornerRadius}"
+                                Padding="{StaticResource SmallPadding}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Component Name -->
+                                <TextBlock Grid.Row="0"
+                                           Text="{Binding ComponentId, Converter={StaticResource ComponentIdToNameConverter}}"
+                                           Style="{StaticResource SubtitleTextStyle}"
+                                           FontWeight="SemiBold"
+                                           TextTrimming="CharacterEllipsis"/>
+
+                                <!-- Health Indicator -->
+                                <StackPanel Grid.Row="1"
+                                            Orientation="Horizontal"
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center">
+                                    <Ellipse Width="40" Height="40"
+                                             Fill="{Binding Health, Converter={StaticResource HealthToBrushConverter}}"
+                                             Stroke="{StaticResource BorderBrush}"
+                                             StrokeThickness="2"/>
+                                    <TextBlock Text="{Binding Health, Converter={StaticResource HealthToStringConverter}}"
+                                               Style="{StaticResource BodyTextStyle}"
+                                               FontWeight="SemiBold"
+                                               Margin="{StaticResource SmallLeftMargin}"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <!-- Status Message -->
+                                <TextBlock Grid.Row="2"
+                                           Text="{Binding StatusMessage}"
+                                           Style="{StaticResource CaptionTextStyle}"
+                                           TextWrapping="Wrap"
+                                           TextTrimming="CharacterEllipsis"
+                                           Foreground="{StaticResource SecondaryTextBrush}"/>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Status Bar -->
+            <Border Grid.Row="3"
+                    Background="{StaticResource BackgroundBrush}"
+                    Padding="{StaticResource MediumPadding}"
+                    Margin="{StaticResource MediumPadding}"
+                    CornerRadius="{StaticResource MediumCornerRadius}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Component Count -->
+                    <TextBlock Grid.Column="0">
+                        <Run Text="Components: " FontWeight="SemiBold"/>
+                        <Run Text="{Binding ComponentStatuses.Count, Mode=OneWay}"/>
+                        <Run Text="  |  "/>
+                        <Run Text="Updated: " FontWeight="SemiBold"/>
+                        <Run Text="{Binding OverallStatus.UpdatedAt, StringFormat='yyyy-MM-dd HH:mm:ss', Mode=OneWay}"/>
+                    </TextBlock>
+
+                    <!-- Exposure Ready -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Ellipse Width="12" Height="12"
+                                 Fill="{Binding CanInitiateExposure, Converter={StaticResource BoolToSuccessBrushConverter}}"
+                                 Stroke="{StaticResource BorderBrush}"
+                                 StrokeThickness="1"
+                                 VerticalAlignment="Center"/>
+                        <TextBlock Text="Exposure Ready"
+                                   Style="{StaticResource BodyTextStyle}"
+                                   Margin="{StaticResource SmallLeftMargin}"
+                                   Visibility="{Binding CanInitiateExposure, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

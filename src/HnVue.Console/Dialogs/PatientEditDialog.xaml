@@ -1,0 +1,117 @@
+<Window x:Class="HnVue.Console.Dialogs.PatientEditDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="Edit Patient"
+        Height="500"
+        Width="600"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource BackgroundBrush}"
+        ResizeMode="NoResize">
+
+    <Border Style="{StaticResource CardStyle}"
+            Margin="0">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <TextBlock Grid.Row="0"
+                       Text="Edit Patient"
+                       Style="{StaticResource TitleTextStyle}"
+                       Margin="{StaticResource MediumPadding}"/>
+
+            <!-- Form Fields -->
+            <ScrollViewer Grid.Row="1"
+                          VerticalScrollBarVisibility="Auto"
+                          Padding="{StaticResource MediumPadding}">
+                <StackPanel>
+                    <!-- Patient ID (Read-only) -->
+                    <StackPanel Margin="{StaticResource SmallBottomMargin}">
+                        <TextBlock Text="Patient ID"
+                                   Style="{StaticResource BodyTextStyle}"
+                                   FontWeight="SemiBold"/>
+                        <TextBox Text="{Binding PatientId, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource BaseTextBoxStyle}"
+                                 IsReadOnly="True"
+                                 Background="{StaticResource DisabledTextBrush}"
+                                 Margin="{StaticResource SmallTopMargin}"/>
+                    </StackPanel>
+
+                    <!-- Patient Name -->
+                    <StackPanel Margin="{StaticResource SmallBottomMargin}">
+                        <TextBlock Text="Patient Name *"
+                                   Style="{StaticResource BodyTextStyle}"
+                                   FontWeight="SemiBold"/>
+                        <TextBox Text="{Binding PatientName, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource BaseTextBoxStyle}"
+                                 Margin="{StaticResource SmallTopMargin}"/>
+                    </StackPanel>
+
+                    <!-- Date of Birth -->
+                    <StackPanel Margin="{StaticResource SmallBottomMargin}">
+                        <TextBlock Text="Date of Birth *"
+                                   Style="{StaticResource BodyTextStyle}"
+                                   FontWeight="SemiBold"/>
+                        <DatePicker SelectedDate="{Binding DateOfBirth}"
+                                    Margin="{StaticResource SmallTopMargin}"/>
+                    </StackPanel>
+
+                    <!-- Sex -->
+                    <StackPanel Margin="{StaticResource SmallBottomMargin}">
+                        <TextBlock Text="Sex *"
+                                   Style="{StaticResource BodyTextStyle}"
+                                   FontWeight="SemiBold"/>
+                        <ComboBox SelectedIndex="{Binding SelectedSexIndex}"
+                                  Margin="{StaticResource SmallTopMargin}">
+                            <ComboBoxItem Content="Unknown"/>
+                            <ComboBoxItem Content="Male"/>
+                            <ComboBoxItem Content="Female"/>
+                            <ComboBoxItem Content="Other"/>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <!-- Accession Number -->
+                    <StackPanel Margin="{StaticResource SmallBottomMargin}">
+                        <TextBlock Text="Accession Number"
+                                   Style="{StaticResource BodyTextStyle}"
+                                   FontWeight="SemiBold"/>
+                        <TextBox Text="{Binding AccessionNumber, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource BaseTextBoxStyle}"
+                                 Margin="{StaticResource SmallTopMargin}"/>
+                    </StackPanel>
+
+                    <!-- Error Message -->
+                    <TextBlock Text="{Binding ErrorMessage}"
+                               Style="{StaticResource CaptionTextStyle}"
+                               Foreground="{StaticResource ErrorBrush}"
+                               Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}"
+                               Margin="{StaticResource SmallTopMargin}"/>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Action Buttons -->
+            <Border Grid.Row="2"
+                    Background="{StaticResource HeaderBrush}"
+                    Padding="{StaticResource MediumPadding}">
+                <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Right">
+                    <Button Content="Cancel"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding CancelCommand}"
+                            Margin="{StaticResource SmallRightMargin}"
+                            MinWidth="80"/>
+                    <Button Content="Save"
+                            Style="{StaticResource PrimaryButtonStyle}"
+                            Command="{Binding SaveCommand}"
+                            MinWidth="80"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

@@ -1,0 +1,186 @@
+<UserControl x:Class="HnVue.Console.Views.Panels.ExposureParameterPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="400" d:DesignWidth="500">
+
+    <Border Style="{StaticResource CardStyle}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <TextBlock Grid.Row="0"
+                       Text="Exposure Parameters"
+                       Style="{StaticResource SubtitleTextStyle}"
+                       Margin="{StaticResource MediumPadding}"/>
+
+            <!-- Parameters Grid -->
+            <Grid Grid.Row="1" Margin="{StaticResource MediumPadding}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="120"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- kVp -->
+                <TextBlock Grid.Row="0" Grid.Column="0"
+                           Text="kVp"
+                           Style="{StaticResource BodyTextStyle}"
+                           VerticalAlignment="Center"/>
+                <TextBlock Grid.Row="0" Grid.Column="1"
+                           Text="{Binding KVp, StringFormat={}{0} kV}"
+                           Style="{StaticResource BodyTextStyle}"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center"/>
+                <Button Grid.Row="0" Grid.Column="2"
+                        Content="-"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Command="{Binding DecreaseKVpCommand}"
+                        Width="40"
+                        Margin="{StaticResource SmallLeftMargin}"/>
+                <Button Grid.Row="0" Grid.Column="3"
+                        Content="+"
+                        Style="{StaticResource SecondaryButtonStyle}"
+                        Command="{Binding IncreaseKVpCommand}"
+                        Width="40"
+                        Margin="{StaticResource SmallLeftMargin}"/>
+
+                <!-- mA -->
+                <TextBlock Grid.Row="1" Grid.Column="0"
+                           Text="mA"
+                           Style="{StaticResource BodyTextStyle}"
+                           VerticalAlignment="Center"
+                           Margin="{StaticResource SmallTopMargin}"/>
+                <TextBlock Grid.Row="1" Grid.Column="1"
+                           Text="{Binding MA, StringFormat={}{0} mA}"
+                           Style="{StaticResource BodyTextStyle}"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center"
+                           Margin="{StaticResource SmallTopMargin}"/>
+                <StackPanel Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2"
+                            Orientation="Horizontal"
+                            Margin="{StaticResource SmallTopMargin}">
+                    <Button Content="-"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding DecreaseMACommand}"
+                            Width="40"
+                            IsEnabled="{Binding IsReadOnly, Converter={StaticResource BoolToInverseConverter}}"/>
+                    <Button Content="+"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding IncreaseMACommand}"
+                            Width="40"
+                            Margin="{StaticResource SmallLeftMargin}"
+                            IsEnabled="{Binding IsReadOnly, Converter={StaticResource BoolToInverseConverter}}"/>
+                </StackPanel>
+
+                <!-- Exposure Time -->
+                <TextBlock Grid.Row="2" Grid.Column="0"
+                           Text="Time"
+                           Style="{StaticResource BodyTextStyle}"
+                           VerticalAlignment="Center"
+                           Margin="{StaticResource SmallTopMargin}"/>
+                <TextBlock Grid.Row="2" Grid.Column="1"
+                           Text="{Binding ExposureTimeMs, StringFormat={}{0} ms}"
+                           Style="{StaticResource BodyTextStyle}"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center"
+                           Margin="{StaticResource SmallTopMargin}"/>
+                <StackPanel Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="2"
+                            Orientation="Horizontal"
+                            Margin="{StaticResource SmallTopMargin}">
+                    <Button Content="-"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding DecreaseTimeCommand}"
+                            Width="40"
+                            IsEnabled="{Binding IsReadOnly, Converter={StaticResource BoolToInverseConverter}}"/>
+                    <Button Content="+"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding IncreaseTimeCommand}"
+                            Width="40"
+                            Margin="{StaticResource SmallLeftMargin}"
+                            IsEnabled="{Binding IsReadOnly, Converter={StaticResource BoolToInverseConverter}}"/>
+                </StackPanel>
+
+                <!-- SID -->
+                <TextBlock Grid.Row="3" Grid.Column="0"
+                           Text="SID"
+                           Style="{StaticResource BodyTextStyle}"
+                           VerticalAlignment="Center"
+                           Margin="{StaticResource SmallTopMargin}"/>
+                <TextBlock Grid.Row="3" Grid.Column="1"
+                           Text="{Binding SourceImageDistanceCm, StringFormat={}{0} cm}"
+                           Style="{StaticResource BodyTextStyle}"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center"
+                           Margin="{StaticResource SmallTopMargin}"/>
+
+                <!-- Focal Spot Size -->
+                <TextBlock Grid.Row="4" Grid.Column="0"
+                           Text="Focal Spot"
+                           Style="{StaticResource BodyTextStyle}"
+                           VerticalAlignment="Center"
+                           Margin="{StaticResource SmallTopMargin}"/>
+                <TextBlock Grid.Row="4" Grid.Column="1"
+                           Text="{Binding FocalSpotSize, Converter={StaticResource FocalSpotSizeToStringConverter}}"
+                           Style="{StaticResource BodyTextStyle}"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center"
+                           Margin="{StaticResource SmallTopMargin}"/>
+
+                <!-- mAs Display -->
+                <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="2"
+                        Grid.ColumnSpan="4"
+                        Background="{StaticResource HeaderBrush}"
+                        CornerRadius="{StaticResource SmallCornerRadius}"
+                        Padding="{StaticResource SmallPadding}"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Margin="{StaticResource SmallTopMargin}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="mAs: "
+                                   Style="{StaticResource BodyTextStyle}"
+                                   FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding Mas, StringFormat={}{0:F2} mAs}"
+                                   Style="{StaticResource BodyTextStyle}"
+                                   FontWeight="SemiBold"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- AEC Indicator -->
+                <Border Grid.Row="4" Grid.Column="2" Grid.ColumnSpan="2"
+                        Background="{Binding IsReadOnly, Converter={StaticResource AecModeToBrushConverter}}"
+                        CornerRadius="{StaticResource SmallCornerRadius}"
+                        Padding="{StaticResource SmallPadding}"
+                        Margin="{StaticResource SmallTopMargin}"
+                        Visibility="{Binding IsReadOnly, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <TextBlock Text="AEC ACTIVE"
+                               Style="{StaticResource CaptionTextStyle}"
+                               Foreground="{StaticResource WhiteBrush}"
+                               FontWeight="SemiBold"/>
+                </Border>
+            </Grid>
+
+            <!-- Apply Button -->
+            <Button Grid.Row="1"
+                    Content="Apply Parameters"
+                    Style="{StaticResource PrimaryButtonStyle}"
+                    Command="{Binding ApplyCommand}"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
+                    Margin="{StaticResource MediumPadding}"/>
+        </Grid>
+    </Border>
+</UserControl>
