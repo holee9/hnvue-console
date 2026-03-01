@@ -42,42 +42,200 @@ INFRA → IPC → HAL/IMAGING → DICOM → DOSE → WORKFLOW → UI
 
 ### 2026-03-01: SPEC-WORKFLOW-001 Phase 1-3 완료 - 상태 머신, 프로토콜, 방사선량 ✅
 
-#### Clinical Workflow State Machine Implementation
-- **WorkflowStateMachine**: 10-state clinical workflow with guard clauses and transition tracking
-- **States**: IDLE, WORKLIST_SYNC, PATIENT_SELECT, PROTOCOL_SELECT, POSITION_AND_PREVIEW, EXPOSURE_TRIGGER, QC_REVIEW, REJECT_RETAKE, MPPS_COMPLETE, PACS_EXPORT
-- **Safety-Critical Guards**: Interlock checking, dose limit validation, protocol safety limits
-- **IEC 62304 Class C**: Safety-critical state transitions for X-ray exposure control
+#### 임상 워크플로우 상태 머신 구현 (FR-WF-01 ~ FR-WF-07)
 
-#### Protocol Repository (FR-WF-08, FR-WF-09)
-- **SQLite-Backed Storage**: Protocol entity with composite key uniqueness (body_part, projection, device_model)
-- **Safety Validation**: DeviceSafetyLimits enforcement (kVp: 40-150, mA: 1-500, mAs calculation)
-- **N-to-1 Procedure Mapping**: Multiple procedure codes per protocol
-- **Performance**: 50ms or better lookup for 500+ protocols (indexed queries with COLLATE NOCASE)
-- **Case-Insensitive Search**: Body part, projection, device model matching regardless of case
+**WorkflowStateMachine 핵심 기능**
+- 10개 상태 기반 임상 워크플로우: IDLE → WORKLIST_SYNC → PATIENT_SELECT → PROTOCOL_SELECT → POSITION_AND_PREVIEW → EXPOSURE_TRIGGER → QC_REVIEW → REJECT_RETAKE → MPPS_COMPLETE → PACS_EXPORT
+- 비동기 상태 전환: TryTransitionAsync with guard clause evaluation
+- 상태 컨텍스트 바인딩: StudyContext를 통한 환자, 프로토콜, 노출 정보 추적
+- 이벤트 발행: 상태 변경 이벤트 for UI integration
 
-#### Dose Limit Integration (FR-WF-04, FR-WF-05)
-- **MultiExposureCoordinator**: Cumulative dose tracking across multi-view studies
-- **StudyDoseTracker**: Per-study dose limit checking with warning thresholds (80% of limit)
-- **DoseLimitConfiguration**: Configurable study/daily limits with default safety values
-- **Real-Time Validation**: Exposure acceptance/rejection based on projected cumulative dose
+**안전 임계 가드 (Safety-Critical Guards)**
+- InterlockChecker: 9가지 하드웨어 인터락 사전 검증
+  - IL-01: KVP_READY, IL-02: MA_READY, IL-03: COLLIMATOR_READY
+  - IL-04: DETECTOR_READY, IL-05: TABLE_POSITION_SAFE
+  - IL-06: DOOR_CLOSED, IL-07: EMERGENCY_STOP_RELEASED
+  - IL-08: AEC_READY, IL-09: PROTOCOL_VALID
+- DoseLimitGuard: 누적 방사선량 한도 사전 검증
+- ProtocolSafetyGuard: 프로토콜 안전 파라미터 검증
 
-#### State Machine Engine Components
-- **TransitionResult**: Result types (Success, InvalidState, GuardFailed, Error)
-- **GuardEvaluation**: Async guard clause evaluation with context binding
-- **StudyContext**: Stateful context for patient, protocol, exposure tracking
-- **WorkflowEngine**: Main orchestrator replacing stub implementation
+**TransitionResult 상태 타입**
+- Success: 상태 전환 성공
+- InvalidState: 현재 상태에서 전환 불가
+- GuardFailed: 가드 조건 불충족
+- Error: 시스템 오류 발생
 
-#### Testing (170 Tests, All Passing)
-- **Protocol Tests**: DeviceSafetyLimits validation, ProtocolRepository CRUD, composite key lookup
-- **Dose Tests**: DoseTrackingCoordinator limits, MultiExposureCoordinator cumulative tracking
-- **State Machine Tests**: Transition validation, guard evaluation, context management
-- **Performance Tests**: 500-protocol lookup under 50ms, multi-exposure dose tracking
+**상태별 상세 기능**
+| 상태 | 기능 | 가드 조건 |
+|------|------|-----------|
+| IDLE | 시스템 대기 상태 | - |
+| WORKLIST_SYNC | MWL 동기화 | DICOM 연결 |
+| PATIENT_SELECT | 환자 선택/등록 | 환자 ID 유효 |
+| PROTOCOL_SELECT | 촬영 프로토콜 선택 | 프로토콜 안전성 |
+| POSITION_AND_PREVIEW | 위치 정렬/프리뷰 | 장비 준비 완료 |
+| EXPOSURE_TRIGGER | 방사선 조사 | 모든 인터락 통과 |
+| QC_REVIEW | 이미지 품질 검토 | 이미지 존재 |
+| REJECT_RETAKE | 재촬영 처리 | 재촬영 횟수 < 3 |
+| MPPS_COMPLETE | MPPS 전송 완료 | DICOM 연결 |
+| PACS_EXPORT | PACS 송신 | DICOM 연결 |
 
-#### Technical Details
-- **Platform**: .NET 8, C# 12
-- **Database**: SQLite with WAL mode for concurrent access
-- **Files**: 6 protocol files, 4 dose files, 3 state machine files, 1 engine orchestrator
-- **Tests**: 170/170 passing (37 dose + 133 protocol/state machine)
+---
+
+#### 프로토콜 저장소 구현 (FR-WF-08, FR-WF-09)
+
+**Protocol 엔티티 구조**
+- ProtocolId: 고유 식별자 (GUID)
+- BodyPart: 촬영 부위 (CHEST, ABDOMEN, PELVIS 등)
+- Projection: 투영 방식 (PA, AP, LATERAL, OBLIQUE 등)
+- Kv: 관 전압 (40-150 kVp)
+- Ma: 관 전류 (1-500 mA)
+- ExposureTimeMs: 노출 시간 (1-3000 ms)
+- CalculatedMas: 계산된 mAs = Kv × Ma × ExposureTime / 1000
+- AecMode: AEC 모드 (Disabled, Enabled, Override)
+- DeviceModel: 장치 모델 (HVG-3000 등)
+- CompositeKey: BodyPart|Projection|DeviceModel 고유 키
+
+**DeviceSafetyLimits 안전 검증**
+| 파라미터 | 최소값 | 최대값 | 단위 |
+|---------|--------|--------|------|
+| MinKvp | 40 | - | kVp |
+| MaxKvp | - | 150 | kVp |
+| MinMa | 1 | - | mA |
+| MaxMa | - | 500 | mA |
+| MaxExposureTimeMs | - | 3000 | ms |
+| MaxMas | - | 2000 | mAs |
+
+**ProtocolRepository 기능**
+- CreateAsync: 프로토콜 생성 + 안전 검증
+- UpdateAsync: 프로토콜 수정 + 안전 검증
+- DeleteAsync: 소프트 삭제 (is_active = 0)
+- GetByCompositeKeyAsync: 복합 키 조회 (< 50ms)
+- GetProtocolsByBodyPartAsync: 부위별 조회
+- GetByProcedureCodeAsync: 진단 코드별 조회
+- GetAllAsync: 전체 활성 프로토콜 조회
+
+**SQLite 스키마**
+```sql
+CREATE UNIQUE INDEX idx_protocols_composite_unique
+  ON protocols(body_part COLLATE NOCASE, projection COLLATE NOCASE, device_model COLLATE NOCASE);
+
+CREATE INDEX idx_protocols_body_part ON protocols(body_part);
+CREATE INDEX idx_protocols_active ON protocols(is_active);
+```
+
+**성능 최적화**
+- WAL 모드: 동시 읽기/쓰기 지원
+- 인덱싱: 복합 키 고유 인덱스, 부위 검색 인덱스
+- 대소문자 무시: COLLATE NOCASE로 검색
+- 조회 성능: 500개 프로토콜 기준 < 50ms
+
+---
+
+#### 방사선량 한도 통합 (FR-WF-04, FR-WF-05)
+
+**MultiExposureCoordinator 다중 노출 추적**
+- Study별 누적 방사선량 추적
+- 다중 뷰 촬영 지원 (PA, LATERAL, OBLIQUE 등)
+- 노출 기록 관리 (ExposureRecord)
+
+**StudyDoseTracker 임상 용량 추적**
+- StudyDoseLimit: 연구당 방사선량 한도 (기본 1000 mAs)
+- DailyDoseLimit: 일일 방사선량 한도 (기본 5000 mAs)
+- WarningThresholdPercent: 경고 임계값 (기본 80%)
+- IsWithinLimits: 한도 내 여부 판단
+- TotalDap: 총 Dose-Area Product
+
+**DoseLimitConfiguration 설정**
+```csharp
+public class DoseLimitConfiguration
+{
+    public decimal StudyDoseLimit { get; set; } = 1000m;      // mAs
+    public decimal DailyDoseLimit { get; set; } = 5000m;      // mAs
+    public decimal WarningThresholdPercent { get; set; } = 0.8m; // 80%
+}
+```
+
+**실시간 검증 흐름**
+1. 노출 전: CheckDoseLimits(projectedDose) 호출
+2. 예상 용량 계산: TotalDap + ProjectedDap
+3. 한도 검증: StudyDoseLimit, DailyDoseLimit 비교
+4. 경고 발생: 80% 도달 시 경고
+5. 거부: 한도 초과 시 노출 거부
+
+---
+
+#### WorkflowEngine 메인 오케스트레이터
+
+**IWorkflowEngine 인터페이스 구현**
+- TryTransitionAsync: 비동기 상태 전환
+- GetCurrentStateAsync: 현재 상태 조회
+- GetStudyContextAsync: 연구 컨텍스트 조회
+- SubscribeToEvents: 상태 변경 이벤트 구독
+
+**WorkflowEngine 교체**
+- WorkflowEngineStub 삭제
+- WorkflowStateMachine 기반 실제 구현으로 대체
+- 10개 상태 핸들러 통합
+- Guard clause 평가 통합
+
+---
+
+#### 테스트 (170개, 전체 통과)
+
+**프로토콜 테스트 (50개)**
+| 테스트 파일 | 테스트 수 | 설명 |
+|-------------|----------|------|
+| DeviceSafetyLimitsTests | 12 | 안전 한도 검증 |
+| ProtocolRepositoryTests | 28 | CRUD, 복합 키 조회 |
+| ProtocolTests | 10 | 엔티티 검증 |
+
+**방사선량 테스트 (37개)**
+| 테스트 파일 | 테스트 수 | 설명 |
+|-------------|----------|------|
+| DoseTrackingCoordinatorTests | 15 | 용량 추적, 한도 검증 |
+| MultiExposureCoordinatorTests | 12 | 다중 노출 추적 |
+| ExposureCollectionTests | 10 | 노출 기록 관리 |
+
+**상태 머신 테스트 (83개)**
+| 테스트 파일 | 테스트 수 | 설명 |
+|-------------|----------|------|
+| WorkflowStateMachineTests | 35 | 상태 전환, 가드 평가 |
+| TransitionResultTests | 18 | 전환 결과 검증 |
+| GuardEvaluationTypesTests | 15 | 가드 타입 검증 |
+| StudyContextTests | 15 | 컨텍스트 관리 |
+
+**성능 테스트**
+- CompositeKeyLookupPerformance: 500개 프로토콜 < 50ms 조회
+- MultiExposureDoseTracking: 다중 노출 누적 추적
+
+---
+
+#### 기술 사양
+
+**플랫폼**
+- .NET 8 LTS
+- C# 12
+- Windows 10/11
+
+**데이터베이스**
+- SQLite 3.x
+- WAL 모드 (Write-Ahead Logging)
+- COLLATE NOCASE (대소문자 무시)
+
+**안전 분류**
+- IEC 62304 Class C (방사선 조사 제어)
+
+**파일 구성**
+- Protocol: 6 files (Protocol, ProtocolRepository, DeviceSafetyLimits, IProtocolRepository, ProtocolStub, enums)
+- Dose: 4 files (DoseTrackingCoordinator, MultiExposureCollection, DoseLimitConfiguration, ExposureRecord)
+- StateMachine: 3 files (WorkflowStateMachine, TransitionResult, GuardEvaluationTypes)
+- Engine: 1 file (WorkflowEngine)
+
+**테스트 커버리지**
+- 총 170개 테스트 통과
+- 프로토콜: 50개
+- 방사선량: 37개
+- 상태 머신: 83개
 
 ---
 
@@ -239,18 +397,14 @@ hnvue-console/
 │   │   ├── Display/         # ✅ Dose Display Notifier
 │   │   ├── Alerting/        # ✅ DRL Comparison
 │   │   └── RDSR/            # ✅ RDSR Data Provider
-│   ├── HnVue.Workflow/      # 🔄 Workflow Engine (Phase 1-3 Complete)
-│   │   ├── StateMachine/    # ✅ State Machine, Transition Guards
-│   │   ├── States/          # ✅ 10 State Handlers
-│   │   ├── Safety/          # ✅ Interlock Checker
-│   │   ├── Journal/         # ✅ SQLite Workflow Journal
-│   │   ├── Study/           # ✅ Study Context, Multi-Exposure
-│   │   ├── Protocol/        # ✅ Protocol Validator
-│   │   ├── Dose/            # ✅ Dose Tracking Coordinator
-│   │   ├── RejectRetake/    # ✅ Reject/Retake Coordinator
-│   │   ├── Events/          # ✅ IPC Event Publisher
-│   │   ├── Recovery/        # ✅ Crash Recovery Service
-│   │   └── Interfaces/      # ✅ HAL Interfaces
+│   ├── HnVue.Workflow/      # ✅ Workflow Engine (Phase 1-3 Complete)
+│   │   ├── StateMachine/    # ✅ WorkflowStateMachine, TransitionResult, GuardEvaluation
+│   │   ├── States/          # ✅ StudyContext (Patient, Protocol, Exposure tracking)
+│   │   ├── Safety/          # ✅ InterlockChecker (9 interlocks)
+│   │   ├── Study/           # ✅ MultiExposureCollection (Dose tracking)
+│   │   ├── Protocol/        # ✅ Protocol, ProtocolRepository, DeviceSafetyLimits
+│   │   ├── Dose/            # ✅ DoseTrackingCoordinator, DoseLimitConfiguration
+│   │   └── WorkflowEngine.cs # ✅ Main orchestrator (replaces stub)
 │   └── HnVue.Console/       # 🔄 WPF GUI (Phase 1 Complete)
 │       ├── ViewModels/      # ✅ 16 ViewModels (Patient, Worklist, Acquisition, etc.)
 │       ├── Views/           # ✅ 10+ Views (Patient, Worklist, Acquisition, ImageReview, etc.)
@@ -268,7 +422,7 @@ hnvue-console/
 │   ├── cpp/                 # C++ tests (Google Test)
 │   ├── csharp/              # C# tests (xUnit)
 │   │   ├── HnVue.Dose.Tests/        # ✅ 222 tests
-│   │   ├── HnVue.Workflow.Tests/    # ✅ 89 tests
+│   │   ├── HnVue.Workflow.Tests/    # ✅ 170 tests (37 Dose + 133 Protocol/StateMachine)
 │   │   └── HnVue.Console.Tests/     # ✅ 13 ViewModel tests + MVVM compliance tests
 │   └── integration/         # Integration tests
 └── .moai/                   # MoAI-ADK configuration
