@@ -1,7 +1,12 @@
 using FluentAssertions;
+using HnVue.Workflow.Events;
+using HnVue.Workflow.Interfaces;
+using HnVue.Workflow.Journal;
+using HnVue.Workflow.Safety;
 using HnVue.Workflow.States;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using Xunit;
 
 namespace HnVue.Workflow.Tests.Integration;
@@ -18,6 +23,13 @@ public class WorkflowIntegrationTests
     {
         var loggerFactory = NullLoggerFactory.Instance;
 
+        // Create mock dependencies for ExposureTriggerHandler
+        var mockSafetyInterlock = new Mock<ISafetyInterlock>();
+        var mockHvgDriver = new Mock<IHvgDriver>();
+        var mockDoseTracker = new Mock<IDoseTracker>();
+        var mockJournal = new Mock<IWorkflowJournal>();
+        var mockEventPublisher = new Mock<IWorkflowEventPublisher>();
+
         _handlers = new Dictionary<WorkflowState, IStateHandler>
         {
             { WorkflowState.Idle, new IdleHandler(loggerFactory.CreateLogger<IdleHandler>()) },
@@ -25,7 +37,13 @@ public class WorkflowIntegrationTests
             { WorkflowState.ProtocolSelect, new ProtocolSelectHandler(loggerFactory.CreateLogger<ProtocolSelectHandler>()) },
             { WorkflowState.WorklistSync, new WorklistSyncHandler(loggerFactory.CreateLogger<WorklistSyncHandler>()) },
             { WorkflowState.PositionAndPreview, new PositioningAndPreviewHandler(loggerFactory.CreateLogger<PositioningAndPreviewHandler>()) },
-            { WorkflowState.ExposureTrigger, new ExposureTriggerHandler(loggerFactory.CreateLogger<ExposureTriggerHandler>()) },
+            { WorkflowState.ExposureTrigger, new ExposureTriggerHandler(
+                loggerFactory.CreateLogger<ExposureTriggerHandler>(),
+                mockSafetyInterlock.Object,
+                mockHvgDriver.Object,
+                mockDoseTracker.Object,
+                mockJournal.Object,
+                mockEventPublisher.Object) },
             { WorkflowState.QcReview, new QcReviewHandler(loggerFactory.CreateLogger<QcReviewHandler>()) },
             { WorkflowState.RejectRetake, new RejectRetakeHandler(loggerFactory.CreateLogger<RejectRetakeHandler>()) },
             { WorkflowState.MppsComplete, new MppsCompleteHandler(loggerFactory.CreateLogger<MppsCompleteHandler>()) },

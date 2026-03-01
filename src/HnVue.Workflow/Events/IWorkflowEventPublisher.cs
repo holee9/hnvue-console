@@ -23,6 +23,14 @@ public interface IWorkflowEventPublisher
     Task PublishEventAsync(WorkflowEvent @event, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Publishes a notification to the operator (GUI).
+    /// </summary>
+    /// <param name="notification">The notification to publish.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    Task PublishNotificationAsync(OperatorNotification notification, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Gets a channel reader for subscribing to workflow events.
     /// </summary>
     /// <returns>A channel reader for receiving workflow events.</returns>
@@ -174,6 +182,21 @@ public sealed class InMemoryWorkflowEventPublisher : IWorkflowEventPublisher, ID
     }
 
     /// <inheritdoc/>
+    public async Task PublishNotificationAsync(OperatorNotification notification, CancellationToken cancellationToken = default)
+    {
+        // Create a notification event
+        var notificationEvent = new WorkflowEvent
+        {
+            EventId = Guid.NewGuid().ToString(),
+            Timestamp = DateTimeOffset.UtcNow,
+            Type = WorkflowEventType.Warning, // Use Warning type for notifications
+            Data = notification
+        };
+
+        await PublishEventAsync(notificationEvent, cancellationToken);
+    }
+
+    /// <inheritdoc/>
     public ChannelReader<WorkflowEvent> Subscribe()
     {
         return _eventChannel.Reader;
@@ -199,6 +222,34 @@ public sealed class InMemoryWorkflowEventPublisher : IWorkflowEventPublisher, ID
         }
         _cts.Dispose();
     }
+}
+
+/// <summary>
+/// Notification sent to the operator via IPC.
+/// </summary>
+public record OperatorNotification
+{
+    /// <summary>Notification title.</summary>
+    public required string Title { get; init; }
+    /// <summary>Notification message.</summary>
+    public required string Message { get; init; }
+    /// <summary>Notification severity.</summary>
+    public NotificationSeverity Severity { get; init; } = NotificationSeverity.Info;
+    /// <summary>Whether operator action is required.</summary>
+    public bool RequiresAction { get; init; }
+    public DateTime Timestamp { get; init; } = DateTime.UtcNow;
+    public string? ActionLabel { get; init; }
+}
+
+/// <summary>
+/// Severity levels for operator notifications.
+/// </summary>
+public enum NotificationSeverity
+{
+    Info,
+    Warning,
+    Error,
+    Critical
 }
 
 /// <summary>

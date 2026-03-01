@@ -8,13 +8,15 @@ using HnVue.Workflow.StateMachine;
 using HnVue.Workflow.Journal;
 using HnVue.Workflow.Safety;
 using HnVue.Workflow.Interfaces;
+using HnVue.Workflow.States;
+using StateMachineWorkflowState = HnVue.Workflow.StateMachine.WorkflowState;
 
 // Temporary stubs for pre-existing test files
 // TODO: Implement actual IWorkflowEngine and WorkflowEngine
 
 public interface IWorkflowEngine
 {
-    WorkflowState CurrentState { get; }
+    StateMachineWorkflowState CurrentState { get; }
     event EventHandler<StateChangedEventArgs> StateChanged;
     Task StartWorklistSyncAsync(CancellationToken cancellationToken = default);
     Task ConfirmPatientAsync(Study.PatientInfo patient, CancellationToken cancellationToken = default);
@@ -31,11 +33,26 @@ public interface IWorkflowEngine
     Task StartEmergencyWorkflowAsync(Study.PatientInfo patient, CancellationToken cancellationToken = default);
     Task AbortStudyAsync(string authorizedOperator, CancellationToken cancellationToken = default);
     Task<RecoveryContext?> PerformCrashRecoveryAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Handles a critical hardware error by initiating emergency shutdown sequence.
+    /// SPEC-WORKFLOW-001 Safety T-18: ANY -> IDLE (CriticalHardwareError)
+    /// </summary>
+    /// <param name="errorEvent">The critical hardware error event.</param>
+    /// <param name="currentStudyContext">The current study context (if any).</param>
+    /// <param name="operatorId">The operator ID for audit logging.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Result of the emergency shutdown sequence.</returns>
+    Task<EmergencyShutdownResult> HandleCriticalHardwareErrorAsync(
+        CriticalHardwareErrorEvent errorEvent,
+        StudyContext? currentStudyContext,
+        string operatorId,
+        CancellationToken cancellationToken = default);
 }
 
 public class StateChangedEventArgs : EventArgs
 {
-    public WorkflowState? NewState { get; init; }
+    public StateMachineWorkflowState? NewState { get; init; }
 }
 
 public class WorkflowEngine : IWorkflowEngine
@@ -46,6 +63,7 @@ public class WorkflowEngine : IWorkflowEngine
     private readonly IHvgDriver _hvgDriver;
     private readonly IDetector _detector;
     private readonly IDoseTracker _doseTracker;
+    private readonly SafetyEventHandler _safetyEventHandler;
 
     public WorkflowEngine(
         ILogger<WorkflowEngine> logger,
@@ -53,7 +71,8 @@ public class WorkflowEngine : IWorkflowEngine
         ISafetyInterlock safetyInterlock,
         IHvgDriver hvgDriver,
         IDetector detector,
-        IDoseTracker doseTracker)
+        IDoseTracker doseTracker,
+        SafetyEventHandler safetyEventHandler)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _journal = journal ?? throw new ArgumentNullException(nameof(journal));
@@ -61,37 +80,38 @@ public class WorkflowEngine : IWorkflowEngine
         _hvgDriver = hvgDriver ?? throw new ArgumentNullException(nameof(hvgDriver));
         _detector = detector ?? throw new ArgumentNullException(nameof(detector));
         _doseTracker = doseTracker ?? throw new ArgumentNullException(nameof(doseTracker));
+        _safetyEventHandler = safetyEventHandler ?? throw new ArgumentNullException(nameof(safetyEventHandler));
 
-        CurrentState = WorkflowState.Idle;
+        CurrentState = StateMachineWorkflowState.Idle;
     }
 
-    public WorkflowState CurrentState { get; private set; }
+    public StateMachineWorkflowState CurrentState { get; private set; }
 
     public event EventHandler<StateChangedEventArgs>? StateChanged;
 
-    protected virtual void OnStateChanged(WorkflowState? newState)
+    protected virtual void OnStateChanged(StateMachineWorkflowState? newState)
     {
         StateChanged?.Invoke(this, new StateChangedEventArgs { NewState = newState });
     }
 
     public Task StartWorklistSyncAsync(CancellationToken cancellationToken = default)
     {
-        CurrentState = WorkflowState.WorklistSync;
-        OnStateChanged(WorkflowState.WorklistSync);
+        CurrentState = StateMachineWorkflowState.WorklistSync;
+        OnStateChanged(StateMachineWorkflowState.WorklistSync);
         return Task.CompletedTask;
     }
 
     public Task ConfirmPatientAsync(Study.PatientInfo patient, CancellationToken cancellationToken = default)
     {
-        CurrentState = WorkflowState.PatientSelect;
-        OnStateChanged(WorkflowState.PatientSelect);
+        CurrentState = StateMachineWorkflowState.PatientSelect;
+        OnStateChanged(StateMachineWorkflowState.PatientSelect);
         return Task.CompletedTask;
     }
 
     public Task ConfirmProtocolAsync(Protocol.Protocol protocol, CancellationToken cancellationToken = default)
     {
         var oldState = CurrentState;
-        CurrentState = WorkflowState.ProtocolSelect;
+        CurrentState = StateMachineWorkflowState.ProtocolSelect;
 
         // Only raise event if state actually changed
         if (oldState != CurrentState)
@@ -104,8 +124,8 @@ public class WorkflowEngine : IWorkflowEngine
 
     public async Task ReadyForExposureAsync(CancellationToken cancellationToken = default)
     {
-        CurrentState = WorkflowState.PositionAndPreview;
-        OnStateChanged(WorkflowState.PositionAndPreview);
+        CurrentState = StateMachineWorkflowState.PositionAndPreview;
+        OnStateChanged(StateMachineWorkflowState.PositionAndPreview);
 
         // Check interlocks before transitioning to ExposureTrigger
         var status = await _safetyInterlock.CheckAllInterlocksAsync(cancellationToken);
@@ -124,8 +144,8 @@ public class WorkflowEngine : IWorkflowEngine
         if (allInterlocksPassed)
         {
             // Interlocks passed - transition to ExposureTrigger
-            CurrentState = WorkflowState.ExposureTrigger;
-            OnStateChanged(WorkflowState.ExposureTrigger);
+            CurrentState = StateMachineWorkflowState.ExposureTrigger;
+            OnStateChanged(StateMachineWorkflowState.ExposureTrigger);
         }
         // If interlocks fail, remain in PositionAndPreview (no state change)
 
@@ -134,15 +154,15 @@ public class WorkflowEngine : IWorkflowEngine
 
     public Task TriggerExposureAsync(CancellationToken cancellationToken = default)
     {
-        CurrentState = WorkflowState.ExposureTrigger;
-        OnStateChanged(WorkflowState.ExposureTrigger);
+        CurrentState = StateMachineWorkflowState.ExposureTrigger;
+        OnStateChanged(StateMachineWorkflowState.ExposureTrigger);
         return Task.CompletedTask;
     }
 
     public Task OnExposureCompleteAsync(Study.ImageData imageData, CancellationToken cancellationToken = default)
     {
-        CurrentState = WorkflowState.QcReview;
-        OnStateChanged(WorkflowState.QcReview);
+        CurrentState = StateMachineWorkflowState.QcReview;
+        OnStateChanged(StateMachineWorkflowState.QcReview);
         return Task.CompletedTask;
     }
 
@@ -150,11 +170,11 @@ public class WorkflowEngine : IWorkflowEngine
     {
         if (hasMoreExposures)
         {
-            CurrentState = WorkflowState.ProtocolSelect;
+            CurrentState = StateMachineWorkflowState.ProtocolSelect;
         }
         else
         {
-            CurrentState = WorkflowState.MppsComplete;
+            CurrentState = StateMachineWorkflowState.MppsComplete;
         }
         OnStateChanged(CurrentState);
         return Task.CompletedTask;
@@ -162,51 +182,98 @@ public class WorkflowEngine : IWorkflowEngine
 
     public Task RejectImageAsync(Study.RejectReason reason, string operatorId, CancellationToken cancellationToken = default)
     {
-        CurrentState = WorkflowState.RejectRetake;
-        OnStateChanged(WorkflowState.RejectRetake);
+        CurrentState = StateMachineWorkflowState.RejectRetake;
+        OnStateChanged(StateMachineWorkflowState.RejectRetake);
         return Task.CompletedTask;
     }
 
     public Task ApproveRetakeAsync(CancellationToken cancellationToken = default)
     {
-        CurrentState = WorkflowState.PositionAndPreview;
-        OnStateChanged(WorkflowState.PositionAndPreview);
+        CurrentState = StateMachineWorkflowState.PositionAndPreview;
+        OnStateChanged(StateMachineWorkflowState.PositionAndPreview);
         return Task.CompletedTask;
     }
 
     public Task CancelRetakeAsync(CancellationToken cancellationToken = default)
     {
-        CurrentState = WorkflowState.MppsComplete;
-        OnStateChanged(WorkflowState.MppsComplete);
+        CurrentState = StateMachineWorkflowState.MppsComplete;
+        OnStateChanged(StateMachineWorkflowState.MppsComplete);
         return Task.CompletedTask;
     }
 
     public Task FinalizeStudyAsync(CancellationToken cancellationToken = default)
     {
-        CurrentState = WorkflowState.PacsExport;
-        OnStateChanged(WorkflowState.PacsExport);
+        CurrentState = StateMachineWorkflowState.PacsExport;
+        OnStateChanged(StateMachineWorkflowState.PacsExport);
         return Task.CompletedTask;
     }
 
     public Task CompleteExportAsync(CancellationToken cancellationToken = default)
     {
-        CurrentState = WorkflowState.Idle;
-        OnStateChanged(WorkflowState.Idle);
+        CurrentState = StateMachineWorkflowState.Idle;
+        OnStateChanged(StateMachineWorkflowState.Idle);
         return Task.CompletedTask;
     }
 
     public Task StartEmergencyWorkflowAsync(Study.PatientInfo patient, CancellationToken cancellationToken = default)
     {
-        CurrentState = WorkflowState.PatientSelect;
-        OnStateChanged(WorkflowState.PatientSelect);
+        CurrentState = StateMachineWorkflowState.PatientSelect;
+        OnStateChanged(StateMachineWorkflowState.PatientSelect);
         return Task.CompletedTask;
     }
 
     public Task AbortStudyAsync(string authorizedOperator, CancellationToken cancellationToken = default)
     {
-        CurrentState = WorkflowState.Idle;
-        OnStateChanged(WorkflowState.Idle);
+        CurrentState = StateMachineWorkflowState.Idle;
+        OnStateChanged(StateMachineWorkflowState.Idle);
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Handles a critical hardware error by initiating emergency shutdown sequence.
+    /// SPEC-WORKFLOW-001 Safety T-18: ANY -> IDLE (CriticalHardwareError)
+    ///
+    /// This method:
+    /// 1. Invokes SafetyEventHandler to perform emergency shutdown (abort exposure, standby hardware, etc.)
+    /// 2. Transitions the state machine to IDLE
+    /// 3. Returns the result of the emergency shutdown sequence
+    /// </summary>
+    /// <param name="errorEvent">The critical hardware error event.</param>
+    /// <param name="currentStudyContext">The current study context (if any).</param>
+    /// <param name="operatorId">The operator ID for audit logging.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Result of the emergency shutdown sequence.</returns>
+    public async Task<EmergencyShutdownResult> HandleCriticalHardwareErrorAsync(
+        CriticalHardwareErrorEvent errorEvent,
+        StudyContext? currentStudyContext,
+        string operatorId,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogCritical(
+            "CRITICAL HARDWARE ERROR in WorkflowEngine: {ErrorCode} - {ErrorDescription}",
+            errorEvent.ErrorCode,
+            errorEvent.ErrorDescription);
+
+        // Step 1: Execute emergency shutdown sequence via SafetyEventHandler
+        var shutdownResult = await _safetyEventHandler.HandleCriticalHardwareErrorAsync(
+            errorEvent,
+            currentStudyContext,
+            operatorId,
+            cancellationToken);
+
+        // Step 2: Transition state machine to IDLE
+        // Note: In a full implementation, this would use WorkflowStateMachine.TryTransitionAsync
+        // For the stub, we directly set the state
+        var previousState = CurrentState;
+        CurrentState = StateMachineWorkflowState.Idle;
+
+        _logger.LogInformation(
+            "State transitioned from {PreviousState} to IDLE due to critical hardware error",
+            previousState);
+
+        OnStateChanged(StateMachineWorkflowState.Idle);
+
+        return shutdownResult;
     }
 
     public Task<RecoveryContext?> PerformCrashRecoveryAsync(CancellationToken cancellationToken = default)
@@ -215,7 +282,7 @@ public class WorkflowEngine : IWorkflowEngine
         return Task.FromResult<RecoveryContext?>(new RecoveryContext
         {
             StudyInstanceUID = "1.2.3.4.5.100",
-            StateAtCrash = WorkflowState.PositionAndPreview,
+            StateAtCrash = StateMachineWorkflowState.PositionAndPreview,
             PatientID = "PATIENT001"
         });
     }
@@ -224,6 +291,6 @@ public class WorkflowEngine : IWorkflowEngine
 public class RecoveryContext
 {
     public string StudyInstanceUID { get; set; } = string.Empty;
-    public WorkflowState StateAtCrash { get; set; }
+    public StateMachineWorkflowState StateAtCrash { get; set; }
     public string PatientID { get; set; } = string.Empty;
 }

@@ -26,7 +26,7 @@ public class ProtocolSelectHandlerTests
             StudyId = "STUDY-001",
             PatientId = "PATIENT-001",
             CurrentState = WorkflowState.ProtocolSelect,
-            Metadata = new Dictionary<string, object>
+            Metadata = new Dictionary<string, object?>
             {
                 { "protocol", "CHEST_PA" }
             }
@@ -37,7 +37,7 @@ public class ProtocolSelectHandlerTests
             StudyId = "STUDY-002",
             PatientId = "PATIENT-002",
             CurrentState = WorkflowState.ProtocolSelect,
-            Metadata = new Dictionary<string, object>()
+            Metadata = new Dictionary<string, object?>()
         };
     }
 

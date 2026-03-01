@@ -1,7 +1,12 @@
 using FluentAssertions;
+using HnVue.Workflow.Events;
+using HnVue.Workflow.Interfaces;
+using HnVue.Workflow.Journal;
+using HnVue.Workflow.Safety;
 using HnVue.Workflow.States;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using Xunit;
 
 namespace HnVue.Workflow.Tests.States;
@@ -12,13 +17,31 @@ namespace HnVue.Workflow.Tests.States;
 /// </summary>
 public class ExposureTriggerHandlerTests
 {
+    private readonly Mock<ILogger<ExposureTriggerHandler>> _loggerMock;
+    private readonly Mock<ISafetyInterlock> _safetyInterlockMock;
+    private readonly Mock<IHvgDriver> _hvgDriverMock;
+    private readonly Mock<IDoseTracker> _doseTrackerMock;
+    private readonly Mock<IWorkflowJournal> _journalMock;
+    private readonly Mock<IWorkflowEventPublisher> _eventPublisherMock;
     private readonly ExposureTriggerHandler _sut;
     private readonly StudyContext _context;
 
     public ExposureTriggerHandlerTests()
     {
-        var logger = new NullLogger<ExposureTriggerHandler>();
-        _sut = new ExposureTriggerHandler(logger);
+        _loggerMock = new Mock<ILogger<ExposureTriggerHandler>>();
+        _safetyInterlockMock = new Mock<ISafetyInterlock>();
+        _hvgDriverMock = new Mock<IHvgDriver>();
+        _doseTrackerMock = new Mock<IDoseTracker>();
+        _journalMock = new Mock<IWorkflowJournal>();
+        _eventPublisherMock = new Mock<IWorkflowEventPublisher>();
+
+        _sut = new ExposureTriggerHandler(
+            _loggerMock.Object,
+            _safetyInterlockMock.Object,
+            _hvgDriverMock.Object,
+            _doseTrackerMock.Object,
+            _journalMock.Object,
+            _eventPublisherMock.Object);
 
         _context = new StudyContext
         {
@@ -76,4 +99,18 @@ public class ExposureTriggerHandlerTests
         // Assert
         state.Should().Be(WorkflowState.ExposureTrigger);
     }
+
+    #region Mid-Exposure Interlock Monitoring Tests (T-08/T-09)
+
+    [Fact]
+    public void IsExposureActive_Initially_ReturnsFalse()
+    {
+        // Arrange & Act
+        var isActive = _sut.IsExposureActive;
+
+        // Assert
+        isActive.Should().BeFalse();
+    }
+
+    #endregion
 }
