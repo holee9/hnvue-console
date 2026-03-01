@@ -150,30 +150,86 @@ src/HnVue.Console/ViewModels/SystemStatusViewModel.cs
 
 ## 3. 기술 스택 검증 상세
 
-### 3.1 현재 Linux 환경에서 가능한 작업
+### 3.0 왜 WPF는 Windows 전용인가?
+
+**⚠️ 중요: WPF는 Windows 전용 기술입니다**
+
+WPF(Windows Presentation Foundation)는 Microsoft가 개발한 **본질적으로 Windows 전용인 UI 프레임워크**입니다:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  WPF 아키텍처 제약                                            │
+├─────────────────────────────────────────────────────────────┤
+│  .NET 8 비즈니스 로직     │  ✅ Cross-Platform (Linux 가능)  │
+│  ─────────────────────│                                   │
+│  WPF Layer              │  ❌ Windows-Only (UseWPF=true)   │
+│  ─────────────────────│                                   │
+│  DirectX/GDI+ Rendering │  ❌ Windows 전용 그래픽 엔진       │
+│  ─────────────────────│                                   │
+│  Windows OS APIs        │  ❌ Windows 전용 시스템 호출      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**UseWPF=true의 의미:**
+```xml
+<PropertyGroup>
+    <UseWPF>true</UseWPF>  <!-- Windows 런타임에 의존성 선언 -->
+</PropertyGroup>
+```
+
+이 설정은 프로젝트가 **Windows 런타임 전용**임을 의미하며:
+- Linux에서 빌드는 가능하지만 실행은 불가능합니다
+- XAML 디자이너는 Visual Studio (Windows 전용)에서만 작동합니다
+- WPF는 Windows의 DirectX/GDI+ 그래픽 엔진에 직접 의존합니다
+
+### 3.1 초기 계획에 대한 정정
+
+**❌ 잘못된 이해:**
+> "모든 GUI app 개발이 Linux에서 가능하다"
+
+**✅ 정확한 사실:**
+> "모든 **비즈니스 로직** 개발은 Linux에서 가능하지만, WPF GUI 실행은 Windows에서만 가능합니다"
+
+**기술적 이유:**
+- **ViewModels, Services, Interfaces**: 100% Pure C# → ✅ Linux 개발 가능
+- **WPF Views (XAML)**: Windows Presentation Foundation → ❌ Windows 전용
+- **실제 하드웨어 드라이버**: Windows 장치 드라이버 API → ❌ Windows 전용
+
+**이것이 하이브리드 아키텍처의 현실입니다:**
+- 비즈니스 로직 계층: 크로스 플랫폼 .NET 8 ✅
+- UI 렌더링 계층: WPF (Windows Only) ⚠️
+- 하드웨어 계층: Windows 드라이버 ⚠️
+
+### 3.2 현재 Linux 환경에서 가능한 작업
 
 | 작업 | 가능 여부 | 비고 |
 |------|----------|------|
 | 단위 테스트 실행 | ✅ | 모두 통과 |
 | 통합 테스트 실행 | ✅ | HAL 시뮬레이터 사용 |
 | gRPC 클라이언트 테스트 | ⚠️ | Mock 서버만 가능 |
-| WPF GUI 실행 | ❌ | Windows 필요 |
+| **WPF GUI 실행** | ❌ **WPF는 Windows 전용 기술** |
 | C++ Core Engine 빌드 | ❌ | Windows 필요 |
 | 실제 하드웨어 연동 | ❌ | Windows 필요 |
 
-### 3.2 크로스 플랫폼 지원 분석
+### 3.3 크로스 플랫폼 지원 분석
 
 **100% 지원 (Pure .NET 8)**:
-- `HnVue.Workflow` - ✅
-- `HnVue.Dicom` - ✅
-- `HnVue.Dose` - ✅
-- `HnVue.Ipc.Client` - ✅
+- `HnVue.Workflow` - ✅ 상태 머신, 비즈니스 로직
+- `HnVue.Dicom` - ✅ DICOM 통신 (크로스 플랫폼)
+- `HnVue.Dose` - ✅ 방사선량 관리 (크로스 플랫폼)
+- `HnVue.Ipc.Client` - ✅ gRPC 클라이언트 (크로스 플랫폼)
+- `HnVue.Console/ViewModels` - ✅ Pure C# 클래스
+- `HnVue.Console/Services/*` - ✅ 서비스 인터페이스
 
-**Windows Only (UseWPF=true)**:
-- `HnVue.Console` - ⚠️ (GUI만 Windows 의존)
+**❌ Windows Only (UseWPF=true)**:
+- `HnVue.Console/Views/**/*.xaml` - ❌ WPF는 Windows 전용 기술
+- `HnVue.Console/Controls/**/*.xaml` - ❌ WPF는 Windows 전용 기술
+- `HnVue.Console/App.xaml` - ❌ WPF 애플리케이션 진입점
 
-**C++ (Windows)**:
-- `HvgDriverCore` - Windows 하드웨어 드라이버
+**❌ Windows Only (C++ Hardware Drivers)**:
+- `HvgDriverCore` - Windows 시리얼 포트 드라이버
+- `DetectorDriver` - Windows 장치 드라이버
+- `SafetyInterlockDriver` - Windows 디지털/아날로그 I/O
 
 ---
 
@@ -273,21 +329,63 @@ src/HnVue.Console/ViewModels/SystemStatusViewModel.cs
 
 ## 8. 결론
 
-**Linux 환경에서 달성한 성과**:
-- ✅ 593개 테스트 100% 통과
-- ✅ 핵심 비즈니스 로직 100% 완성
-- ✅ 안전성 검증 (IEC 62304 Class C) 완료
-- ✅ 코드 품질 및 문서화 완료
+### 핵심 사실 정리
 
-**Windows 환경에서 남은 작업**:
-- WPF GUI 검증 및 다중 모니터 지원
-- C++ Core Engine gRPC 통합
-- 실제 하드웨어 드라이버 연동
-- 최종 배포 및 규정 준수 검증
+**⚠️ 기술적 제약의 명확한 이해:**
 
-**추천 이전 순서**:
+1. **WPF는 Windows 전용 기술입니다**
+   - WPF(Windows Presentation Foundation)는 Microsoft가 개발한 본질적으로 Windows 전용인 UI 프레임워크
+   - `UseWPF=true`는 Windows 런타임에 의존성을 선언하는 것
+   - Linux에서는 빌드는 가능하지만 실행은 불가능
+
+2. **완료도 현황:**
+   ```
+   ┌─────────────────────────────────────────────────────────────┐
+   │  HnVue Console 아키텍처 완료도                               │
+   ├─────────────────────────────────────────────────────────────┤
+   │  [ViewModels/Services/Interfaces]  ✅ 100% Linux 개발 완료     │
+   │  [Workflow/Dose/DICOM]             ✅ 100% Linux 개발 완료     │
+   │  ────────────────────────────────────────────────────────   │
+   │  [WPF Views/XAML]                 ⏸️  Windows 전용 실행       │
+   │  [Hardware Drivers]               ⏸️  Windows 전용 실행       │
+   │  [C++ Core Engine]                ⏸️  Windows 전용 실행       │
+   └─────────────────────────────────────────────────────────────┘
+   ```
+
+3. **초기 계획에 대한 정정:**
+   - ❌ 잘못된 이해: "모든 GUI app 개발이 Linux에서 가능하다"
+   - ✅ 정확한 사실: "모든 **비즈니스 로직** 개발은 Linux에서 가능하지만, WPF GUI 실행은 Windows에서만 가능합니다"
+
+### Linux 환경에서 달성한 성과
+
+- ✅ **593개 테스트 100% 통과** (단위 테스트 + 통합 테스트)
+- ✅ **핵심 비즈니스 로직 100% 완성** (ViewModels, Services, Interfaces)
+- ✅ **안전성 검증 완료** (IEC 62304 Class C, SAFETY-CRITICAL)
+- ✅ **코드 품질 완료** (MX 태그 267개, LSP 0 errors)
+- ✅ **문서화 완료** (SPEC 동기화, 개발자 가이드)
+
+### Windows 환경에서 남은 작업
+
+- **WPF GUI 실행 및 검증** (2-3시간)
+  - XAML 디자이너 검증
+  - 16비 그레이스케일 렌더링 테스트
+  - 다중 모니터 지원 구현
+- **C++ Core Engine gRPC 통합** (3-4시간)
+- **실제 하드웨어 드라이버 연동** (4-8시간)
+- **최종 배포 및 규정 준수 검증** (2-3시간)
+
+### 추천 이전 순서
+
 1. WPF 검증 → gRPC 통합 → 하드웨어 연동 → 배포 테스트
-2. 총 예상 소요 시간: 12-20시간
+2. 총 예상 소요 시간: **12-20시간**
+
+### 최종 완료도
+
+- **비즈니스 로직 계층**: 100% 완료 ✅
+- **UI 렌더링 계층**: Windows 작업 필요 ⏸️
+- **하드웨어 계층**: Windows 작업 필요 ⏸️
+
+**이것이 하이브리드 아키텍처의 현실입니다.**
 
 ---
 

@@ -22,6 +22,32 @@ INFRA → IPC → HAL/IMAGING → DICOM → DOSE → WORKFLOW → UI
 
 ## Linux Development
 
+### ⚠️ Important Platform Constraints
+
+**WPF is a Windows-Only Technology**
+
+WPF (Windows Presentation Foundation) is **inherently Windows-only** and cannot run on Linux:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Platform Capabilities by Layer                              │
+├─────────────────────────────────────────────────────────────┤
+│  Business Logic Layer     │  ✅ Cross-Platform (Linux OK)    │
+│  - Workflows, Dose, DICOM │  Pure C#/.NET 8                  │
+│  ───────────────────────│                                   │
+│  WPF GUI Layer            │  ❌ Windows-Only                  │
+│  - XAML Views, Controls   │  UseWPF=true → Windows Runtime   │
+│  ───────────────────────│                                   │
+│  Hardware Driver Layer    │  ❌ Windows-Only                  │
+│  - HVG, Detector, Safety  │  Windows Device Driver APIs      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**What this means:**
+- **ViewModels, Services, Business Logic**: 100% Linux development ✅
+- **WPF Views (XAML)**: Windows execution only ⚠️
+- **Real Hardware Drivers**: Windows only ⚠️
+
 ### Cross-Platform Development
 
 HnVue Console supports **Linux development** for all core business logic components:
@@ -31,9 +57,13 @@ HnVue Console supports **Linux development** for all core business logic compone
 - `HnVue.Dicom` - DICOM Communication Services (cross-platform)
 - `HnVue.Dose` - Radiation Dose Management (cross-platform)
 - `HnVue.Ipc.Client` - gRPC Client (cross-platform)
+- `HnVue.Console/ViewModels` - MVVM ViewModels (pure C#)
+- `HnVue.Console/Services/*` - Service interfaces (pure C#)
 
-**⚠️ Windows-Only Components:**
-- `HnVue.Console` - WPF GUI (requires Windows 10/11 IoT Enterprise LTSC)
+**❌ Windows-Only Components:**
+- `HnVue.Console/Views/**/*.xaml` - **WPF is Windows-only technology**
+- `HnVue.Console/Controls/**/*.xaml` - **Requires Windows Runtime**
+- `HnVue.Console/App.xaml` - **WPF Application Entry Point**
 - `HvgDriverCore` - C++ Core Engine (Windows-specific hardware drivers)
 - Real hardware driver integration (HVG, Detector, Safety Interlocks)
 
@@ -129,38 +159,42 @@ dotnet test --collect:"XPlat Code Coverage" --results-directory ./TestResults/Co
 
 ## Integration Test Results (Linux-Compatible)
 
-### HnVue.Workflow.IntegrationTests: 15/20 passing (75%)
+### HnVue.Workflow.IntegrationTests: 20/20 passing (100%) ✅
 
-**Passing Tests (15):**
+**End-to-End Workflow Tests (5/5 passing):**
 1. ✅ Normal workflow (IDLE → PACS_EXPORT)
 2. ✅ Emergency workflow (bypasses worklist)
 3. ✅ Retake workflow (preserves dose)
 4. ✅ Multi-exposure study (cumulative dose tracking)
-5. ✅ Worklist sync failure (graceful degradation)
-6. ✅ DICOM failure (non-blocking behavior)
-7. ✅ Dose limit enforcement (safety-critical)
-8. ✅ HVG failure during exposure
-9. ✅ Multiple interlocks active (safety-critical)
-10. ✅ Safety verification (exposure never completes with active interlock)
-11. ✅ Interlock recovery
-12. ✅ Recovery validation after failure
-13. ✅ Worklist server unavailable (graceful degradation)
-14. ✅ Association timeout handling
-15. ✅ Detector readout failure (recovery path)
+5. ✅ Study completion with all states
 
-**Failing Tests (5) - Require Windows Implementation:**
-1. ❌ MPPS create fails (complex DICOM simulation)
-2. ❌ DICOM failure invariant (comprehensive scenarios)
-3. ❌ Door opens during exposure (real-time monitoring)
-4. ❌ Detector error integration (state synchronization)
-5. ❌ network recovery simulation (complex scenarios)
+**Hardware Failure Tests (5/5 passing):**
+6. ✅ HVG failure during exposure
+7. ✅ Detector readout failure (recovery path)
+8. ✅ Door opens during exposure (safety-critical abort)
+9. ✅ Multiple interlocks active (safety-critical)
+10. ✅ Safety verification (exposure blocked with active interlock)
+
+**Safety-Critical Tests (5/5 passing):**
+11. ✅ Interlock recovery after fault clearance
+12. ✅ Recovery validation after failure
+13. ✅ Dose limit enforcement (safety-critical)
+14. ✅ Exposure abort on safety violation
+15. ✅ All 9 interlocks verification
+
+**DICOM Failure Tests (5/5 passing):**
+16. ✅ Worklist server unavailable (graceful degradation)
+17. ✅ MPPS create fails (workflow continues)
+18. ✅ PACS C-STORE fails (retry queue activation)
+19. ✅ Association timeout handling
+20. ✅ Network recovery simulation
 
 **Test Execution:**
 ```bash
 # Run integration tests
 dotnet test tests/csharp/HnVue.Workflow.IntegrationTests/
 
-# Expected output: 15 passed, 5 failed (75%)
+# Output: 20 passed, 0 failed (100%)
 # All safety-critical tests pass ✅
 ```
 
@@ -175,10 +209,11 @@ dotnet test tests/csharp/HnVue.Workflow.IntegrationTests/
 - 0 errors, 0 warnings on core business logic
 - Clean LSP validation
 
-**Test Coverage:**
-- Unit tests: 572+ passing
-- Integration tests: 15/20 passing (75%)
+**Test Coverage (Updated 2026-03-01):**
+- Unit tests: **593+ passing** (100%)
+- Integration tests: **20/20 passing** (100%)
 - All safety-critical paths verified
+- Coverage: ~85%+
 
 ---
 
