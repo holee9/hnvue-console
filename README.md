@@ -30,15 +30,56 @@ INFRA → IPC → HAL/IMAGING → DICOM → DOSE → WORKFLOW → UI
 | SPEC-IMAGING-001 | Image Processing Pipeline | ✅ 완료 | 100% |
 | SPEC-DICOM-001 | DICOM Communication Services (Storage/Worklist/MPPS/Commitment/QR) | ✅ 완료 | 100% |
 | SPEC-DOSE-001 | Radiation Dose Management (DAP, Cumulative Tracking, RDSR, Audit Trail) | ✅ 완료 | 100% |
-| SPEC-WORKFLOW-001 | Workflow Engine (Phase 1-3: State Machine, Handlers, Integration) | 🔄 진행중 | 70% |
+| SPEC-WORKFLOW-001 | Workflow Engine (Phase 1-3: State Machine, Protocol, Dose) | ✅ 완료 | 100% |
 | SPEC-UI-001 | WPF Console UI (Phase 1: MVVM Architecture Complete) | 🔄 Phase 1 완료 | 60% |
 | SPEC-TEST-001 | Test Infrastructure | 🔄 진행중 | 30% |
 
-**전체 진행률: 6.5/9 SPEC (72%), UI Phase 1 완료로 아키텍처 기반 확보**
+**전체 진행률: 7/9 SPEC (78%), WORKFLOW Phase 1-3 완료로 안전 임계 경로 구현**
 
 ---
 
 ## 최근 업데이트
+
+### 2026-03-01: SPEC-WORKFLOW-001 Phase 1-3 완료 - 상태 머신, 프로토콜, 방사선량 ✅
+
+#### Clinical Workflow State Machine Implementation
+- **WorkflowStateMachine**: 10-state clinical workflow with guard clauses and transition tracking
+- **States**: IDLE, WORKLIST_SYNC, PATIENT_SELECT, PROTOCOL_SELECT, POSITION_AND_PREVIEW, EXPOSURE_TRIGGER, QC_REVIEW, REJECT_RETAKE, MPPS_COMPLETE, PACS_EXPORT
+- **Safety-Critical Guards**: Interlock checking, dose limit validation, protocol safety limits
+- **IEC 62304 Class C**: Safety-critical state transitions for X-ray exposure control
+
+#### Protocol Repository (FR-WF-08, FR-WF-09)
+- **SQLite-Backed Storage**: Protocol entity with composite key uniqueness (body_part, projection, device_model)
+- **Safety Validation**: DeviceSafetyLimits enforcement (kVp: 40-150, mA: 1-500, mAs calculation)
+- **N-to-1 Procedure Mapping**: Multiple procedure codes per protocol
+- **Performance**: 50ms or better lookup for 500+ protocols (indexed queries with COLLATE NOCASE)
+- **Case-Insensitive Search**: Body part, projection, device model matching regardless of case
+
+#### Dose Limit Integration (FR-WF-04, FR-WF-05)
+- **MultiExposureCoordinator**: Cumulative dose tracking across multi-view studies
+- **StudyDoseTracker**: Per-study dose limit checking with warning thresholds (80% of limit)
+- **DoseLimitConfiguration**: Configurable study/daily limits with default safety values
+- **Real-Time Validation**: Exposure acceptance/rejection based on projected cumulative dose
+
+#### State Machine Engine Components
+- **TransitionResult**: Result types (Success, InvalidState, GuardFailed, Error)
+- **GuardEvaluation**: Async guard clause evaluation with context binding
+- **StudyContext**: Stateful context for patient, protocol, exposure tracking
+- **WorkflowEngine**: Main orchestrator replacing stub implementation
+
+#### Testing (170 Tests, All Passing)
+- **Protocol Tests**: DeviceSafetyLimits validation, ProtocolRepository CRUD, composite key lookup
+- **Dose Tests**: DoseTrackingCoordinator limits, MultiExposureCoordinator cumulative tracking
+- **State Machine Tests**: Transition validation, guard evaluation, context management
+- **Performance Tests**: 500-protocol lookup under 50ms, multi-exposure dose tracking
+
+#### Technical Details
+- **Platform**: .NET 8, C# 12
+- **Database**: SQLite with WAL mode for concurrent access
+- **Files**: 6 protocol files, 4 dose files, 3 state machine files, 1 engine orchestrator
+- **Tests**: 170/170 passing (37 dose + 133 protocol/state machine)
+
+---
 
 ### 2026-03-01: SPEC-UI-001 Phase 1 완료 - MVVM 아키텍처 구현 ✅
 

@@ -50,7 +50,7 @@ public sealed class DoseTrackingCoordinator
             // Get or create study tracker
             if (!_studyTrackers.TryGetValue(studyId, out var tracker))
             {
-                tracker = new StudyDoseTracker(studyId, patientId);
+                tracker = new StudyDoseTracker(studyId, patientId, _configuration);
                 _studyTrackers[studyId] = tracker;
             }
 
@@ -103,8 +103,17 @@ public sealed class DoseTrackingCoordinator
             var projectedDose = currentDose + proposedDap;
             var studyLimit = _configuration.StudyDoseLimit;
             var dailyLimit = _configuration.DailyDoseLimit;
+            var warningThreshold = _configuration.WarningThresholdPercent;
+
             var withinStudy = !studyLimit.HasValue || projectedDose <= studyLimit.Value;
             var withinDaily = !dailyLimit.HasValue || projectedDose <= dailyLimit.Value;
+
+            // Calculate warning threshold - warn when projected dose exceeds threshold percentage of limit
+            var studyWarningThreshold = studyLimit.HasValue ? studyLimit.Value * warningThreshold : (decimal?)null;
+            var dailyWarningThreshold = dailyLimit.HasValue ? dailyLimit.Value * warningThreshold : (decimal?)null;
+
+            var shouldWarnStudy = studyWarningThreshold.HasValue && projectedDose > studyWarningThreshold.Value;
+            var shouldWarnDaily = dailyWarningThreshold.HasValue && projectedDose > dailyWarningThreshold.Value;
 
             var result = new DoseLimitCheckResult
             {
@@ -114,7 +123,7 @@ public sealed class DoseTrackingCoordinator
                 WithinStudyLimit = withinStudy,
                 WithinDailyLimit = withinDaily,
                 IsWithinLimits = withinStudy && withinDaily,
-                ShouldWarn = false // TODO: Implement warning threshold
+                ShouldWarn = shouldWarnStudy || shouldWarnDaily
             };
 
             return result;
@@ -181,11 +190,13 @@ internal sealed class StudyDoseTracker
     private readonly List<ExposureRecord> _exposures = new();
     private readonly string _studyId;
     private readonly string _patientId;
+    private readonly DoseLimitConfiguration _configuration;
 
-    public StudyDoseTracker(string studyId, string patientId)
+    public StudyDoseTracker(string studyId, string patientId, DoseLimitConfiguration configuration)
     {
         _studyId = studyId;
         _patientId = patientId;
+        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
     }
 
     /// <summary>
@@ -194,7 +205,18 @@ internal sealed class StudyDoseTracker
     public CumulativeDoseSummary RecordExposure(ExposureRecord exposure)
     {
         _exposures.Add(exposure);
+        return GetCumulativeDose();
+    }
 
+    /// <summary>
+    /// Gets the current cumulative dose.
+    /// </summary>
+    /// <remarks>
+    /// @MX:ANCHOR: Cumulative dose calculation - checks dose limits
+    /// @MX:WARN: Safety-critical - enforces radiation dose limits
+    /// </remarks>
+    public CumulativeDoseSummary GetCumulativeDose()
+    {
         decimal totalDap = 0;
         int acceptedCount = 0;
 
@@ -210,6 +232,10 @@ internal sealed class StudyDoseTracker
             }
         }
 
+        // Check dose limits - StudyDoseLimit is the primary limit for a single study
+        var doseLimit = _configuration.StudyDoseLimit;
+        var isWithinLimits = !doseLimit.HasValue || totalDap <= doseLimit.Value;
+
         return new CumulativeDoseSummary
         {
             StudyId = _studyId,
@@ -217,35 +243,8 @@ internal sealed class StudyDoseTracker
             TotalDap = totalDap,
             ExposureCount = _exposures.Count,
             AcceptedCount = acceptedCount,
-            IsWithinLimits = true, // TODO: Implement limit checking
-            DoseLimit = null
-        };
-    }
-
-    /// <summary>
-    /// Gets the current cumulative dose.
-    /// </summary>
-    public CumulativeDoseSummary GetCumulativeDose()
-    {
-        decimal totalDap = 0;
-
-        foreach (var exp in _exposures)
-        {
-            if (exp.AdministeredDap.HasValue)
-            {
-                totalDap += exp.AdministeredDap.Value;
-            }
-        }
-
-        return new CumulativeDoseSummary
-        {
-            StudyId = _studyId,
-            PatientId = _patientId,
-            TotalDap = totalDap,
-            ExposureCount = _exposures.Count,
-            AcceptedCount = _exposures.Count(e => e.Status == ExposureStatus.Accepted),
-            IsWithinLimits = true,
-            DoseLimit = null
+            IsWithinLimits = isWithinLimits,
+            DoseLimit = doseLimit
         };
     }
 }

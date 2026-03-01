@@ -7,6 +7,29 @@ using Microsoft.Extensions.Logging;
 using HnVue.Workflow.Journal;
 
 /// <summary>
+/// Interface for the workflow state machine.
+/// Used by emergency workflow coordinator and other components.
+/// SPEC-WORKFLOW-001: FR-WF-07 Emergency workflow bypass
+/// </summary>
+public interface IWorkflowStateMachine
+{
+    /// <summary>
+    /// Gets the current workflow state.
+    /// </summary>
+    WorkflowState CurrentState { get; }
+
+    /// <summary>
+    /// Attempts to transition to a new state.
+    /// </summary>
+    Task<TransitionResult> TryTransitionAsync(
+        WorkflowState targetState,
+        string trigger,
+        string operatorId,
+        GuardEvaluationContext? context = null,
+        CancellationToken cancellationToken = default);
+}
+
+/// <summary>
 /// Core workflow state machine orchestrator.
 ///
 /// SPEC-WORKFLOW-001 FR-WF-01: Full Workflow State Machine
@@ -22,7 +45,7 @@ using HnVue.Workflow.Journal;
 /// </summary>
 // @MX:ANCHOR: Primary state machine orchestrator
 // @MX:REASON: High fan_in - central component for all workflow state management. Critical for patient safety.
-public class WorkflowStateMachine
+public class WorkflowStateMachine : IWorkflowStateMachine
 {
     private readonly ILogger<WorkflowStateMachine> _logger;
     private readonly IWorkflowJournal _journal;

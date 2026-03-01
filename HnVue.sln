@@ -21,6 +21,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "csharp", "csharp", "{0FE664
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HnVue.Dicom.IntegrationTests", "tests\csharp\HnVue.Dicom.IntegrationTests\HnVue.Dicom.IntegrationTests.csproj", "{83FECA6B-65CB-4FBA-85E9-F233AF1D8D0D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HnVue.Console.Tests", "tests\csharp\HnVue.Console.Tests\HnVue.Console.Tests.csproj", "{9A1B2C3D-4E5F-6A7B-8C9D-0E1F2A3B4C5D6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,9 +53,14 @@ Global
 		{83FECA6B-65CB-4FBA-85E9-F233AF1D8D0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{83FECA6B-65CB-4FBA-85E9-F233AF1D8D0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{83FECA6B-65CB-4FBA-85E9-F233AF1D8D0D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9A1B2C3D-4E5F-6A7B-8C9D-0E1F2A3B4C5D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A1B2C3D-4E5F-6A7B-8C9D-0E1F2A3B4C5D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A1B2C3D-4E5F-6A7B-8C9D-0E1F2A3B4C5D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A1B2C3D-4E5F-6A7B-8C9D-0E1F2A3B4C5D6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{0FE664E4-CEB2-470A-A040-71372EF9CE5F} = {C2F8C0B2-0D4E-5F3G-B6E1-2D3C4E5F6A7B}
 		{83FECA6B-65CB-4FBA-85E9-F233AF1D8D0D} = {0FE664E4-CEB2-470A-A040-71372EF9CE5F}
+		{9A1B2C3D-4E5F-6A7B-8C9D-0E1F2A3B4C5D6} = {0FE664E4-CEB2-470A-A040-71372EF9CE5F}
 	EndGlobalSection
 EndGlobal

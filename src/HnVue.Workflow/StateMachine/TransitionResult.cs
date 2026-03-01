@@ -33,9 +33,20 @@ public class TransitionResult
     public Exception? Error { get; init; }
 
     /// <summary>
+    /// Gets the error details (Exception) for the failed transition.
+    /// Used by EmergencyWorkflowCoordinator for error handling.
+    /// </summary>
+    public Exception? ErrorDetails => Error;
+
+    /// <summary>
     /// Gets the list of guards that failed during evaluation, if any.
     /// </summary>
     public string[] FailedGuards { get; init; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets the type of error that caused the transition to fail.
+    /// </summary>
+    public TransitionErrorType? ErrorType { get; init; }
 
     /// <summary>
     /// Creates a successful transition result.
@@ -47,19 +58,19 @@ public class TransitionResult
     /// Creates a failed transition result with an error message and failed guards.
     /// </summary>
     public static TransitionResult Failure(WorkflowState originalState, string errorMessage, string[] failedGuards) =>
-        new() { IsSuccess = false, NewState = originalState, OldState = originalState, ErrorMessage = errorMessage, FailedGuards = failedGuards };
+        new() { IsSuccess = false, NewState = originalState, OldState = originalState, ErrorMessage = errorMessage, FailedGuards = failedGuards, ErrorType = TransitionErrorType.InvalidTransition };
 
     /// <summary>
     /// Creates a failed transition result due to guard failure.
     /// </summary>
     public static TransitionResult GuardFailed(WorkflowState originalState, string[] failedGuards) =>
-        new() { IsSuccess = false, NewState = originalState, OldState = originalState, FailedGuards = failedGuards };
+        new() { IsSuccess = false, NewState = originalState, OldState = originalState, FailedGuards = failedGuards, ErrorType = TransitionErrorType.GuardFailed };
 
     /// <summary>
     /// Creates a failed transition result due to an error.
     /// </summary>
     public static TransitionResult Errored(WorkflowState originalState, Exception error) =>
-        new() { IsSuccess = false, NewState = originalState, OldState = originalState, Error = error, ErrorMessage = error.Message };
+        new() { IsSuccess = false, NewState = originalState, OldState = originalState, Error = error, ErrorMessage = error.Message, ErrorType = TransitionErrorType.Exception };
 }
 
 /// <summary>
@@ -91,4 +102,25 @@ public class InvalidStateTransitionException : Exception
         ToState = toState;
         Trigger = trigger;
     }
+}
+
+/// <summary>
+/// Types of errors that can occur during state transitions.
+/// </summary>
+public enum TransitionErrorType
+{
+    /// <summary>
+    /// One or more guards failed during evaluation.
+    /// </summary>
+    GuardFailed,
+
+    /// <summary>
+    /// An exception occurred during the transition.
+    /// </summary>
+    Exception,
+
+    /// <summary>
+    /// The requested transition is not valid from the current state.
+    /// </summary>
+    InvalidTransition
 }

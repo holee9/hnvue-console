@@ -17,8 +17,9 @@
     <!-- Implicit Usings -->
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <!-- Treat Warnings as Errors -->
+    <!-- Treat Warnings as Errors (excluding WPF design-time build warnings) -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);CS0579;CS7059</WarningsNotAsErrors>
 
     <!-- Warning Level -->
     <WarningLevel>5</WarningLevel>
@@ -37,6 +38,9 @@
 
     <!-- Generate Documentation File -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <!-- Disable auto-generated AssemblyInfo (WPF handles this) -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 
       <!-- NoWarn -->
     <NoWarn>$(NoWarn);CS1591</NoWarn> <!-- Missing XML comment -->

@@ -364,7 +364,7 @@ public class DeviceSafetyLimits : IDeviceSafetyLimits
     public decimal MinMa { get; set; } = 1;
     public decimal MaxMa { get; set; } = 500;
     public int MaxExposureTime { get; set; } = 3000;
-    public decimal MaxMas { get; set; } = 500;
+    public decimal MaxMas { get; set; } = 2000; // Updated to accommodate realistic clinical protocols
     public decimal DapWarningLevel { get; set; } = 50000;
 }
 

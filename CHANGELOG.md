@@ -5,7 +5,60 @@ All notable changes to HnVue Console will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2026-02-28
+## [1.0.0] - 2026-03-01
+
+### Added - SPEC-WORKFLOW-001 Phase 1-3: Clinical Workflow Engine
+
+Complete implementation of clinical workflow state machine, protocol repository, and dose limit integration for IEC 62304 Class C X-ray control.
+
+#### Workflow State Machine (FR-WF-01 ~ FR-WF-07)
+- **WorkflowStateMachine**: 10-state clinical workflow orchestrator
+- **States**: IDLE, WORKLIST_SYNC, PATIENT_SELECT, PROTOCOL_SELECT, POSITION_AND_PREVIEW, EXPOSURE_TRIGGER, QC_REVIEW, REJECT_RETAKE, MPPS_COMPLETE, PACS_EXPORT
+- **Guard Clauses**: InterlockChecker, dose limit validation, protocol safety validation
+- **Transition Tracking**: TransitionResult with Success/InvalidState/GuardFailed/Error outcomes
+- **StudyContext**: Stateful context for patient, protocol, exposure tracking
+
+#### Protocol Repository (FR-WF-08, FR-WF-09)
+- **SQLite-Backed Storage**: Protocol entity with composite key uniqueness
+- **Protocol Entity**: Body part, projection, kVp, mA, exposure time, AEC mode, grid, device model
+- **DeviceSafetyLimits**: Min/Max kVp (40-150), mA (1-500), exposure time (3000ms), mAs (2000)
+- **N-to-1 Procedure Mapping**: Multiple procedure codes per protocol
+- **Case-Insensitive Search**: COLLATE NOCASE for body part, projection, device model
+- **Unique Constraint**: (body_part, projection, device_model) with case-insensitive collation
+
+#### Dose Limit Integration (FR-WF-04, FR-WF-05)
+- **MultiExposureCoordinator**: Cumulative dose tracking across multi-view studies
+- **StudyDoseTracker**: Per-study dose limit checking with warning thresholds (80%)
+- **DoseLimitConfiguration**: Study limit (1000 mAs default), daily limit (5000 mAs default)
+- **Real-Time Validation**: Exposure acceptance/rejection based on projected cumulative dose
+
+#### Safety-Critical Validations (IEC 62304 Class C)
+- **Interlock Checking**: 9 safety interlocks before exposure trigger
+- **Protocol Safety**: Device limits enforced on create/update (kVp, mA, mAs, exposure time)
+- **Dose Limits**: Study and daily cumulative dose limits with warning thresholds
+- **State Guarding**: Pre-transition validation for all state changes
+
+#### WorkflowEngine Implementation
+- **Main Orchestrator**: Replaces WorkflowEngineStub with full state machine integration
+- **Async State Transitions**: TryTransitionAsync with guard evaluation and context binding
+- **Event Publishing**: State change events for UI integration
+- **Error Handling**: Graceful failure with TransitionResult error reporting
+
+#### Testing (170 Tests, All Passing)
+- **Protocol Tests (50)**: DeviceSafetyLimits, ProtocolRepository CRUD, composite key lookup, procedure code mapping
+- **Dose Tests (37)**: DoseTrackingCoordinator limits, MultiExposureCoordinator cumulative tracking
+- **State Machine Tests**: Transition validation, guard evaluation, context management
+- **Performance Tests**: 500-protocol lookup under 50ms, multi-exposure dose tracking
+
+#### Technical Details
+- **Platform**: .NET 8, C# 12, Windows 10/11
+- **Database**: SQLite 3.x with WAL mode for concurrent access
+- **Safety**: IEC 62304 Class C (safety-critical exposure control)
+- **Files**: 6 protocol files, 4 dose files, 3 state machine files, 1 engine orchestrator, 170 tests
+
+---
+
+## [1.0.0-alpha] - 2026-02-28
 
 ### Added - SPEC-IMAGING-001: Image Processing Pipeline
 

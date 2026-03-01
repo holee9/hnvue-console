@@ -106,6 +106,13 @@ public class GuardEvaluationContext
     public bool? OperatorAuthorized { get; init; }
 
     /// <summary>
+    /// Whether this is an emergency/unscheduled workflow.
+    /// Used by: T-02 (IDLE -> PATIENT_SELECT emergency path)
+    /// SPEC-WORKFLOW-001: FR-WF-07 Emergency workflow bypass
+    /// </summary>
+    public bool? IsEmergencyWorkflow { get; init; }
+
+    /// <summary>
     /// Additional metadata for guard evaluation.
     /// </summary>
     public Dictionary<string, object?> Metadata { get; } = new();

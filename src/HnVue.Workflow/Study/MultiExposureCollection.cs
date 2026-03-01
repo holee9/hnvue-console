@@ -1,6 +1,7 @@
 namespace HnVue.Workflow.Study;
 
 using System.Collections.ObjectModel;
+using HnVue.Workflow.Dose;
 
 /// <summary>
 /// Represents a collection of exposures within a single study.
@@ -17,16 +18,30 @@ public sealed class ExposureCollection
 {
     private readonly List<ExposureRecord> _exposures = new();
     private readonly object _lock = new();
+    private readonly DoseLimitConfiguration _configuration;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ExposureCollection"/> class.
+    /// </summary>
+    /// <param name="studyId">The study identifier.</param>
+    /// <param name="patientId">The patient identifier.</param>
+    /// <param name="configuration">The dose limit configuration.</param>
+    public ExposureCollection(string studyId, string patientId, DoseLimitConfiguration configuration)
+    {
+        StudyId = studyId ?? throw new ArgumentNullException(nameof(studyId));
+        PatientId = patientId ?? throw new ArgumentNullException(nameof(patientId));
+        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+    }
 
     /// <summary>
     /// Gets the unique study identifier.
     /// </summary>
-    public required string StudyId { get; init; }
+    public string StudyId { get; }
 
     /// <summary>
     /// Gets the patient identifier.
     /// </summary>
-    public required string PatientId { get; init; }
+    public string PatientId { get; }
 
     /// <summary>
     /// Gets all exposures in the collection (thread-safe snapshot).
@@ -100,6 +115,10 @@ public sealed class ExposureCollection
             }
         }
 
+        // Check dose limits - StudyDoseLimit is the primary limit for a single study
+        var doseLimit = _configuration.StudyDoseLimit;
+        var isWithinLimits = !doseLimit.HasValue || totalDap <= doseLimit.Value;
+
         return new CumulativeDoseSummary
         {
             StudyId = StudyId,
@@ -107,8 +126,8 @@ public sealed class ExposureCollection
             TotalDap = totalDap,
             ExposureCount = Count,
             AcceptedCount = acceptedCount,
-            IsWithinLimits = true, // TODO: Implement dose limit checking
-            DoseLimit = null
+            IsWithinLimits = isWithinLimits,
+            DoseLimit = doseLimit
         };
     }
 }
@@ -171,6 +190,16 @@ public sealed class MultiExposureCoordinator
 {
     private readonly Dictionary<string, ExposureCollection> _studies = new();
     private readonly object _lock = new();
+    private readonly DoseLimitConfiguration _configuration;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MultiExposureCoordinator"/> class.
+    /// </summary>
+    /// <param name="configuration">The dose limit configuration.</param>
+    public MultiExposureCoordinator(DoseLimitConfiguration configuration)
+    {
+        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+    }
 
     /// <summary>
     /// Gets or creates an exposure collection for the specified study.
@@ -184,11 +213,7 @@ public sealed class MultiExposureCoordinator
         {
             if (!_studies.TryGetValue(studyId, out var collection))
             {
-                collection = new ExposureCollection
-                {
-                    StudyId = studyId,
-                    PatientId = patientId
-                };
+                collection = new ExposureCollection(studyId, patientId, _configuration);
                 _studies[studyId] = collection;
             }
             return collection;

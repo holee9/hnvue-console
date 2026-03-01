@@ -28,5 +28,78 @@ public record StudyContext
     /// <summary>
     /// Gets optional additional context data.
     /// </summary>
-    public IDictionary<string, object>? Metadata { get; init; }
+    public IDictionary<string, object?>? Metadata { get; init; }
+
+    /// <summary>
+    /// Gets whether this is an emergency workflow (unscheduled).
+    /// SPEC-WORKFLOW-001: FR-WF-07 Emergency workflow bypass
+    /// </summary>
+    public bool IsEmergency { get; init; }
+
+    /// <summary>
+    /// Gets the optional patient name for emergency workflows.
+    /// May be minimal or incomplete for emergency cases.
+    /// </summary>
+    public string? PatientName { get; init; }
+
+    /// <summary>
+    /// Creates a new StudyContext with the specified values.
+    /// </summary>
+    public static StudyContext Create(
+        string studyId,
+        string patientId,
+        WorkflowState currentState,
+        bool isEmergency = false,
+        string? patientName = null,
+        IDictionary<string, object?>? metadata = null)
+    {
+        return new StudyContext
+        {
+            StudyId = studyId,
+            PatientId = patientId,
+            CurrentState = currentState,
+            IsEmergency = isEmergency,
+            PatientName = patientName,
+            Metadata = metadata
+        };
+    }
+
+    /// <summary>
+    /// Creates an emergency workflow context with minimal patient data.
+    /// SPEC-WORKFLOW-001: FR-WF-07 Emergency workflow bypass
+    /// </summary>
+    public static StudyContext CreateEmergency(
+        string studyId,
+        string patientId,
+        string patientName,
+        IDictionary<string, object?>? metadata = null)
+    {
+        return new StudyContext
+        {
+            StudyId = studyId,
+            PatientId = patientId,
+            CurrentState = WorkflowState.PatientSelect,
+            IsEmergency = true,
+            PatientName = patientName,
+            Metadata = metadata
+        };
+    }
+
+    /// <summary>
+    /// Updates the context with a new state.
+    /// </summary>
+    public StudyContext WithState(WorkflowState newState)
+    {
+        return this with { CurrentState = newState };
+    }
+
+    /// <summary>
+    /// Updates the context with additional metadata.
+    /// </summary>
+    public StudyContext WithMetadata(string key, object? value)
+    {
+        var updatedMetadata = new Dictionary<string, object?>(Metadata ?? new Dictionary<string, object?>());
+        updatedMetadata[key] = value;
+        return this with { Metadata = updatedMetadata };
+    }
 }
