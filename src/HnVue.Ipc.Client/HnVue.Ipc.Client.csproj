@@ -12,6 +12,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Project References -->
+    <ProjectReference Include="..\HnVue.Workflow\HnVue.Workflow.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- gRPC Dependencies (no Version attribute - uses Directory.Packages.props) -->
     <PackageReference Include="Google.Protobuf" />
     <PackageReference Include="Grpc.Net.Client" />

@@ -20,7 +20,7 @@ using HnVue.Workflow.StateMachine;
 /// </summary>
 // @MX:ANCHOR: SQLite journal persistence for crash recovery
 // @MX:REASON: High fan_in - all state transitions are journaled. Critical for crash recovery and audit trail.
-public class SqliteWorkflowJournal : IWorkflowJournal, IAsyncDisposable
+public class SqliteWorkflowJournal : IWorkflowJournal, System.IAsyncDisposable
 {
     private readonly string _journalPath;
     private readonly SqliteConnection _connection;
@@ -60,7 +60,19 @@ public class SqliteWorkflowJournal : IWorkflowJournal, IAsyncDisposable
         _connection = new SqliteConnection(connectionString);
         _connection.Open();
 
+        // Initialize database is called in constructor
         InitializeDatabase();
+    }
+
+    /// <summary>
+    /// Initializes the journal database and tables.
+    /// This method is called implicitly by the constructor.
+    /// </summary>
+    public Task InitializeAsync(CancellationToken cancellationToken = default)
+    {
+        // Database is already initialized in constructor
+        // This method exists for interface compatibility
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -294,12 +306,12 @@ public class SqliteWorkflowJournal : IWorkflowJournal, IAsyncDisposable
         try
         {
             await _connection.DisposeAsync();
-            _lock.Dispose();
             _disposed = true;
         }
         finally
         {
             _lock.Release();
+            _lock.Dispose();
         }
     }
 }

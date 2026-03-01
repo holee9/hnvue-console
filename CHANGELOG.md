@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2026-03-01
 
+### Added - SPEC-WORKFLOW-001 Phase 4: Hardware Integration, DICOM Integration, GUI Integration
+
+Complete implementation of HAL simulators, DICOM services, and GUI components for IEC 62304 Class C X-ray control system.
+
+#### Phase 4.1: HAL Simulators (Hardware Abstraction Layer)
+- **HvgDriverSimulator**: Async state transitions (Initializing→Idle→Preparing→Ready→Exposing→Idle) with fault injection
+- **DetectorSimulator**: Acquisition pipeline with progress reporting and synthetic 16-bit DICOM-like image generation
+- **SafetyInterlockSimulator**: 9 safety interlocks (door_closed, emergency_stop_clear, thermal_normal, generator_ready, detector_ready, collimator_valid, table_locked, dose_within_limits, aec_configured)
+- **AecControllerSimulator**: Readiness states, AEC chamber selection (1-3), parameter recommendation based on body part thickness
+- **HalSimulatorOrchestrator**: Unified coordination with scenario playback (normal workflow, door opens during exposure, emergency stop, temperature overheat)
+- **Tests**: 111 tests, all passing
+
+#### Phase 4.2: DICOM Integration
+- **C-FIND Worklist Query**: Patient ID, name, date filters with 5-second timeout, graceful degradation on error
+- **MPPS N-CREATE/N-SET**: Study start, exposure completion, study completion reporting with error handling
+- **C-STORE PACS Export**: Retry queue (3 retries, exponential backoff), export status tracking
+- **DICOM Association Management**: Connection pooling (max 5 associations), 10-second timeout, clean shutdown
+- **DICOM Error Handling**: Centralized error handling with error categorization and operator notification
+
+#### Phase 4.3: GUI Integration (ViewModels)
+- **WorkflowEventSubscriptionService**: Observable pattern with Channel-based communication, event delivery within 50ms
+- **StateMachineViewModel**: Visual representation of all 10 workflow states with current state highlighting
+- **InterlockStatusViewModel**: 9 interlocks with color coding (Green=OK, Red=active, Yellow=warning)
+- **DoseIndicatorViewModel**: Study/daily mGy display with warning (80%) and alarm (100%) thresholds
+- **WorkflowViewModel**: Integration of all ViewModels with event subscription
+- **Tests**: 47 tests, all passing
+
+#### Phase 4.4: Integration Tests
+- **End-to-End Workflow Tests**: 7 scenarios including normal workflow, emergency, retake, multi-exposure, DICOM failures, dose limits
+- **Hardware Failure Tests**: 6 scenarios (HVG failure, detector readout, door opens, multiple interlocks, interlock clears, recovery)
+- **DICOM Failure Tests**: 5 scenarios (worklist unavailable, MPPS failure, C-STORE retry, association timeout, network recovery)
+- **Tests**: 7/20 passing (35% - GREEN phase implementation continues)
+
+#### Files Created (30+ files)
+- HAL Simulators: `src/HnVue.Workflow/Hal/Simulators/`
+- DICOM Services: `src/HnVue.Dicom/{Worklist,Mpps,Store,Association,Common}/`
+- GUI ViewModels: `src/HnVue.Workflow/ViewModels/`
+- Integration Tests: `tests/csharp/HnVue.Workflow.IntegrationTests/`
+- Unit Tests: `tests/csharp/HnVue.Workflow.Tests/{Hal,ViewModels,Events}/`
+- DICOM Tests: `tests/csharp/HnVue.Dicom.Tests/{Worklist,Mpps,Store,Association,Common}/`
+
+#### Notes
+- WPF XAML controls require Windows environment for completion (ViewModels complete)
+- Integration tests GREEN phase continues (13 remaining tests require additional HAL integration)
+
 ### Added - SPEC-WORKFLOW-001 Phase 1-3: Clinical Workflow Engine
 
 Complete implementation of clinical workflow state machine, protocol repository, and dose limit integration for IEC 62304 Class C X-ray control.

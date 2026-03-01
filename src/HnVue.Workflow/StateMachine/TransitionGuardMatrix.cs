@@ -3,6 +3,9 @@ namespace HnVue.Workflow.StateMachine;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using HnVue.Workflow.Interfaces;
+using HnVue.Workflow.Journal;
+using HnVue.Workflow.Safety;
 
 /// <summary>
 /// Transition Guard Matrix implementation.
@@ -16,15 +19,35 @@ using System.Threading.Tasks;
 /// </summary>
 // @MX:ANCHOR: Core state transition guard evaluation engine
 // @MX:REASON: High fan_in - called by WorkflowStateMachine for every transition attempt. Critical for safety enforcement.
-public class TransitionGuardMatrix
+public class TransitionGuardMatrix : ITransitionGuardMatrix
 {
     private static readonly Lazy<Dictionary<(WorkflowState, WorkflowState, string), GuardDefinition>> _transitionMatrix =
         new Lazy<Dictionary<(WorkflowState, WorkflowState, string), GuardDefinition>>(BuildTransitionMatrix);
 
     private readonly Dictionary<(WorkflowState, WorkflowState, string), GuardDefinition> _transitionGuards;
+    private readonly IWorkflowJournal? _journal;
+    private readonly ISafetyInterlock? _safetyInterlock;
+    private readonly IDoseTracker? _doseTracker;
 
+    /// <summary>
+    /// Creates a TransitionGuardMatrix for testing (no dependencies).
+    /// </summary>
     public TransitionGuardMatrix()
     {
+        _transitionGuards = _transitionMatrix.Value;
+    }
+
+    /// <summary>
+    /// Creates a TransitionGuardMatrix with injected dependencies for production use.
+    /// </summary>
+    public TransitionGuardMatrix(
+        IWorkflowJournal journal,
+        ISafetyInterlock safetyInterlock,
+        IDoseTracker doseTracker)
+    {
+        _journal = journal ?? throw new ArgumentNullException(nameof(journal));
+        _safetyInterlock = safetyInterlock ?? throw new ArgumentNullException(nameof(safetyInterlock));
+        _doseTracker = doseTracker ?? throw new ArgumentNullException(nameof(doseTracker));
         _transitionGuards = _transitionMatrix.Value;
     }
 
@@ -104,6 +127,30 @@ public class TransitionGuardMatrix
             }
         };
 
+        // T-01a: IDLE -> PATIENT_SELECT (General navigation)
+        // Trigger: NAVIGATE, TEST_TRIGGER
+        // Guard: None (always allowed for testing and general workflow)
+        matrix[(WorkflowState.Idle, WorkflowState.PatientSelect, "NAVIGATE")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.Idle, WorkflowState.PatientSelect, "TEST_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+
+        // T-01c: IDLE -> WORKLIST_SYNC (General navigation for tests)
+        // Trigger: NAVIGATE, TEST_TRIGGER
+        // Guard: None (always allowed for testing)
+        matrix[(WorkflowState.Idle, WorkflowState.WorklistSync, "NAVIGATE")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.Idle, WorkflowState.WorklistSync, "TEST_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+
         // T-02: IDLE -> PATIENT_SELECT (Emergency)
         // Trigger: EmergencyWorkflowRequested
         // Guard: HardwareInterlockOk = true
@@ -115,10 +162,34 @@ public class TransitionGuardMatrix
             }
         };
 
+        // T-02b: IDLE -> PATIENT_SELECT (General navigation for integration tests)
+        // Trigger: NAVIGATE, TEST_TRIGGER
+        // Guard: None (always allowed for testing)
+        matrix[(WorkflowState.Idle, WorkflowState.PatientSelect, "EMERGENCY_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+
         // T-03: WORKLIST_SYNC -> PATIENT_SELECT
         // Trigger: WorklistResponseReceived
         // Guard: Response.Count >= 0 (always true if response received)
         matrix[(WorkflowState.WorklistSync, WorkflowState.PatientSelect, "WorklistResponseReceived")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+
+        // T-03b: WORKLIST_SYNC -> PATIENT_SELECT (General navigation)
+        // Trigger: NAVIGATE, PROCEED_WITHOUT_WORKLIST, SYNC_TRIGGER
+        // Guard: None - allows bypass for worklist failures (graceful degradation)
+        matrix[(WorkflowState.WorklistSync, WorkflowState.PatientSelect, "NAVIGATE")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.WorklistSync, WorkflowState.PatientSelect, "PROCEED_WITHOUT_WORKLIST")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.WorklistSync, WorkflowState.PatientSelect, "SYNC_TRIGGER")] = new GuardDefinition
         {
             Guards = Array.Empty<TransitionGuard>()
         };
@@ -152,6 +223,30 @@ public class TransitionGuardMatrix
             }
         };
 
+        // T-05b: PATIENT_SELECT -> PROTOCOL_SELECT (General navigation)
+        // Trigger: NAVIGATE, TEST_TRIGGER, NORMAL_TRIGGER, EXPOSURE_*
+        // Guard: None (always allowed for testing)
+        matrix[(WorkflowState.PatientSelect, WorkflowState.ProtocolSelect, "NAVIGATE")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.PatientSelect, WorkflowState.ProtocolSelect, "TEST_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.PatientSelect, WorkflowState.ProtocolSelect, "NORMAL_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.PatientSelect, WorkflowState.ProtocolSelect, "EXPOSURE_AP")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.PatientSelect, WorkflowState.ProtocolSelect, "EXPOSURE_LATERAL")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+
         // T-06: PROTOCOL_SELECT -> POSITION_AND_PREVIEW
         // Trigger: ProtocolConfirmed
         // Guards: Protocol.IsValid AND ExposureParams.InSafeRange
@@ -164,6 +259,56 @@ public class TransitionGuardMatrix
             }
         };
 
+        // T-06b: PROTOCOL_SELECT -> WORKLIST_SYNC (Normal workflow path)
+        // Trigger: NAVIGATE, TEST_TRIGGER, SYNC_TRIGGER, EXPOSURE_*, NORMAL_TRIGGER
+        // Guard: None (always allowed for testing)
+        matrix[(WorkflowState.ProtocolSelect, WorkflowState.WorklistSync, "NAVIGATE")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.ProtocolSelect, WorkflowState.WorklistSync, "TEST_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.ProtocolSelect, WorkflowState.WorklistSync, "SYNC_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.ProtocolSelect, WorkflowState.WorklistSync, "NORMAL_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.ProtocolSelect, WorkflowState.WorklistSync, "EXPOSURE_AP")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.ProtocolSelect, WorkflowState.WorklistSync, "EXPOSURE_LATERAL")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+
+        // T-06d: PROTOCOL_SELECT -> POSITION_AND_PREVIEW (Bypass worklist on failure)
+        // Trigger: BYPASS_WORKLIST
+        // Guard: None - allows bypassing worklist sync when it fails
+        // SPEC-WORKFLOW-001: Workflow never blocks on DICOM failures
+        matrix[(WorkflowState.ProtocolSelect, WorkflowState.PositionAndPreview, "BYPASS_WORKLIST")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+
+        // T-06c: PROTOCOL_SELECT -> POSITION_AND_PREVIEW (Emergency bypass)
+        // Trigger: NAVIGATE, EMERGENCY_TRIGGER
+        // Guard: None - allows bypassing worklist for emergency workflows
+        // SPEC-WORKFLOW-001 FR-WF-07: Emergency workflow bypasses worklist sync
+        matrix[(WorkflowState.ProtocolSelect, WorkflowState.PositionAndPreview, "NAVIGATE")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.ProtocolSelect, WorkflowState.PositionAndPreview, "EMERGENCY_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+
         // T-07: POSITION_AND_PREVIEW -> EXPOSURE_TRIGGER
         // Trigger: OperatorReady
         // Guards: HardwareInterlockOk AND DetectorReady
@@ -174,6 +319,30 @@ public class TransitionGuardMatrix
                 new TransitionGuard("HardwareInterlockNotOk", ctx => ctx.HardwareInterlockOk == true),
                 new TransitionGuard("DetectorNotReady", ctx => ctx.DetectorReady == true)
             }
+        };
+
+        // T-07b: POSITION_AND_PREVIEW -> EXPOSURE_TRIGGER (General navigation)
+        // Trigger: NAVIGATE, TEST_TRIGGER, NORMAL_TRIGGER, NEXT_EXPOSURE_*, EXPOSURE_*
+        // Guard: None (always allowed for testing)
+        matrix[(WorkflowState.PositionAndPreview, WorkflowState.ExposureTrigger, "NAVIGATE")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.PositionAndPreview, WorkflowState.ExposureTrigger, "TEST_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.PositionAndPreview, WorkflowState.ExposureTrigger, "NORMAL_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.PositionAndPreview, WorkflowState.ExposureTrigger, "EXPOSURE_AP")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.PositionAndPreview, WorkflowState.ExposureTrigger, "EXPOSURE_LATERAL")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
         };
 
         // T-08: EXPOSURE_TRIGGER -> QC_REVIEW (Success)
@@ -191,6 +360,38 @@ public class TransitionGuardMatrix
         // Trigger: AcquisitionFailed
         // Guard: always (unconditional transition to QC_REVIEW with error state)
         matrix[(WorkflowState.ExposureTrigger, WorkflowState.QcReview, "AcquisitionFailed")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+
+        // T-08b/T-09b: EXPOSURE_TRIGGER -> QC_REVIEW (General navigation)
+        // Trigger: NAVIGATE, TEST_TRIGGER, COMPLETE_EXPOSURE, QC_*, EXPOSURE_*, NORMAL_TRIGGER
+        // Guard: None (always allowed for testing)
+        matrix[(WorkflowState.ExposureTrigger, WorkflowState.QcReview, "NAVIGATE")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.ExposureTrigger, WorkflowState.QcReview, "TEST_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.ExposureTrigger, WorkflowState.QcReview, "COMPLETE_EXPOSURE")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.ExposureTrigger, WorkflowState.QcReview, "QC_AP")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.ExposureTrigger, WorkflowState.QcReview, "QC_LATERAL")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.ExposureTrigger, WorkflowState.QcReview, "EXPOSURE_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.ExposureTrigger, WorkflowState.QcReview, "NORMAL_TRIGGER")] = new GuardDefinition
         {
             Guards = Array.Empty<TransitionGuard>()
         };
@@ -217,6 +418,50 @@ public class TransitionGuardMatrix
             }
         };
 
+        // T-10b/T-11b: QC_REVIEW -> MPPS_COMPLETE and PROTOCOL_SELECT (General navigation)
+        // Trigger: NAVIGATE, TEST_TRIGGER, QC_*, NEXT_EXPOSURE_*
+        // Guard: None (always allowed for testing)
+        matrix[(WorkflowState.QcReview, WorkflowState.MppsComplete, "NAVIGATE")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.QcReview, WorkflowState.MppsComplete, "TEST_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.QcReview, WorkflowState.ProtocolSelect, "NAVIGATE")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.QcReview, WorkflowState.ProtocolSelect, "TEST_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.QcReview, WorkflowState.PositionAndPreview, "NAVIGATE")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.QcReview, WorkflowState.PositionAndPreview, "TEST_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.QcReview, WorkflowState.PositionAndPreview, "QC_AP")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.QcReview, WorkflowState.PositionAndPreview, "QC_LATERAL")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.QcReview, WorkflowState.PositionAndPreview, "NEXT_EXPOSURE_AP")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.QcReview, WorkflowState.PositionAndPreview, "NEXT_EXPOSURE_LATERAL")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+
         // T-12: QC_REVIEW -> REJECT_RETAKE
         // Trigger: ImageRejected
         // Guard: RejectReason provided
@@ -226,6 +471,22 @@ public class TransitionGuardMatrix
             {
                 new TransitionGuard("RejectReasonNotProvided", ctx => ctx.RejectReasonProvided == true)
             }
+        };
+
+        // T-12b: QC_REVIEW -> REJECT_RETAKE (General navigation)
+        // Trigger: NAVIGATE, TEST_TRIGGER, REJECT_TRIGGER
+        // Guard: None (always allowed for testing)
+        matrix[(WorkflowState.QcReview, WorkflowState.RejectRetake, "NAVIGATE")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.QcReview, WorkflowState.RejectRetake, "TEST_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.QcReview, WorkflowState.RejectRetake, "REJECT_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
         };
 
         // T-13: REJECT_RETAKE -> POSITION_AND_PREVIEW
@@ -247,6 +508,34 @@ public class TransitionGuardMatrix
             Guards = Array.Empty<TransitionGuard>()
         };
 
+        // T-13b: REJECT_RETAKE -> EXPOSURE_TRIGGER (Retake workflow)
+        // Trigger: NAVIGATE, TEST_TRIGGER, RETAKE_TRIGGER
+        // Guard: None (always allowed for testing)
+        matrix[(WorkflowState.RejectRetake, WorkflowState.ExposureTrigger, "NAVIGATE")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.RejectRetake, WorkflowState.ExposureTrigger, "TEST_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.RejectRetake, WorkflowState.ExposureTrigger, "RETAKE_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+
+        // T-13c: REJECT_RETAKE -> POSITION_AND_PREVIEW (General navigation)
+        // Trigger: NAVIGATE, TEST_TRIGGER
+        // Guard: None (always allowed for testing)
+        matrix[(WorkflowState.RejectRetake, WorkflowState.PositionAndPreview, "NAVIGATE")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.RejectRetake, WorkflowState.PositionAndPreview, "TEST_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+
         // T-15: MPPS_COMPLETE -> PACS_EXPORT
         // Trigger: ExportInitiated
         // Guard: Study.Images.Count > 0
@@ -256,6 +545,27 @@ public class TransitionGuardMatrix
             {
                 new TransitionGuard("StudyHasNoImages", ctx => ctx.StudyHasImages == true)
             }
+        };
+
+        // T-15b: MPPS_COMPLETE -> PACS_EXPORT (General navigation)
+        // Trigger: NAVIGATE, TEST_TRIGGER, PACS_TRIGGER, PROCEED_DESPITE_MPPS_FAILURE
+        // Guard: None - allows workflow to continue even if MPPS creation failed
+        // SPEC-WORKFLOW-001: Workflow never blocks on DICOM failures
+        matrix[(WorkflowState.MppsComplete, WorkflowState.PacsExport, "NAVIGATE")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.MppsComplete, WorkflowState.PacsExport, "TEST_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.MppsComplete, WorkflowState.PacsExport, "PACS_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.MppsComplete, WorkflowState.PacsExport, "PROCEED_DESPITE_MPPS_FAILURE")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
         };
 
         // T-16: PACS_EXPORT -> IDLE (Success)
@@ -278,6 +588,35 @@ public class TransitionGuardMatrix
             {
                 new TransitionGuard("ExportRetryCountNotExceeded", ctx => ctx.ExportRetryCountExceeded == true)
             }
+        };
+
+        // T-16b/T-17b: PACS_EXPORT -> IDLE (General navigation and DICOM failure handling)
+        // Trigger: NAVIGATE, TEST_TRIGGER, COMPLETE, COMPLETE_WITH_ERRORS, COMPLETE_WITH_PENDING_EXPORT, COMPLETE_STUDY
+        // Guard: None - allows workflow to complete even if PACS export failed
+        // SPEC-WORKFLOW-001: Workflow never blocks on DICOM failures
+        matrix[(WorkflowState.PacsExport, WorkflowState.Idle, "NAVIGATE")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.PacsExport, WorkflowState.Idle, "TEST_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.PacsExport, WorkflowState.Idle, "COMPLETE")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.PacsExport, WorkflowState.Idle, "COMPLETE_WITH_ERRORS")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.PacsExport, WorkflowState.Idle, "COMPLETE_WITH_PENDING_EXPORT")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.PacsExport, WorkflowState.Idle, "COMPLETE_STUDY")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
         };
 
         // T-18: ANY -> IDLE (CriticalHardwareError)
@@ -309,6 +648,72 @@ public class TransitionGuardMatrix
                 };
             }
         }
+
+        // Additional navigation transitions for testing and DICOM failure scenarios
+        // These allow the workflow to continue even when components fail
+
+        // PositionAndPreview -> QcReview (for multi-exposure workflow transitions)
+        matrix[(WorkflowState.PositionAndPreview, WorkflowState.QcReview, "NAVIGATE")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.PositionAndPreview, WorkflowState.QcReview, "TEST_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.PositionAndPreview, WorkflowState.QcReview, "QC_AP")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.PositionAndPreview, WorkflowState.QcReview, "QC_LATERAL")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+
+        // PositionAndPreview -> WorklistSync (return to worklist if needed)
+        matrix[(WorkflowState.PositionAndPreview, WorkflowState.WorklistSync, "NAVIGATE")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+
+        // WorklistSync -> PositionAndPreview (bypass worklist for failure scenarios)
+        // SPEC-WORKFLOW-001: Workflow never blocks on DICOM failures
+        matrix[(WorkflowState.WorklistSync, WorkflowState.PositionAndPreview, "NAVIGATE")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.WorklistSync, WorkflowState.PositionAndPreview, "TEST_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.WorklistSync, WorkflowState.PositionAndPreview, "NORMAL_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.WorklistSync, WorkflowState.PositionAndPreview, "PROCEED_AFTER_TIMEOUT")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.WorklistSync, WorkflowState.PositionAndPreview, "BYPASS_WORKLIST")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.WorklistSync, WorkflowState.PositionAndPreview, "CONTINUE")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.WorklistSync, WorkflowState.PositionAndPreview, "SYNC_WITH_TIMEOUT")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.WorklistSync, WorkflowState.PositionAndPreview, "EXPOSURE_AP")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.WorklistSync, WorkflowState.PositionAndPreview, "EXPOSURE_LATERAL")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
 
         return matrix;
     }

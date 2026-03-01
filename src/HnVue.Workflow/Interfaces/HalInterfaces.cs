@@ -96,6 +96,12 @@ public enum HvgState
     /// <summary>Generator is initializing.</summary>
     Initializing,
 
+    /// <summary>Generator is idle and ready to prepare.</summary>
+    Idle,
+
+    /// <summary>Generator is preparing for exposure.</summary>
+    Preparing,
+
     /// <summary>Generator is ready for exposure.</summary>
     Ready,
 
@@ -320,6 +326,123 @@ public readonly record struct CumulativeDose
 
     /// <summary>Configured dose limit in µGy·m², or null if no limit is set.</summary>
     public double? DoseLimit { get; init; }
+}
+
+#endregion
+
+#region AEC (Automatic Exposure Control)
+
+/// <summary>
+/// Defines the contract for controlling the Automatic Exposure Controller (AEC).
+/// </summary>
+/// <remarks>
+/// @MX:ANCHOR: AEC control interface - automatic exposure parameter management
+/// @MX:SPEC: SPEC-WORKFLOW-001 FR-WORKFLOW-03
+///
+/// This interface provides methods for configuring AEC parameters,
+/// checking AEC readiness, and getting recommended exposure parameters.
+/// </remarks>
+public interface IAecController
+{
+    /// <summary>
+    /// Sets the AEC parameters for the next exposure.
+    /// </summary>
+    /// <param name="parameters">The AEC parameters to set.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// @MX:ANCHOR: Set AEC parameters - configures automatic exposure control
+    /// @MX:WARN: Parameter validation - affects exposure quality
+    /// </remarks>
+    Task SetAecParametersAsync(AecParameters parameters, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets the current readiness status of the AEC system.
+    /// </summary>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>The current AEC status.</returns>
+    /// <remarks>
+    /// @MX:ANCHOR: AEC readiness check - verifies AEC is ready for exposure
+    /// @MX:WARN: Safety-critical - AEC must be ready when mode is enabled
+    /// </remarks>
+    Task<AecStatus> GetAecReadinessAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets recommended exposure parameters based on body part thickness.
+    /// </summary>
+    /// <param name="bodyPartThickness">The body part thickness in millimeters.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>Recommended exposure parameters.</returns>
+    /// <remarks>
+    /// @MX:NOTE: Parameter recommendation - suggests optimal exposure settings
+    /// </remarks>
+    Task<ExposureParameters> GetRecommendedParamsAsync(int bodyPartThickness, CancellationToken cancellationToken = default);
+}
+
+/// <summary>
+/// Represents AEC configuration parameters.
+/// </summary>
+/// <remarks>
+/// @MX:NOTE: AEC parameters structure - automatic exposure control configuration
+/// </remarks>
+public readonly record struct AecParameters
+{
+    /// <summary>True if AEC mode is enabled.</summary>
+    public required bool AecEnabled { get; init; }
+
+    /// <summary>Selected AEC chamber (1-3).</summary>
+    public required int Chamber { get; init; }
+
+    /// <summary>Target density index.</summary>
+    public required int DensityIndex { get; init; }
+
+    /// <summary>Body part thickness in millimeters.</summary>
+    public required int BodyPartThickness { get; init; }
+
+    /// <summary>kVp priority mode (true to prioritize kVp over mA).</summary>
+    public required bool KvPriority { get; init; }
+}
+
+/// <summary>
+/// Represents the current status of the AEC system.
+/// </summary>
+/// <remarks>
+/// @MX:NOTE: AEC status structure - AEC system state information
+/// </remarks>
+public readonly record struct AecStatus
+{
+    /// <summary>The current state of the AEC system.</summary>
+    public required AecState State { get; init; }
+
+    /// <summary>True if the AEC is ready for exposure.</summary>
+    public required bool IsReady { get; init; }
+
+    /// <summary>Any active error message, or null if no error.</summary>
+    public string? ErrorMessage { get; init; }
+}
+
+/// <summary>
+/// Represents the possible states of the AEC system.
+/// </summary>
+/// <remarks>
+/// @MX:NOTE: AEC state enumeration - AEC operational states
+/// </remarks>
+public enum AecState
+{
+    /// <summary>AEC is initializing.</summary>
+    Initializing,
+
+    /// <summary>AEC is not configured (IL-09: aec_configured = false).</summary>
+    NotConfigured,
+
+    /// <summary>AEC is ready for exposure.</summary>
+    Ready,
+
+    /// <summary>AEC has an error condition.</summary>
+    Error,
+
+    /// <summary>AEC is in standby mode.</summary>
+    Standby
 }
 
 #endregion

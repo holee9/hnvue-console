@@ -51,4 +51,14 @@ public interface IWorkflowJournal
     /// Used after successful crash recovery.
     /// </summary>
     Task ClearAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Initializes the journal (creates database, tables, etc.).
+    /// </summary>
+    Task InitializeAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Disposes the journal asynchronously.
+    /// </summary>
+    ValueTask DisposeAsync();
 }

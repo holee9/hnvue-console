@@ -1,5 +1,7 @@
 namespace HnVue.Workflow.States;
 
+using HnVue.Workflow.Study;
+
 /// <summary>
 /// Context object containing data shared across workflow states.
 /// </summary>
@@ -41,6 +43,12 @@ public record StudyContext
     /// May be minimal or incomplete for emergency cases.
     /// </summary>
     public string? PatientName { get; init; }
+
+    /// <summary>
+    /// Gets optional patient information for integration tests.
+    /// This property is used by HAL simulators and integration tests.
+    /// </summary>
+    public Study.PatientInfo? PatientInfo { get; init; }
 
     /// <summary>
     /// Creates a new StudyContext with the specified values.

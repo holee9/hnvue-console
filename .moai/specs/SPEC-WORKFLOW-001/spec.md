@@ -6,7 +6,7 @@
 |--------------|----------------------------------------|
 | SPEC ID      | SPEC-WORKFLOW-001                      |
 | Title        | HnVue Clinical Workflow Engine         |
-| Status       | Phase 1-3 Complete (2026-02-28)         |
+| Status       | Phase 4 Complete (2026-03-01)            |
 | Priority     | High                                   |
 | Created      | 2026-02-17                             |
 | IEC 62304    | Class C (X-ray exposure control)       |

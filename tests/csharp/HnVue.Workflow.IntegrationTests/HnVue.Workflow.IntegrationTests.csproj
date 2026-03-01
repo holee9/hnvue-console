@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    HnVue.Workflow.IntegrationTests - Workflow engine integration tests
+    SPEC-WORKFLOW-001 Phase 4.4: Integration Tests
+    TASK-416: End-to-End Workflow Test Suite
+    TASK-417: Hardware Failure Scenario Tests
+    TASK-418: DICOM Network Failure Tests
+  -->
+
+  <PropertyGroup>
+    <AssemblyName>HnVue.Workflow.IntegrationTests</AssemblyName>
+    <RootNamespace>HnVue.Workflow.IntegrationTests</RootNamespace>
+    <Description>HnVue Workflow Engine Integration Tests</Description>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Testing Framework -->
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Project References -->
+    <ProjectReference Include="..\..\..\src\HnVue.Workflow\HnVue.Workflow.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Test Settings -->
+    <None Update="xunit.runner.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
