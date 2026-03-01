@@ -203,6 +203,30 @@ public interface ISafetyInterlock
     Task<InterlockStatus> CheckAllInterlocksAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Checks whether exposure is currently blocked by any interlock.
+    /// Returns true if ANY interlock is in unsafe state (false).
+    /// </summary>
+    /// <remarks>
+    /// @MX:ANCHOR: IsExposureBlockedAsync - safety gate for exposure control
+    /// @MX:WARN: Safety-critical - returns true when any interlock is unsafe
+    /// </remarks>
+    Task<bool> IsExposureBlockedAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Sets the state of an individual interlock.
+    /// Used for testing and simulator control.
+    /// </summary>
+    /// <param name="interlockName">The name of the interlock to set.</param>
+    /// <param name="enabled">True to enable (safe), false to disable (unsafe).</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    /// <remarks>
+    /// @MX:NOTE: SetInterlockStateAsync - testing method for interlock control
+    /// @MX:WARN: Safety-critical - directly affects exposure blocking
+    /// </remarks>
+    Task SetInterlockStateAsync(string interlockName, bool enabled, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Puts the system into emergency standby mode.
     /// SPEC-WORKFLOW-001 Section 5.2: Emergency stop override
     /// </summary>

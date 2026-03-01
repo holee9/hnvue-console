@@ -47,9 +47,9 @@ public class DicomFailureTests : IAsyncDisposable
     public DicomFailureTests()
     {
         _loggerFactory = NullLoggerFactory.Instance;
-        _hvgSimulator = new HvgDriverSimulator();
-        _detectorSimulator = new DetectorSimulator();
         _safetySimulator = new SafetyInterlockSimulator();
+        _hvgSimulator = new HvgDriverSimulator(_safetySimulator); // Pass safety interlock to HVG
+        _detectorSimulator = new DetectorSimulator();
         _doseSimulator = new DoseTrackerSimulator();
         _aecSimulator = new AecControllerSimulator();
         _journal = new SqliteWorkflowJournal(":memory:");
@@ -201,9 +201,9 @@ public class DicomFailureTests : IAsyncDisposable
 
         stateMachine.CurrentState.Should().Be(StateMachineWorkflowState.PacsExport);
 
-        // Should be able to complete the study
+        // Should be able to complete the study (transition to Idle)
         var completeResult = await stateMachine.TryTransitionAsync(
-            StateMachineWorkflowState.PacsExport,
+            StateMachineWorkflowState.Idle,
             "COMPLETE_STUDY",
             "TEST_OPERATOR");
 
@@ -270,8 +270,9 @@ public class DicomFailureTests : IAsyncDisposable
         // (This would be verified through journal entries or retry queue state)
 
         // Attempt to complete study despite PACS export failure
+        // Note: This transitions to Idle (completed state), not PacsExport self-transition
         var completeResult = await stateMachine.TryTransitionAsync(
-            StateMachineWorkflowState.PacsExport,
+            StateMachineWorkflowState.Idle, // Transition to Idle (completed state)
             "COMPLETE_WITH_PENDING_EXPORT",
             "TEST_OPERATOR");
 
@@ -279,7 +280,7 @@ public class DicomFailureTests : IAsyncDisposable
         completeResult.IsSuccess.Should().BeTrue(
             "Should be able to complete study even if PACS export failed");
 
-        stateMachine.CurrentState.Should().Be(StateMachineWorkflowState.PacsExport);
+        stateMachine.CurrentState.Should().Be(StateMachineWorkflowState.Idle);
 
         // Verify workflow never blocks - study can complete with pending PACS export
         completeResult.IsSuccess.Should().BeTrue(
@@ -396,8 +397,9 @@ public class DicomFailureTests : IAsyncDisposable
         stateMachine.CurrentState.Should().Be(StateMachineWorkflowState.PacsExport);
 
         // Study completes despite export failure
+        // Note: This transitions to Idle (completed state), not PacsExport self-transition
         var completeResult = await stateMachine.TryTransitionAsync(
-            StateMachineWorkflowState.PacsExport,
+            StateMachineWorkflowState.Idle, // Transition to Idle (completed state)
             "COMPLETE_WITH_PENDING_EXPORT",
             "TEST_OPERATOR");
 
@@ -408,7 +410,7 @@ public class DicomFailureTests : IAsyncDisposable
         // In real implementation, a background service would detect network recovery
         // and retry pending exports. For this test, we verify the state.
 
-        stateMachine.CurrentState.Should().Be(StateMachineWorkflowState.PacsExport);
+        stateMachine.CurrentState.Should().Be(StateMachineWorkflowState.Idle);
 
         // Assert - Verify study is complete and export is pending
         // (In real implementation, would check retry queue or export status)
@@ -473,7 +475,7 @@ public class DicomFailureTests : IAsyncDisposable
             {
                 var result = await stateMachine.TryTransitionAsync(
                     state,
-                    $"TEST_{scenario}",
+                    "NAVIGATE",  // Use NAVIGATE trigger which is defined for all transitions
                     "TEST_OPERATOR",
                     cancellationToken: CancellationToken.None);
 

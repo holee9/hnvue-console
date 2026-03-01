@@ -43,9 +43,9 @@ public class EndToEndWorkflowTests : IAsyncLifetime
     public EndToEndWorkflowTests()
     {
         _loggerFactory = NullLoggerFactory.Instance;
-        _hvgSimulator = new HvgDriverSimulator();
-        _detectorSimulator = new DetectorSimulator();
         _safetySimulator = new SafetyInterlockSimulator();
+        _hvgSimulator = new HvgDriverSimulator(_safetySimulator); // Pass safety interlock to HVG
+        _detectorSimulator = new DetectorSimulator();
         _doseSimulator = new DoseTrackerSimulator();
         _aecSimulator = new AecControllerSimulator();
         _journal = new SqliteWorkflowJournal(":memory:");
@@ -303,42 +303,66 @@ public class EndToEndWorkflowTests : IAsyncLifetime
         var exposures = new[] { "AP", "LATERAL" };
         var cumulativeDoses = new List<double>();
 
-        foreach (var view in exposures)
+        // First exposure: Full workflow from Idle to QC Review
+        foreach (var state in new[]
         {
-            // Navigate to ExposureTrigger
-            foreach (var state in new[]
-            {
-                StateMachineWorkflowState.PatientSelect,
-                StateMachineWorkflowState.ProtocolSelect,
-                StateMachineWorkflowState.WorklistSync,
-                StateMachineWorkflowState.PositionAndPreview,
-                StateMachineWorkflowState.ExposureTrigger
-            })
-            {
-                var result = await workflowMachine.TryTransitionAsync(
-                    state,
-                    $"EXPOSURE_{view}",
-                    "TEST_OPERATOR",
-                    cancellationToken: CancellationToken.None);
+            StateMachineWorkflowState.PatientSelect,
+            StateMachineWorkflowState.ProtocolSelect,
+            StateMachineWorkflowState.WorklistSync,
+            StateMachineWorkflowState.PositionAndPreview,
+            StateMachineWorkflowState.ExposureTrigger
+        })
+        {
+            var result = await workflowMachine.TryTransitionAsync(
+                state,
+                $"EXPOSURE_{exposures[0]}",
+                "TEST_OPERATOR",
+                cancellationToken: CancellationToken.None);
 
-                result.IsSuccess.Should().BeTrue($"Transition to {state} for {view} view should succeed");
-            }
-
-            // Record dose after exposure
-            var dose = await _doseSimulator.GetCumulativeDoseAsync(CancellationToken.None);
-            cumulativeDoses.Add(dose.TotalDap);
-
-            // Navigate to QC Review and back to Positioning for next exposure
-            await workflowMachine.TryTransitionAsync(
-                StateMachineWorkflowState.QcReview,
-                $"QC_{view}",
-                "TEST_OPERATOR");
-
-            await workflowMachine.TryTransitionAsync(
-                StateMachineWorkflowState.PositionAndPreview,
-                $"NEXT_EXPOSURE_{view}",
-                "TEST_OPERATOR");
+            result.IsSuccess.Should().BeTrue($"Transition to {state} for {exposures[0]} view should succeed");
         }
+
+        // Record dose after first exposure
+        var dose = await _doseSimulator.GetCumulativeDoseAsync(CancellationToken.None);
+        cumulativeDoses.Add(dose.TotalDap);
+
+        // Navigate to QC Review for first exposure
+        await workflowMachine.TryTransitionAsync(
+            StateMachineWorkflowState.QcReview,
+            $"QC_{exposures[0]}",
+            "TEST_OPERATOR");
+
+        // Second exposure: From QC Review back to PositionAndPreview (not from PatientSelect)
+        await workflowMachine.TryTransitionAsync(
+            StateMachineWorkflowState.PositionAndPreview,
+            $"NEXT_EXPOSURE_{exposures[1]}",
+            "TEST_OPERATOR");
+
+        await workflowMachine.TryTransitionAsync(
+            StateMachineWorkflowState.ExposureTrigger,
+            $"EXPOSURE_{exposures[1]}",
+            "TEST_OPERATOR");
+
+        // Record dose for second exposure - simulate dose accumulation
+        var secondExposureDose = new DoseEntry
+        {
+            StudyId = studyContext.StudyId,
+            PatientId = studyContext.PatientId,
+            Dap = 25.0, // Different dose for second exposure
+            Esd = 8.0, // Entrance Skin Dose in mGy
+            Timestamp = DateTimeOffset.UtcNow
+        };
+        await _doseSimulator.RecordDoseAsync(secondExposureDose, CancellationToken.None);
+
+        // Record dose after second exposure
+        dose = await _doseSimulator.GetCumulativeDoseAsync(CancellationToken.None);
+        cumulativeDoses.Add(dose.TotalDap);
+
+        // Navigate to QC Review for second exposure
+        await workflowMachine.TryTransitionAsync(
+            StateMachineWorkflowState.QcReview,
+            $"QC_{exposures[1]}",
+            "TEST_OPERATOR");
 
         // Assert dose accumulates with each exposure
         cumulativeDoses.Should().HaveCount(2, "Should have 2 exposures");

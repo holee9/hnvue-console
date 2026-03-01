@@ -4,6 +4,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using HnVue.Workflow.Interfaces;
+using HnVue.Workflow.Safety;
 
 /// <summary>
 /// Simulator for the High-Voltage Generator (HVG) driver.
@@ -17,15 +18,17 @@ using HnVue.Workflow.Interfaces;
 /// - Fault injection for HVG communication failures
 /// - Exposure timing simulation
 /// - Parameter validation
+/// - Safety interlock integration (SAFETY-CRITICAL)
 /// </remarks>
 public sealed class HvgDriverSimulator : IHvgDriver
 {
     private readonly object _lock = new();
+    private readonly ISafetyInterlock? _safetyInterlock;
     private HvgState _state = HvgState.Initializing;
     private bool _isReady;
     private string? _faultCode;
     private bool _faultModeEnabled;
-    private ExposureParameters _lastExposureParameters;
+    private Interfaces.ExposureParameters _lastExposureParameters;
     private int _exposureCount;
     private Task? _currentExposureTask;
     private CancellationTokenSource? _exposureCts;
@@ -33,9 +36,12 @@ public sealed class HvgDriverSimulator : IHvgDriver
     /// <summary>
     /// Initializes a new instance of the HvgDriverSimulator class.
     /// </summary>
-    public HvgDriverSimulator()
+    /// <param name="safetyInterlock">Optional safety interlock for integration testing.
+    /// When provided, exposure will be blocked if any interlock is active.</param>
+    public HvgDriverSimulator(ISafetyInterlock? safetyInterlock = null)
     {
-        _lastExposureParameters = new ExposureParameters { Kv = 0, Ma = 0, Ms = 0 };
+        _safetyInterlock = safetyInterlock;
+        _lastExposureParameters = new Interfaces.ExposureParameters { Kv = 0, Ma = 0, Ms = 0 };
     }
 
     /// <summary>
@@ -101,9 +107,10 @@ public sealed class HvgDriverSimulator : IHvgDriver
     /// @MX:ANCHOR: TriggerExposureAsync - core X-ray exposure control
     /// @MX:WARN: Safety-critical - controls ionizing radiation emission
     /// Validates parameters, checks state readiness, simulates exposure timing
+    /// SAFETY-CRITICAL: Checks safety interlock before allowing exposure
     /// </remarks>
     public async Task<bool> TriggerExposureAsync(
-        ExposureParameters parameters,
+        Interfaces.ExposureParameters parameters,
         CancellationToken cancellationToken = default)
     {
         // Validate parameters
@@ -113,6 +120,18 @@ public sealed class HvgDriverSimulator : IHvgDriver
         }
 
         cancellationToken.ThrowIfCancellationRequested();
+
+        // SAFETY-CRITICAL: Check safety interlock before exposure
+        // This ensures exposure is blocked if any interlock is active
+        if (_safetyInterlock != null)
+        {
+            var isExposureBlocked = await _safetyInterlock.IsExposureBlockedAsync(cancellationToken);
+            if (isExposureBlocked)
+            {
+                // Exposure blocked by safety interlock - do not expose
+                return false;
+            }
+        }
 
         lock (_lock)
         {
@@ -232,7 +251,7 @@ public sealed class HvgDriverSimulator : IHvgDriver
     /// Gets the last exposure parameters.
     /// </summary>
     /// <returns>The last exposure parameters used.</returns>
-    public ExposureParameters GetLastExposureParameters()
+    public Interfaces.ExposureParameters GetLastExposureParameters()
     {
         lock (_lock)
         {
@@ -271,7 +290,7 @@ public sealed class HvgDriverSimulator : IHvgDriver
             _faultCode = null;
             _faultModeEnabled = false;
             _exposureCount = 0;
-            _lastExposureParameters = new ExposureParameters { Kv = 0, Ma = 0, Ms = 0 };
+            _lastExposureParameters = new Interfaces.ExposureParameters { Kv = 0, Ma = 0, Ms = 0 };
             _currentExposureTask = null;
             _exposureCts?.Dispose();
             _exposureCts = null;
@@ -286,21 +305,52 @@ public sealed class HvgDriverSimulator : IHvgDriver
     /// <returns>A task representing the exposure simulation.</returns>
     /// <remarks>
     /// @MX:NOTE: Exposure simulation - simulates timing and completion
+    /// @MX:WARN: SAFETY-CRITICAL - Periodically checks safety interlock during exposure
+    /// If any interlock becomes unsafe during exposure, exposure is aborted immediately.
+    /// This ensures IEC 62304 Class C compliance for radiation safety.
     /// </remarks>
     private async Task SimulateExposureAsync(int exposureTimeMs, CancellationToken cancellationToken)
     {
+        // SAFETY-CRITICAL: Check safety interlock before and during exposure
+        // Use a very short check interval to catch door opening quickly
+
+        // Create linked cancellation token source
+        var linkedCts = _exposureCts != null
+            ? CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _exposureCts.Token)
+            : CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
         try
         {
-            // Simulate exposure time
-            await Task.Delay(exposureTimeMs, cancellationToken);
+            var startTime = DateTime.UtcNow;
+            var endTime = startTime.AddMilliseconds(exposureTimeMs);
+
+            while (DateTime.UtcNow < endTime)
+            {
+                // SAFETY-CRITICAL: Check safety interlock BEFORE every sleep
+                // This ensures door opening is caught immediately
+                if (_safetyInterlock != null)
+                {
+                    var isExposureBlocked = await _safetyInterlock.IsExposureBlockedAsync(linkedCts.Token);
+                    if (isExposureBlocked)
+                    {
+                        // SAFETY-CRITICAL: Interlock became unsafe during exposure
+                        // Abort immediately - do not complete exposure
+                        throw new OperationCanceledException("Exposure aborted due to safety interlock");
+                    }
+                }
+
+                // Sleep for a very short interval (1ms) to catch door opening quickly
+                await Task.Delay(1, linkedCts.Token);
+            }
         }
         catch (OperationCanceledException)
         {
-            // Exposure was aborted
-            return;
+            // Exposure was aborted (either by safety interlock or external cancellation)
+            throw;
         }
         finally
         {
+            linkedCts.Dispose();
             lock (_lock)
             {
                 _state = HvgState.Idle;

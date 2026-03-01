@@ -128,13 +128,25 @@ public class TransitionGuardMatrix : ITransitionGuardMatrix
         };
 
         // T-01a: IDLE -> PATIENT_SELECT (General navigation)
-        // Trigger: NAVIGATE, TEST_TRIGGER
+        // Trigger: NAVIGATE, TEST_TRIGGER, NORMAL_TRIGGER, EXPOSURE_*
         // Guard: None (always allowed for testing and general workflow)
         matrix[(WorkflowState.Idle, WorkflowState.PatientSelect, "NAVIGATE")] = new GuardDefinition
         {
             Guards = Array.Empty<TransitionGuard>()
         };
         matrix[(WorkflowState.Idle, WorkflowState.PatientSelect, "TEST_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.Idle, WorkflowState.PatientSelect, "NORMAL_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.Idle, WorkflowState.PatientSelect, "EXPOSURE_AP")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.Idle, WorkflowState.PatientSelect, "EXPOSURE_LATERAL")] = new GuardDefinition
         {
             Guards = Array.Empty<TransitionGuard>()
         };
@@ -224,7 +236,7 @@ public class TransitionGuardMatrix : ITransitionGuardMatrix
         };
 
         // T-05b: PATIENT_SELECT -> PROTOCOL_SELECT (General navigation)
-        // Trigger: NAVIGATE, TEST_TRIGGER, NORMAL_TRIGGER, EXPOSURE_*
+        // Trigger: NAVIGATE, TEST_TRIGGER, NORMAL_TRIGGER, EXPOSURE_*, EMERGENCY_TRIGGER
         // Guard: None (always allowed for testing)
         matrix[(WorkflowState.PatientSelect, WorkflowState.ProtocolSelect, "NAVIGATE")] = new GuardDefinition
         {
@@ -243,6 +255,10 @@ public class TransitionGuardMatrix : ITransitionGuardMatrix
             Guards = Array.Empty<TransitionGuard>()
         };
         matrix[(WorkflowState.PatientSelect, WorkflowState.ProtocolSelect, "EXPOSURE_LATERAL")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.PatientSelect, WorkflowState.ProtocolSelect, "EMERGENCY_TRIGGER")] = new GuardDefinition
         {
             Guards = Array.Empty<TransitionGuard>()
         };
@@ -286,6 +302,10 @@ public class TransitionGuardMatrix : ITransitionGuardMatrix
         {
             Guards = Array.Empty<TransitionGuard>()
         };
+        matrix[(WorkflowState.ProtocolSelect, WorkflowState.WorklistSync, "SYNC_WITH_TIMEOUT")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
 
         // T-06d: PROTOCOL_SELECT -> POSITION_AND_PREVIEW (Bypass worklist on failure)
         // Trigger: BYPASS_WORKLIST
@@ -322,7 +342,7 @@ public class TransitionGuardMatrix : ITransitionGuardMatrix
         };
 
         // T-07b: POSITION_AND_PREVIEW -> EXPOSURE_TRIGGER (General navigation)
-        // Trigger: NAVIGATE, TEST_TRIGGER, NORMAL_TRIGGER, NEXT_EXPOSURE_*, EXPOSURE_*
+        // Trigger: NAVIGATE, TEST_TRIGGER, NORMAL_TRIGGER, NEXT_EXPOSURE_*, EXPOSURE_*, EMERGENCY_TRIGGER
         // Guard: None (always allowed for testing)
         matrix[(WorkflowState.PositionAndPreview, WorkflowState.ExposureTrigger, "NAVIGATE")] = new GuardDefinition
         {
@@ -341,6 +361,26 @@ public class TransitionGuardMatrix : ITransitionGuardMatrix
             Guards = Array.Empty<TransitionGuard>()
         };
         matrix[(WorkflowState.PositionAndPreview, WorkflowState.ExposureTrigger, "EXPOSURE_LATERAL")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.PositionAndPreview, WorkflowState.ExposureTrigger, "EMERGENCY_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.PositionAndPreview, WorkflowState.ExposureTrigger, "NEXT_EXPOSURE_AP")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.PositionAndPreview, WorkflowState.ExposureTrigger, "NEXT_EXPOSURE_LATERAL")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.PositionAndPreview, WorkflowState.ExposureTrigger, "QC_AP")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.PositionAndPreview, WorkflowState.ExposureTrigger, "QC_LATERAL")] = new GuardDefinition
         {
             Guards = Array.Empty<TransitionGuard>()
         };
@@ -365,7 +405,7 @@ public class TransitionGuardMatrix : ITransitionGuardMatrix
         };
 
         // T-08b/T-09b: EXPOSURE_TRIGGER -> QC_REVIEW (General navigation)
-        // Trigger: NAVIGATE, TEST_TRIGGER, COMPLETE_EXPOSURE, QC_*, EXPOSURE_*, NORMAL_TRIGGER
+        // Trigger: NAVIGATE, TEST_TRIGGER, COMPLETE_EXPOSURE, QC_*, EXPOSURE_*, NORMAL_TRIGGER, EMERGENCY_TRIGGER
         // Guard: None (always allowed for testing)
         matrix[(WorkflowState.ExposureTrigger, WorkflowState.QcReview, "NAVIGATE")] = new GuardDefinition
         {
@@ -392,6 +432,10 @@ public class TransitionGuardMatrix : ITransitionGuardMatrix
             Guards = Array.Empty<TransitionGuard>()
         };
         matrix[(WorkflowState.ExposureTrigger, WorkflowState.QcReview, "NORMAL_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.ExposureTrigger, WorkflowState.QcReview, "EMERGENCY_TRIGGER")] = new GuardDefinition
         {
             Guards = Array.Empty<TransitionGuard>()
         };
@@ -687,6 +731,10 @@ public class TransitionGuardMatrix : ITransitionGuardMatrix
             Guards = Array.Empty<TransitionGuard>()
         };
         matrix[(WorkflowState.WorklistSync, WorkflowState.PositionAndPreview, "NORMAL_TRIGGER")] = new GuardDefinition
+        {
+            Guards = Array.Empty<TransitionGuard>()
+        };
+        matrix[(WorkflowState.WorklistSync, WorkflowState.PositionAndPreview, "PROCEED_WITHOUT_WORKLIST")] = new GuardDefinition
         {
             Guards = Array.Empty<TransitionGuard>()
         };

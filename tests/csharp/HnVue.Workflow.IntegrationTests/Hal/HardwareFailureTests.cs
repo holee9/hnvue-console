@@ -49,9 +49,9 @@ public class HardwareFailureTests : IAsyncDisposable
     public HardwareFailureTests()
     {
         _loggerFactory = NullLoggerFactory.Instance;
-        _hvgSimulator = new HvgDriverSimulator();
-        _detectorSimulator = new DetectorSimulator();
         _safetySimulator = new SafetyInterlockSimulator();
+        _hvgSimulator = new HvgDriverSimulator(_safetySimulator); // Pass safety interlock to HVG
+        _detectorSimulator = new DetectorSimulator(_safetySimulator); // Pass safety interlock to Detector
         _doseSimulator = new DoseTrackerSimulator();
         _aecSimulator = new AecControllerSimulator();
         _journal = new SqliteWorkflowJournal(":memory:");

@@ -4,6 +4,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using HnVue.Workflow.Interfaces;
+using HnVue.Workflow.Safety;
 
 /// <summary>
 /// Simulator for the X-ray detector driver.
@@ -17,10 +18,12 @@ using HnVue.Workflow.Interfaces;
 /// - Fault injection for detector communication failures
 /// - Acquisition timing simulation
 /// - Customizable detector information
+/// - Safety interlock integration (detector_ready interlock)
 /// </remarks>
 public sealed class DetectorSimulator : IDetector
 {
     private readonly object _lock = new();
+    private readonly ISafetyInterlock? _safetyInterlock;
     private DetectorState _state = DetectorState.Initializing;
     private bool _isReady;
     private string? _errorMessage;
@@ -32,8 +35,11 @@ public sealed class DetectorSimulator : IDetector
     /// <summary>
     /// Initializes a new instance of the DetectorSimulator class.
     /// </summary>
-    public DetectorSimulator()
+    /// <param name="safetyInterlock">Optional safety interlock for integration testing.
+    /// When provided, detector_ready interlock is updated when detector enters/exits error state.</param>
+    public DetectorSimulator(ISafetyInterlock? safetyInterlock = null)
     {
+        _safetyInterlock = safetyInterlock;
         _detectorInfo = new DetectorInfo
         {
             Manufacturer = "Simulated Detector Corp",
@@ -70,7 +76,7 @@ public sealed class DetectorSimulator : IDetector
     /// <inheritdoc/>
     /// <remarks>
     /// @MX:ANCHOR: StartAcquisitionAsync - begins image acquisition
-    /// @MX:WARN: State transition - affects detector readiness
+    /// @MX:WARN: State transition - affects detector readiness and safety interlock
     /// </remarks>
     public Task StartAcquisitionAsync(CancellationToken cancellationToken = default)
     {
@@ -83,6 +89,17 @@ public sealed class DetectorSimulator : IDetector
                 _state = DetectorState.Error;
                 _errorMessage = "ERR_ACQUISITION_FAULT";
                 _isReady = false;
+
+                // SAFETY: Update safety interlock to reflect detector error state
+                // This ensures exposure is blocked when detector is in error
+                _ = Task.Run(async () =>
+                {
+                    if (_safetyInterlock != null)
+                    {
+                        await _safetyInterlock.SetInterlockStateAsync("detector_ready", false);
+                    }
+                }, cancellationToken);
+
                 return Task.CompletedTask;
             }
 
@@ -193,7 +210,10 @@ public sealed class DetectorSimulator : IDetector
     /// </summary>
     /// <param name="cancellationToken">Token to cancel the operation.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public Task ClearFaultAsync(CancellationToken cancellationToken = default)
+    /// <remarks>
+    /// @MX:NOTE: ClearFaultAsync - restores detector to Ready state and updates safety interlock
+    /// </remarks>
+    public async Task ClearFaultAsync(CancellationToken cancellationToken = default)
     {
         lock (_lock)
         {
@@ -203,7 +223,12 @@ public sealed class DetectorSimulator : IDetector
             _isReady = true;
         }
 
-        return Task.CompletedTask;
+        // SAFETY: Restore safety interlock to safe state when fault is cleared
+        // This allows exposure to proceed after detector fault is resolved
+        if (_safetyInterlock != null)
+        {
+            await _safetyInterlock.SetInterlockStateAsync("detector_ready", true, cancellationToken);
+        }
     }
 
     /// <summary>
