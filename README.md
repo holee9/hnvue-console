@@ -232,10 +232,10 @@ dotnet test tests/csharp/HnVue.Workflow.IntegrationTests/
 | SPEC-DICOM-001 | DICOM Communication Services (Storage/Worklist/MPPS/Commitment/QR) | ✅ 완료 | 100% |
 | SPEC-DOSE-001 | Radiation Dose Management (DAP, Cumulative Tracking, RDSR, Audit Trail) | ✅ 완료 | 100% |
 | SPEC-WORKFLOW-001 | Workflow Engine (Phase 1-4: State Machine, Protocol, Dose, HAL, DICOM, GUI) | ✅ 완료 | 100% |
-| SPEC-UI-001 | WPF Console UI (Phase 1: MVVM Architecture Complete) | 🔄 Phase 1 완료 | 60% |
-| SPEC-TEST-001 | Test Infrastructure | ✅ 진행중 | 80% |
+| SPEC-UI-001 | WPF Console UI (MVVM + gRPC Adapters + DI 완료, WPF 런타임 검증 대기) | 🔄 Windows 검증중 | 80% |
+| SPEC-TEST-001 | Test Infrastructure (96/96 Windows 테스트 통과) | ✅ 완료 | 90% |
 
-**전체 진행률: 7/9 SPEC (78%), WORKFLOW Phase 1-4 완료로 HAL/DICOM/GUI 통합 구현**
+**전체 진행률: 7/9 SPEC (78%), Windows 환경 빌드/테스트 완료 — WPF 런타임 실행 검증 단계**
 
 ---
 
