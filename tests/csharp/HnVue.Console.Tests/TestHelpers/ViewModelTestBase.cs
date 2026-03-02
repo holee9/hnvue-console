@@ -1,7 +1,6 @@
 using Moq;
-using Moq.Language;
-using Moq.Language.Flow;
 using System.ComponentModel;
+using System.Linq.Expressions;
 
 namespace HnVue.Console.Tests.TestHelpers;
 
@@ -40,22 +39,22 @@ public abstract class ViewModelTestBase : IDisposable
     /// <summary>
     /// Sets up a task-returning method that completes successfully.
     /// </summary>
-    protected static ISetup<T, Task<TResult>> SetupSuccessfulTask<T, TResult>(
-        this Mock<T> mock,
+    protected static void SetupSuccessfulTask<T, TResult>(
+        Mock<T> mock,
         Expression<Func<T, Task<TResult>>> expression,
         TResult result) where T : class
     {
-        return mock.Setup(expression).Returns(Task.FromResult(result));
+        mock.Setup(expression).ReturnsAsync(result);
     }
 
     /// <summary>
     /// Sets up a task-returning method that completes successfully.
     /// </summary>
-    protected static ISetup<T, Task> SetupSuccessfulTask<T>(
-        this Mock<T> mock,
+    protected static void SetupSuccessfulTask<T>(
+        Mock<T> mock,
         Expression<Func<T, Task>> expression) where T : class
     {
-        return mock.Setup(expression).Returns(Task.CompletedTask);
+        mock.Setup(expression).Returns(Task.CompletedTask);
     }
 
     /// <summary>
@@ -67,44 +66,49 @@ public abstract class ViewModelTestBase : IDisposable
         {
             PatientId = id,
             PatientName = "Test Patient",
-            DateOfBirth = new DateTimeOffset(1990, 1, 1, 0, 0, 0, TimeSpan.Zero),
-            Sex = "M",
+            DateOfBirth = new DateOnly(1990, 1, 1),
+            Sex = HnVue.Console.Models.Sex.Male,
             AccessionNumber = "ACC001"
         };
     }
 
     /// <summary>
-    /// Creates a test worklist item.
+    /// Creates a test worklist item using actual WorklistItem fields.
     /// </summary>
     protected static HnVue.Console.Models.WorklistItem CreateTestWorklistItem(string id = "WL001")
     {
         return new HnVue.Console.Models.WorklistItem
         {
-            StudyId = id,
+            ProcedureId = id,
             PatientId = "PT001",
             PatientName = "Test Patient",
-            ProcedureName = "Chest X-Ray",
-            ScheduledTime = DateTimeOffset.Now,
-            Priority = HnVue.Console.Models.StudyPriority.Routine,
-            Status = HnVue.Console.Models.WorklistStatus.Pending
+            AccessionNumber = "ACC001",
+            ScheduledProcedureStepDescription = "Chest X-Ray",
+            ScheduledDateTime = DateTimeOffset.Now,
+            BodyPart = "CHEST",
+            Projection = "PA",
+            Status = HnVue.Console.Models.WorklistStatus.Scheduled
         };
     }
 
     /// <summary>
-    /// Creates a test protocol.
+    /// Creates a test protocol preset using actual ProtocolPreset fields.
     /// </summary>
-    protected static HnVue.Console.Models.Protocol CreateTestProtocol(string id = "PROTO001")
+    protected static HnVue.Console.Models.ProtocolPreset CreateTestProtocol(string id = "PROTO001")
     {
-        return new HnVue.Console.Models.Protocol
+        return new HnVue.Console.Models.ProtocolPreset
         {
             ProtocolId = id,
-            ProtocolName = "Chest PA",
-            BodyPart = "CHEST",
-            ViewPosition = "PA",
-            Kv = 120,
-            Mas = 5.0m,
-            FocalSpotSize = HnVue.Console.Models.FocalSpotSize.Large,
-            GridRequired = true
+            BodyPartCode = "CHEST",
+            ProjectionCode = "PA",
+            DefaultExposure = new HnVue.Console.Models.ExposureParameters
+            {
+                KVp = 120,
+                MA = 200,
+                ExposureTimeMs = 25,
+                SourceImageDistanceCm = 180,
+                FocalSpotSize = HnVue.Console.Models.FocalSpotSize.Large
+            }
         };
     }
 

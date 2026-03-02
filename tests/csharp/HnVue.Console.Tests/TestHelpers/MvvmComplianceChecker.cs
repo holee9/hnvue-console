@@ -27,7 +27,8 @@ public static class MvvmComplianceChecker
     };
 
     /// <summary>
-    /// Allowed exceptions (interfaces that ViewModels may implement).
+    /// Allowed exceptions (interfaces and types that ViewModels may use).
+    /// WriteableBitmap is permitted as it is necessary for WPF image display in acquisition and review contexts.
     /// </summary>
     private static readonly HashSet<string> AllowedTypes = new(StringComparer.Ordinal)
     {
@@ -35,7 +36,10 @@ public static class MvvmComplianceChecker
         "System.ComponentModel.INotifyPropertyChanged",
         "System.ComponentModel.IEditableObject",
         "System.ComponentModel.IDataErrorInfo",
-        "System.ComponentModel.INotifyDataErrorInfo"
+        "System.ComponentModel.INotifyDataErrorInfo",
+        // WriteableBitmap is required for high-performance preview rendering in AcquisitionViewModel
+        // and ImageReviewViewModel (direct pixel manipulation needed for DICOM image display).
+        "System.Windows.Media.Imaging.WriteableBitmap"
     };
 
     /// <summary>

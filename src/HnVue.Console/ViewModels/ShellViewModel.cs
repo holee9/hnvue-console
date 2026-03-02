@@ -110,13 +110,19 @@ public class ShellViewModel : ViewModelBase
     }
 
     /// <summary>
+    /// Raised when the locale changes and all resource bindings should be refreshed.
+    /// The string argument is the new locale code (e.g., "ko-KR" or "en-US").
+    /// </summary>
+    public event EventHandler<string>? LocaleChanged;
+
+    /// <summary>
     /// Called when the locale is changed.
     /// </summary>
     /// <param name="locale">The new locale (e.g., "ko-KR" or "en-US").</param>
     private void OnLocaleChanged(string locale)
     {
         Debug.WriteLine($"Locale changed to: {locale}");
-        // TODO: Update resource manager and refresh all bindings
+        LocaleChanged?.Invoke(this, locale);
     }
 }
 

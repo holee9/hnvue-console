@@ -12,6 +12,11 @@ namespace HnVue.Console.ViewModels;
 /// </summary>
 public class SystemStatusViewModel : ViewModelBase
 {
+    /// <summary>
+    /// Raised when a status update requires an immediate exposure halt.
+    /// The ComponentStatus argument identifies the component that caused the halt.
+    /// </summary>
+    public event EventHandler<ComponentStatus>? ExposureHaltRequired;
     private readonly ISystemStatusService _systemStatusService;
     private SystemOverallStatus? _overallStatus;
     private bool _isLoading;
@@ -155,7 +160,7 @@ public class SystemStatusViewModel : ViewModelBase
                     if (update.RequiresExposureHalt)
                     {
                         Debug.WriteLine($"Status update requires exposure halt: {update.Component.ComponentId}");
-                        // TODO: Trigger exposure halt notification
+                        ExposureHaltRequired?.Invoke(this, update.Component);
                     }
                 });
             }

@@ -12,6 +12,11 @@ namespace HnVue.Console.ViewModels;
 /// </summary>
 public class ProtocolViewModel : ViewModelBase
 {
+    /// <summary>
+    /// Raised when a protocol preset is selected and exposure parameters should be updated.
+    /// The ProtocolPreset argument contains the recommended exposure parameters.
+    /// </summary>
+    public event EventHandler<ProtocolPreset>? ProtocolPresetSelected;
     private readonly IProtocolService _protocolService;
     private ProtocolSelection? _selectedProtocol;
     private ProtocolPreset? _selectedProtocolPreset;
@@ -161,9 +166,8 @@ public class ProtocolViewModel : ViewModelBase
         {
             var result = await _protocolService.SelectProtocolAsync(_selectedProtocol, ct);
 
-            // Update exposure parameters with preset values
-            // TODO: Update exposure parameters via event
             Debug.WriteLine($"Protocol selected: {result.Preset.ProtocolId}");
+            ProtocolPresetSelected?.Invoke(this, result.Preset);
 
             _selectedProtocol = new ProtocolSelection
             {

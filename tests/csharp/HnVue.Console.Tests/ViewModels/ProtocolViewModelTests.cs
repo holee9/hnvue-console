@@ -1,6 +1,7 @@
 using HnVue.Console.Models;
 using HnVue.Console.Tests.TestHelpers;
 using HnVue.Console.ViewModels;
+using Moq;
 using Xunit;
 
 namespace HnVue.Console.Tests.ViewModels;
@@ -25,75 +26,147 @@ public class ProtocolViewModelTests : ViewModelTestBase
         var viewModel = new ProtocolViewModel(_mockProtocolService.Object);
 
         // Assert
-        Assert.NotNull(viewModel.Protocols);
+        Assert.NotNull(viewModel.BodyParts);
+        Assert.NotNull(viewModel.Projections);
+        Assert.Empty(viewModel.BodyParts);
+        Assert.Empty(viewModel.Projections);
         Assert.Null(viewModel.SelectedProtocol);
     }
 
     [Fact]
-    public async Task LoadProtocolsAsync_Populates_Protocol_List()
+    public async Task LoadBodyPartsAsync_Populates_BodyParts()
     {
         // Arrange
-        var protocols = new List<Protocol>
+        var bodyParts = new List<BodyPart>
         {
-            CreateTestProtocol("PROTO001"),
-            CreateTestProtocol("PROTO002")
+            new BodyPart { Code = "CHEST", DisplayName = "Chest", DisplayNameKorean = "흉부" },
+            new BodyPart { Code = "ABD", DisplayName = "Abdomen", DisplayNameKorean = "복부" }
         };
 
         _mockProtocolService
-            .Setup(s => s.GetProtocolsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(protocols);
+            .Setup(s => s.GetBodyPartsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(bodyParts);
 
         var viewModel = new ProtocolViewModel(_mockProtocolService.Object);
 
         // Act
-        await viewModel.LoadProtocolsAsync(TestCancellationToken);
+        await viewModel.LoadBodyPartsAsync(TestCancellationToken);
 
         // Assert
-        Assert.Equal(2, viewModel.Protocols.Count);
+        Assert.Equal(2, viewModel.BodyParts.Count);
+        _mockProtocolService.Verify(s => s.GetBodyPartsAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public void SelectProtocolCommand_Sets_Selected_Protocol()
+    public async Task LoadProjectionsAsync_Populates_Projections()
     {
         // Arrange
-        var viewModel = new ProtocolViewModel(_mockProtocolService.Object);
-        var protocol = CreateTestProtocol();
+        var projections = new List<Projection>
+        {
+            new Projection { Code = "PA", DisplayName = "PA", DisplayNameKorean = "전후방" },
+            new Projection { Code = "LAT", DisplayName = "Lateral", DisplayNameKorean = "측면" }
+        };
 
-        // Act
-        viewModel.SelectProtocolCommand.Execute(protocol);
-
-        // Assert
-        Assert.Equal(protocol, viewModel.SelectedProtocol);
-    }
-
-    [Fact]
-    public async Task SelectedProtocol_Raises_PropertyChanged()
-    {
-        // Arrange
         _mockProtocolService
-            .Setup(s => s.GetProtocolsAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Protocol>());
+            .Setup(s => s.GetProjectionsAsync("CHEST", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(projections);
 
         var viewModel = new ProtocolViewModel(_mockProtocolService.Object);
-        await viewModel.LoadProtocolsAsync(TestCancellationToken);
+
+        // Act
+        await viewModel.LoadProjectionsAsync("CHEST", TestCancellationToken);
+
+        // Assert
+        Assert.Equal(2, viewModel.Projections.Count);
+        _mockProtocolService.Verify(
+            s => s.GetProjectionsAsync("CHEST", It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public void SelectedProtocol_RaisesPropertyChanged()
+    {
+        // Arrange
+        var viewModel = new ProtocolViewModel(_mockProtocolService.Object);
         var protocol = CreateTestProtocol();
 
+        // Act
         var changedProperties = GetChangedProperties(viewModel, () => viewModel.SelectedProtocol = protocol);
 
         // Assert
         Assert.Contains("SelectedProtocol", changedProperties);
     }
 
-    [Theory]
-    [InlineData(FocalSpotSize.Small, "0.6")]
-    [InlineData(FocalSpotSize.Large, "1.2")]
-    [InlineData(FocalSpotSize.Micro, "0.3")]
-    public void FocalSpotSizeToString_Returns_Correct_Value(FocalSpotSize size, string expected)
+    [Fact]
+    public void SelectedProtocol_WhenSet_UpdatesValue()
     {
+        // Arrange
+        var viewModel = new ProtocolViewModel(_mockProtocolService.Object);
+        var protocol = CreateTestProtocol();
+
         // Act
-        var result = ProtocolViewModel.FocalSpotSizeToString(size);
+        viewModel.SelectedProtocol = protocol;
 
         // Assert
-        Assert.Equal(expected, result);
+        Assert.Equal(protocol, viewModel.SelectedProtocol);
+    }
+
+    [Fact]
+    public void SelectedProtocol_WhenSetToNull_ClearsValue()
+    {
+        // Arrange
+        var viewModel = new ProtocolViewModel(_mockProtocolService.Object);
+        var protocol = CreateTestProtocol();
+        viewModel.SelectedProtocol = protocol;
+
+        // Act
+        viewModel.SelectedProtocol = null;
+
+        // Assert
+        Assert.Null(viewModel.SelectedProtocol);
+    }
+
+    [Fact]
+    public void SelectProtocolCommand_CanExecute_WhenProtocolSelected()
+    {
+        // Arrange
+        var viewModel = new ProtocolViewModel(_mockProtocolService.Object);
+        var protocol = CreateTestProtocol();
+
+        // Act - set a protocol preset (this also sets the internal _selectedProtocol)
+        viewModel.SelectedProtocol = protocol;
+
+        // Assert - CanExecute should be true when a protocol is selected and not loading
+        Assert.True(viewModel.SelectProtocolCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void SelectProtocolCommand_CannotExecute_WhenNoProtocolSelected()
+    {
+        // Arrange
+        var viewModel = new ProtocolViewModel(_mockProtocolService.Object);
+
+        // Assert - CanExecute should be false when no protocol is selected
+        Assert.False(viewModel.SelectProtocolCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task GetPresetAsync_Returns_ProtocolPreset()
+    {
+        // Arrange
+        var preset = CreateTestProtocol();
+
+        _mockProtocolService
+            .Setup(s => s.GetProtocolPresetAsync("CHEST", "PA", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(preset);
+
+        var viewModel = new ProtocolViewModel(_mockProtocolService.Object);
+
+        // Act
+        var result = await viewModel.GetPresetAsync("CHEST", "PA", TestCancellationToken);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(preset.ProtocolId, result.ProtocolId);
     }
 }

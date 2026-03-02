@@ -12,6 +12,21 @@ namespace HnVue.Console.ViewModels;
 /// </summary>
 public class WorklistViewModel : ViewModelBase
 {
+    /// <summary>
+    /// Raised when navigation to another view is requested.
+    /// The string argument is the view name (e.g., "Acquisition").
+    /// </summary>
+    public event EventHandler<string>? NavigationRequested;
+
+    /// <summary>
+    /// Raised when an error occurs that should be displayed to the user.
+    /// </summary>
+    public event EventHandler<string>? ErrorOccurred;
+
+    /// <summary>
+    /// Gets or sets the selected worklist item (procedure) for navigation context.
+    /// </summary>
+    public WorklistItem? SelectedItem { get; private set; }
     private readonly IWorklistService _worklistService;
     private string _selectedPatientId = string.Empty;
     private bool _isLoading;
@@ -119,7 +134,7 @@ public class WorklistViewModel : ViewModelBase
         catch (Exception ex)
         {
             Debug.WriteLine($"Worklist refresh failed: {ex.Message}");
-            // TODO: Show error dialog
+            ErrorOccurred?.Invoke(this, ex.Message);
         }
         finally
         {
@@ -136,9 +151,9 @@ public class WorklistViewModel : ViewModelBase
             return;
 
         SelectedPatientId = item.PatientId;
+        SelectedItem = item;
         Debug.WriteLine($"Selected procedure {item.ProcedureId} for patient {item.PatientName}");
-
-        // TODO: Navigate to AcquisitionView with selected procedure
+        NavigationRequested?.Invoke(this, "Acquisition");
     }
 
     /// <summary>

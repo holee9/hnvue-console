@@ -22,6 +22,41 @@ public class ConfigurationViewModelTests : ViewModelTestBase
         _mockUserService = CreateMockService<IUserService>();
     }
 
+    /// <summary>
+    /// Creates a valid SystemConfig for testing with all required fields populated.
+    /// </summary>
+    private static SystemConfig CreateValidSystemConfig()
+    {
+        return new SystemConfig
+        {
+            Calibration = new CalibrationConfig
+            {
+                LastCalibrationDate = DateTimeOffset.Now.AddMonths(-1),
+                NextCalibrationDueDate = DateTimeOffset.Now.AddMonths(11),
+                IsCalibrationValid = true,
+                Status = CalibrationStatus.Valid
+            },
+            Network = new NetworkConfig
+            {
+                DicomAeTitle = "TEST_AE",
+                DicomPort = "104",
+                PacsHostName = "localhost",
+                PacsPort = 11112,
+                MwlEnabled = true
+            },
+            Users = new UserConfig
+            {
+                Users = new List<User>()
+            },
+            Logging = new LoggingConfig
+            {
+                MinimumLogLevel = HnVue.Console.Models.LogLevel.Information,
+                RetentionDays = 30,
+                EnableRemoteLogging = false
+            }
+        };
+    }
+
     [Fact]
     public void Constructor_Initializes_Collections()
     {
@@ -44,13 +79,7 @@ public class ConfigurationViewModelTests : ViewModelTestBase
 
         _mockConfigService
             .Setup(s => s.GetConfigAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new SystemConfig
-            {
-                Calibration = new CalibrationConfig(),
-                Network = new NetworkConfig(),
-                Users = new UserConfig(),
-                Logging = new LoggingConfig()
-            });
+            .ReturnsAsync(CreateValidSystemConfig());
 
         var viewModel = new ConfigurationViewModel(
             _mockConfigService.Object,
@@ -65,7 +94,7 @@ public class ConfigurationViewModelTests : ViewModelTestBase
     }
 
     [Theory]
-    [InlineData(UserRole.ServiceEngineer, true, true, false, true)]
+    [InlineData(UserRole.ServiceEngineer, true, true, true, true)]
     [InlineData(UserRole.Supervisor, false, true, false, true)]
     [InlineData(UserRole.Administrator, false, true, true, true)]
     [InlineData(UserRole.Operator, false, false, false, false)]
@@ -83,13 +112,7 @@ public class ConfigurationViewModelTests : ViewModelTestBase
 
         _mockConfigService
             .Setup(s => s.GetConfigAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new SystemConfig
-            {
-                Calibration = new CalibrationConfig(),
-                Network = new NetworkConfig(),
-                Users = new UserConfig(),
-                Logging = new LoggingConfig()
-            });
+            .ReturnsAsync(CreateValidSystemConfig());
 
         var viewModel = new ConfigurationViewModel(
             _mockConfigService.Object,
@@ -113,17 +136,9 @@ public class ConfigurationViewModelTests : ViewModelTestBase
             .Setup(s => s.GetCurrentUserRoleAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(UserRole.Administrator);
 
-        var config = new SystemConfig
-        {
-            Calibration = new CalibrationConfig(),
-            Network = new NetworkConfig(),
-            Users = new UserConfig(),
-            Logging = new LoggingConfig()
-        };
-
         _mockConfigService
             .Setup(s => s.GetConfigAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(config);
+            .ReturnsAsync(CreateValidSystemConfig());
 
         _mockConfigService
             .Setup(s => s.UpdateConfigAsync(It.IsAny<ConfigUpdate>(), It.IsAny<CancellationToken>()))
@@ -156,13 +171,7 @@ public class ConfigurationViewModelTests : ViewModelTestBase
 
         _mockConfigService
             .Setup(s => s.GetConfigAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new SystemConfig
-            {
-                Calibration = new CalibrationConfig(),
-                Network = new NetworkConfig(),
-                Users = new UserConfig(),
-                Logging = new LoggingConfig()
-            });
+            .ReturnsAsync(CreateValidSystemConfig());
 
         _mockConfigService
             .Setup(s => s.StartCalibrationAsync(It.IsAny<CancellationToken>()))

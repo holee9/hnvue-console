@@ -48,11 +48,10 @@ public class ViewModelBaseTests
                 changedProperty = e.PropertyName;
             };
 
-            // Act
-            var result = viewModel.SetTestValue("NewValue");
+            // Act - use the property setter which uses CallerMemberName correctly
+            viewModel.TestValue = "NewValue";
 
             // Assert
-            Assert.True(result);
             Assert.Equal(1, callCount);
             Assert.Equal("TestValue", changedProperty);
         }

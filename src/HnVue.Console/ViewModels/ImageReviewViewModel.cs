@@ -14,6 +14,17 @@ namespace HnVue.Console.ViewModels;
 /// </summary>
 public class ImageReviewViewModel : ViewModelBase
 {
+    /// <summary>
+    /// Raised when navigation to another view is requested.
+    /// The string argument is the view name (e.g., "Acquisition").
+    /// </summary>
+    public event EventHandler<string>? NavigationRequested;
+
+    /// <summary>
+    /// Raised when the current image has been updated and should be reloaded.
+    /// The string argument is the new image ID.
+    /// </summary>
+    public event EventHandler<string>? ImageUpdateRequested;
     private readonly IImageService _imageService;
     private readonly IQCService _qcService;
     private readonly MeasurementOverlayService _measurementService;
@@ -561,7 +572,7 @@ public class ImageReviewViewModel : ViewModelBase
             if (result.Success)
             {
                 Debug.WriteLine($"[ImageReviewViewModel] Image accepted: {_currentImage.ImageId}");
-                // TODO: Navigate to next image
+                NavigationRequested?.Invoke(this, "Worklist");
             }
             else
             {
@@ -593,7 +604,7 @@ public class ImageReviewViewModel : ViewModelBase
             if (result.Success)
             {
                 Debug.WriteLine($"[ImageReviewViewModel] Image rejected: {_currentImage.ImageId} - {SelectedRejectionReason}");
-                // TODO: Navigate to next image or retake
+                NavigationRequested?.Invoke(this, "Acquisition");
             }
             else
             {
@@ -621,7 +632,7 @@ public class ImageReviewViewModel : ViewModelBase
             if (result.Success)
             {
                 Debug.WriteLine($"[ImageReviewViewModel] Image reprocessing: {_currentImage.ImageId}");
-                // TODO: Update image when reprocessing completes
+                ImageUpdateRequested?.Invoke(this, _currentImage.ImageId);
             }
             else
             {

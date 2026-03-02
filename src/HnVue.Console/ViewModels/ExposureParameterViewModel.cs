@@ -204,7 +204,9 @@ public class ExposureParameterViewModel : ViewModelBase
     /// </summary>
     public AsyncRelayCommand ApplyCommand { get; }
 
-    private bool HasChanges => true; // TODO: Track changes
+    private ExposureParameters? _appliedParameters;
+
+    private bool HasChanges => _appliedParameters == null || _appliedParameters != _parameters;
 
     private bool CanIncreaseKVp() => _parameters.KVp < _ranges.KvpRange.Max;
     private bool CanDecreaseKVp() => _parameters.KVp > _ranges.KvpRange.Min;
@@ -242,6 +244,8 @@ public class ExposureParameterViewModel : ViewModelBase
         try
         {
             await _exposureService.SetExposureParametersAsync(_parameters, ct);
+            _appliedParameters = _parameters;
+            ApplyCommand.RaiseCanExecuteChanged();
             Debug.WriteLine($"Exposure parameters applied: kVp={_parameters.KVp}, mA={_parameters.MA}, time={_parameters.ExposureTimeMs}ms");
         }
         catch (Exception ex)

@@ -1,6 +1,6 @@
-using HnVue.Console.Models;
 using HnVue.Console.Tests.TestHelpers;
 using HnVue.Console.ViewModels;
+using Moq;
 using Xunit;
 
 namespace HnVue.Console.Tests.ViewModels;
@@ -26,11 +26,60 @@ public class AECViewModelTests : ViewModelTestBase
 
         // Assert
         Assert.NotNull(viewModel);
-        // AEC should have default values
+        Assert.False(viewModel.IsAecEnabled);
+        Assert.NotNull(viewModel.ToggleAecCommand);
     }
 
     [Fact]
-    public async Task EnableAECAsync_Enables_AEC()
+    public async Task ToggleAecCommand_Enables_When_Disabled()
+    {
+        // Arrange
+        _mockAecService
+            .Setup(s => s.EnableAECAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var viewModel = new AECViewModel(_mockAecService.Object);
+        Assert.False(viewModel.IsAecEnabled);
+
+        // Act - execute toggle when AEC is disabled
+        viewModel.ToggleAecCommand.Execute(null);
+
+        // Wait briefly for async void to complete
+        await Task.Delay(50);
+
+        // Assert - EnableAECAsync should have been called
+        _mockAecService.Verify(s => s.EnableAECAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ToggleAecCommand_Disables_When_Enabled()
+    {
+        // Arrange
+        _mockAecService
+            .Setup(s => s.EnableAECAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        _mockAecService
+            .Setup(s => s.DisableAECAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var viewModel = new AECViewModel(_mockAecService.Object);
+
+        // Set AEC to enabled state first
+        await viewModel.SetAecModeAsync(true);
+        Assert.True(viewModel.IsAecEnabled);
+
+        // Act - execute toggle when AEC is enabled
+        viewModel.ToggleAecCommand.Execute(null);
+
+        // Wait briefly for async void to complete
+        await Task.Delay(50);
+
+        // Assert - DisableAECAsync should have been called
+        _mockAecService.Verify(s => s.DisableAECAsync(It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public async Task SetAecModeAsync_Enables_AEC()
     {
         // Arrange
         _mockAecService
@@ -40,78 +89,43 @@ public class AECViewModelTests : ViewModelTestBase
         var viewModel = new AECViewModel(_mockAecService.Object);
 
         // Act
-        await viewModel.EnableAECAsync(TestCancellationToken);
+        await viewModel.SetAecModeAsync(true);
 
         // Assert
         _mockAecService.Verify(s => s.EnableAECAsync(It.IsAny<CancellationToken>()), Times.Once);
+        Assert.True(viewModel.IsAecEnabled);
     }
 
     [Fact]
-    public async Task DisableAECAsync_Disables_AEC()
+    public async Task SetAecModeAsync_Disables_AEC()
     {
         // Arrange
+        _mockAecService
+            .Setup(s => s.EnableAECAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
         _mockAecService
             .Setup(s => s.DisableAECAsync(It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         var viewModel = new AECViewModel(_mockAecService.Object);
+        await viewModel.SetAecModeAsync(true);
 
         // Act
-        await viewModel.DisableAECAsync(TestCancellationToken);
+        await viewModel.SetAecModeAsync(false);
 
         // Assert
         _mockAecService.Verify(s => s.DisableAECAsync(It.IsAny<CancellationToken>()), Times.Once);
+        Assert.False(viewModel.IsAecEnabled);
     }
 
     [Fact]
-    public async Task GetAECStatusAsync_Returns_Status()
+    public void IsAecEnabled_RaisesPropertyChanged()
     {
         // Arrange
-        var status = new AECStatus
-        {
-            IsEnabled = true,
-            Mode = AECMode.SemiAuto,
-            DetectedDensity = 1.5m,
-            SpeedClass = AECSpeedClass.S400
-        };
-
-        _mockAecService
-            .Setup(s => s.GetStatusAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(status);
-
         var viewModel = new AECViewModel(_mockAecService.Object);
-
-        // Act
-        var result = await viewModel.GetAECStatusAsync(TestCancellationToken);
+        var changedProperties = GetChangedProperties(viewModel, () => viewModel.IsAecEnabled = true);
 
         // Assert
-        Assert.True(result.IsEnabled);
-        Assert.Equal(AECMode.SemiAuto, result.Mode);
-    }
-
-    [Theory]
-    [InlineData(AECMode.Manual, "Manual")]
-    [InlineData(AECMode.SemiAuto, "Semi-Auto")]
-    [InlineData(AECMode.Auto, "Auto")]
-    public void AecModeToString_Returns_Correct_String(AECMode mode, string expected)
-    {
-        // Act
-        var result = AECViewModel.AecModeToString(mode);
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
-
-    [Theory]
-    [InlineData(AECMode.Manual, "DisabledBrush")]
-    [InlineData(AECMode.SemiAuto, "WarningBrush")]
-    [InlineData(AECMode.Auto, "SuccessBrush")]
-    public void AecModeToBrush_Returns_Correct_Brush(AECMode mode, string expectedBrush)
-    {
-        // Act
-        var result = AECViewModel.AecModeToBrush(mode);
-
-        // Assert
-        Assert.Equal(expectedBrush, result);
+        Assert.Contains("IsAecEnabled", changedProperties);
     }
 }

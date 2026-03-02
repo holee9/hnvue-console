@@ -29,12 +29,12 @@ public class WorklistViewModelTests : ViewModelTestBase
         // Assert
         Assert.NotNull(viewModel.WorklistItems);
         Assert.Empty(viewModel.WorklistItems);
-        Assert.Null(viewModel.SelectedWorklistItem);
+        Assert.Null(viewModel.SelectedItem);
         Assert.False(viewModel.IsLoading);
     }
 
     [Fact]
-    public async Task RefreshAsync_Loads_Worklist()
+    public async Task RefreshCommand_Loads_Worklist()
     {
         // Arrange
         var worklistItems = new List<WorklistItem>
@@ -43,112 +43,186 @@ public class WorklistViewModelTests : ViewModelTestBase
             CreateTestWorklistItem("WL002")
         };
 
+        var refreshResult = new WorklistRefreshResult
+        {
+            Items = worklistItems,
+            RefreshedAt = DateTimeOffset.Now
+        };
+
         _mockWorklistService
-            .Setup(s => s.GetWorklistAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(worklistItems);
+            .Setup(s => s.RefreshWorklistAsync(It.IsAny<WorklistRefreshRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(refreshResult);
 
         var viewModel = new WorklistViewModel(_mockWorklistService.Object);
 
-        // Act
-        await viewModel.RefreshAsync(TestCancellationToken);
+        // Act - AsyncRelayCommand uses Execute (async void internally)
+        viewModel.RefreshCommand.Execute(null);
+        await Task.Delay(200);
 
         // Assert
         Assert.Equal(2, viewModel.WorklistItems.Count);
         Assert.False(viewModel.IsLoading);
+        _mockWorklistService.Verify(
+            s => s.RefreshWorklistAsync(It.IsAny<WorklistRefreshRequest>(), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
-    public async Task RefreshAsync_Updates_Status_Message()
+    public async Task RefreshCommand_Handles_Error_And_Raises_ErrorOccurred()
     {
         // Arrange
         _mockWorklistService
-            .Setup(s => s.GetWorklistAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<WorklistItem>());
+            .Setup(s => s.RefreshWorklistAsync(It.IsAny<WorklistRefreshRequest>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Service unavailable"));
 
         var viewModel = new WorklistViewModel(_mockWorklistService.Object);
 
-        // Act
-        await viewModel.RefreshAsync(TestCancellationToken);
+        string? errorMessage = null;
+        viewModel.ErrorOccurred += (s, msg) => errorMessage = msg;
+
+        // Act - AsyncRelayCommand uses Execute (async void internally)
+        viewModel.RefreshCommand.Execute(null);
+        await Task.Delay(200);
 
         // Assert
-        Assert.Contains("0 items", viewModel.StatusMessage);
-    }
-
-    [Theory]
-    [InlineData(WorklistStatus.Pending, "Pending")]
-    [InlineData(WorklistStatus.InProgress, "In Progress")]
-    [InlineData(WorklistStatus.Completed, "Completed")]
-    [InlineData(WorklistStatus.Cancelled, "Cancelled")]
-    public void StatusToString_Returns_Correct_String(WorklistStatus status, string expected)
-    {
-        // Arrange
-        var item = CreateTestWorklistItem();
-        item = item with { Status = status };
-
-        // Act
-        var result = WorklistViewModel.StatusToString(status);
-
-        // Assert
-        Assert.Equal(expected, result);
-    }
-
-    [Theory]
-    [InlineData(StudyPriority.Stat, "PriorityBrush")]
-    [InlineData(StudyPriority.Urgent, "ErrorBrush")]
-    [InlineData(StudyPriority.Routine, "SuccessBrush")]
-    public void PriorityToBrush_Returns_Correct_Brush(StudyPriority priority, string expectedBrush)
-    {
-        // Act
-        var result = WorklistViewModel.PriorityToBrush(priority);
-
-        // Assert
-        Assert.Equal(expectedBrush, result);
+        Assert.NotNull(errorMessage);
+        Assert.False(viewModel.IsLoading);
     }
 
     [Fact]
-    public async Task SelectWorklistItemCommand_Sets_Selected_Item()
+    public void SelectProcedureCommand_SetsSelectedItem()
     {
         // Arrange
-        _mockWorklistService
-            .Setup(s => s.GetWorklistAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<WorklistItem>());
-
         var viewModel = new WorklistViewModel(_mockWorklistService.Object);
-        await viewModel.RefreshAsync(TestCancellationToken);
-
-        var item = CreateTestWorklistItem();
+        var item = CreateTestWorklistItem("WL001");
 
         // Act
-        viewModel.SelectWorklistItemCommand.Execute(item);
+        viewModel.SelectProcedureCommand.Execute(item);
 
         // Assert
-        Assert.Equal(item, viewModel.SelectedWorklistItem);
+        Assert.Equal(item, viewModel.SelectedItem);
     }
 
     [Fact]
-    public async Task FilterByPriority_Updates_Displayed_Items()
+    public void SelectProcedureCommand_RaisesNavigationRequested()
     {
         // Arrange
-        var worklistItems = new List<WorklistItem>
+        var viewModel = new WorklistViewModel(_mockWorklistService.Object);
+        var item = CreateTestWorklistItem("WL001");
+
+        string? navigationTarget = null;
+        viewModel.NavigationRequested += (s, target) => navigationTarget = target;
+
+        // Act
+        viewModel.SelectProcedureCommand.Execute(item);
+
+        // Assert
+        Assert.Equal("Acquisition", navigationTarget);
+    }
+
+    [Fact]
+    public void SelectProcedureCommand_CanExecute_WithWorklistItem()
+    {
+        // Arrange
+        var viewModel = new WorklistViewModel(_mockWorklistService.Object);
+        var item = CreateTestWorklistItem();
+
+        // Assert
+        Assert.True(viewModel.SelectProcedureCommand.CanExecute(item));
+    }
+
+    [Fact]
+    public void SelectProcedureCommand_CannotExecute_WithNull()
+    {
+        // Arrange
+        var viewModel = new WorklistViewModel(_mockWorklistService.Object);
+
+        // Assert
+        Assert.False(viewModel.SelectProcedureCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task ActivateAsync_LoadsIfEmpty()
+    {
+        // Arrange
+        var refreshResult = new WorklistRefreshResult
         {
-            CreateTestWorklistItem("WL001") with { Priority = StudyPriority.Stat },
-            CreateTestWorklistItem("WL002") with { Priority = StudyPriority.Routine },
-            CreateTestWorklistItem("WL003") with { Priority = StudyPriority.Routine }
+            Items = new List<WorklistItem> { CreateTestWorklistItem() },
+            RefreshedAt = DateTimeOffset.Now
         };
 
         _mockWorklistService
-            .Setup(s => s.GetWorklistAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(worklistItems);
+            .Setup(s => s.RefreshWorklistAsync(It.IsAny<WorklistRefreshRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(refreshResult);
 
         var viewModel = new WorklistViewModel(_mockWorklistService.Object);
-        await viewModel.RefreshAsync(TestCancellationToken);
+        Assert.Empty(viewModel.WorklistItems);
 
         // Act
-        viewModel.FilterPriority = StudyPriority.Routine;
-        await Task.Delay(50);
+        await viewModel.ActivateAsync(TestCancellationToken);
 
         // Assert
-        // ViewModel should filter based on selected priority
-        Assert.Contains("Routine", viewModel.StatusMessage);
+        _mockWorklistService.Verify(
+            s => s.RefreshWorklistAsync(It.IsAny<WorklistRefreshRequest>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ActivateAsync_DoesNotLoad_WhenItemsExist()
+    {
+        // Arrange
+        var refreshResult = new WorklistRefreshResult
+        {
+            Items = new List<WorklistItem> { CreateTestWorklistItem() },
+            RefreshedAt = DateTimeOffset.Now
+        };
+
+        _mockWorklistService
+            .Setup(s => s.RefreshWorklistAsync(It.IsAny<WorklistRefreshRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(refreshResult);
+
+        var viewModel = new WorklistViewModel(_mockWorklistService.Object);
+
+        // Load once first
+        await viewModel.ActivateAsync(TestCancellationToken);
+
+        // Act - activate again
+        await viewModel.ActivateAsync(TestCancellationToken);
+
+        // Assert - should only have called RefreshWorklistAsync once total
+        _mockWorklistService.Verify(
+            s => s.RefreshWorklistAsync(It.IsAny<WorklistRefreshRequest>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public void WorklistItem_CreatedWith_CorrectFields()
+    {
+        // Arrange & Act
+        var item = CreateTestWorklistItem("WL001");
+
+        // Assert using actual WorklistItem fields
+        Assert.Equal("WL001", item.ProcedureId);
+        Assert.Equal("PT001", item.PatientId);
+        Assert.Equal("Test Patient", item.PatientName);
+        Assert.Equal("ACC001", item.AccessionNumber);
+        Assert.Equal("Chest X-Ray", item.ScheduledProcedureStepDescription);
+        Assert.Equal("CHEST", item.BodyPart);
+        Assert.Equal("PA", item.Projection);
+        Assert.Equal(WorklistStatus.Scheduled, item.Status);
+    }
+
+    [Fact]
+    public void WorklistItem_WithExpression_UpdatesStatus()
+    {
+        // Arrange
+        var item = CreateTestWorklistItem();
+
+        // Act - use with expression to create modified copy
+        var updatedItem = item with { Status = WorklistStatus.InProgress };
+
+        // Assert
+        Assert.Equal(WorklistStatus.InProgress, updatedItem.Status);
+        Assert.Equal(WorklistStatus.Scheduled, item.Status);
     }
 }

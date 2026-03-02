@@ -47,4 +47,40 @@
     <ProjectReference Include="..\HnVue.Workflow\HnVue.Workflow.csproj" />
   </ItemGroup>
 
+  <!-- Fix: Clean stale WPF temp artifacts before each XAML compilation pass.
+       WPF SDK creates HnVue.Console_RANDOM_wpftmp/ dirs on every build.
+       Accumulated dirs cause CS0111 duplicate symbol errors (stale .g.cs files).
+       CS0579 (duplicate TargetFrameworkAttribute) is fixed via Directory.Build.props:
+         GenerateTargetFrameworkAttribute=false for *_wpftmp projects. -->
+  <Target Name="CleanStaleWpfTempProjects" BeforeTargets="GenerateTemporaryTargetAssembly">
+    <PropertyGroup>
+      <_WpfObjDir>$(MSBuildProjectDirectory)\artifacts\obj</_WpfObjDir>
+      <_MainObjTfmDir>$(_WpfObjDir)\$(MSBuildProjectName)\$(Configuration)\$(TargetFramework)</_MainObjTfmDir>
+    </PropertyGroup>
+    <!-- Delete stale *_wpftmp dirs from previous builds to prevent CS0111 -->
+    <ItemGroup Condition="Exists('$(_WpfObjDir)')">
+      <_StaleWpfTmpDirs Include="$([System.IO.Directory]::GetDirectories('$(_WpfObjDir)', '*_wpftmp'))" />
+    </ItemGroup>
+    <RemoveDir Directories="@(_StaleWpfTmpDirs)" Condition="'@(_StaleWpfTmpDirs)' != ''" />
+    <!-- Clean culture-specific resource files that cause satellite assembly errors -->
+    <RemoveDir Directories="$(_MainObjTfmDir)\en-US" Condition="Exists('$(_MainObjTfmDir)\en-US')" />
+    <RemoveDir Directories="$(_MainObjTfmDir)\ko-KR" Condition="Exists('$(_MainObjTfmDir)\ko-KR')" />
+  </Target>
+
+  <!-- Fix CS2001: Remove deleted wpftmp .g.cs refs from @(Compile) before CoreCompile.
+       CleanStaleWpfTempProjects deletes old wpftmp dirs. But WPF SDK (MarkupCompilePass1)
+       previously added their .g.cs paths to @(Compile) via cached task outputs.
+       Those stale references cause CS2001 (source file not found) on the next build.
+       This target removes any wpftmp Compile items whose files no longer exist on disk. -->
+  <Target Name="RemoveStaleWpftmpCompileItems" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <_StaleWpftmpCompile Include="@(Compile)"
+          Condition="$([System.String]::Copy('%(FullPath)').Contains('_wpftmp')) and
+                     !$([System.IO.File]::Exists('%(FullPath)'))" />
+    </ItemGroup>
+    <ItemGroup>
+      <Compile Remove="@(_StaleWpftmpCompile)" />
+    </ItemGroup>
+  </Target>
+
 </Project>

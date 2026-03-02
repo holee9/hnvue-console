@@ -12,6 +12,12 @@ namespace HnVue.Console.ViewModels;
 /// </summary>
 public class AuditLogViewModel : ViewModelBase
 {
+    /// <summary>
+    /// Raised when audit log data should be saved to a file.
+    /// The byte[] argument is the exported data to write.
+    /// The View handles the SaveFileDialog and file write.
+    /// </summary>
+    public event EventHandler<byte[]>? SaveFileRequested;
     private readonly IAuditLogService _auditLogService;
     private readonly ObservableCollection<AuditLogEntry> _logEntries;
     private bool _isLoading;
@@ -285,7 +291,7 @@ public class AuditLogViewModel : ViewModelBase
         {
             var data = await _auditLogService.ExportLogsAsync(_filter, ct);
             Debug.WriteLine($"Exported {data.Length} bytes of audit log data");
-            // TODO: Show save file dialog and write data
+            SaveFileRequested?.Invoke(this, data);
         }
         catch (Exception ex)
         {

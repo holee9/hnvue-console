@@ -78,7 +78,7 @@ public class PatientViewModelTests : ViewModelTestBase
     }
 
     [Fact]
-    public void SearchCommand_Cannot_Execute_While_Loading()
+    public async Task SearchCommand_Cannot_Execute_While_Loading()
     {
         // Arrange
         var tcs = new TaskCompletionSource<PatientSearchResult>();
@@ -103,6 +103,9 @@ public class PatientViewModelTests : ViewModelTestBase
         // Arrange
         var viewModel = new PatientViewModel(_mockPatientService.Object);
         var patient = CreateTestPatient();
+
+        // EditPatientCommand CanExecute checks SelectedPatient != null
+        viewModel.SelectedPatient = patient;
 
         // Act
         var canExecute = viewModel.EditPatientCommand.CanExecute(patient);

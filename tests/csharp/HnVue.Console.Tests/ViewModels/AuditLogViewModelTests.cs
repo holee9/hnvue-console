@@ -48,6 +48,8 @@ public class AuditLogViewModelTests : ViewModelTestBase
                 UserId = "user1",
                 UserName = "Test User",
                 EventDescription = "Test event",
+                PatientId = "PT001",
+                StudyId = null,
                 Outcome = AuditOutcome.Success
             }
         };
@@ -123,8 +125,17 @@ public class AuditLogViewModelTests : ViewModelTestBase
     [Fact]
     public async Task NextPageCommand_Increments_Page()
     {
-        // Arrange
-        var pagedResult = new PagedAuditLogResult
+        // Arrange - setup page 1 result with HasMorePages=true so NextPage is enabled
+        var page1Result = new PagedAuditLogResult
+        {
+            Entries = new List<AuditLogEntry>(),
+            TotalCount = 150,
+            PageNumber = 1,
+            PageSize = 50,
+            HasMorePages = true
+        };
+
+        var page2Result = new PagedAuditLogResult
         {
             Entries = new List<AuditLogEntry>(),
             TotalCount = 150,
@@ -134,18 +145,25 @@ public class AuditLogViewModelTests : ViewModelTestBase
         };
 
         _mockAuditLogService
+            .Setup(s => s.GetLogsPagedAsync(1, 50, It.IsAny<AuditLogFilter>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(page1Result);
+
+        _mockAuditLogService
             .Setup(s => s.GetLogsPagedAsync(2, 50, It.IsAny<AuditLogFilter>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(pagedResult);
+            .ReturnsAsync(page2Result);
 
         var viewModel = new AuditLogViewModel(_mockAuditLogService.Object);
         await viewModel.InitializeAsync(TestCancellationToken);
 
-        // Reset mock
+        // Verify HasMorePages is true after initial load
+        Assert.True(viewModel.HasMorePages);
+
+        // Reset mock invocations
         _mockAuditLogService.Invocations.Clear();
 
         // Act
         viewModel.NextPageCommand.Execute(null);
-        await Task.Delay(100);
+        await Task.Delay(200);
 
         // Assert
         Assert.Equal(2, viewModel.CurrentPage);

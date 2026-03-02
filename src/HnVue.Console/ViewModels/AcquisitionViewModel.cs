@@ -12,6 +12,17 @@ namespace HnVue.Console.ViewModels;
 /// </summary>
 public class AcquisitionViewModel : ViewModelBase
 {
+    /// <summary>
+    /// Raised when navigation to another view is requested.
+    /// The string argument is the view name (e.g., "ImageReview").
+    /// </summary>
+    public event EventHandler<string>? NavigationRequested;
+
+    /// <summary>
+    /// Raised when an error occurs that should be displayed to the user.
+    /// The string argument is the error message.
+    /// </summary>
+    public event EventHandler<string>? ErrorOccurred;
     private readonly IExposureService _exposureService;
     private readonly IProtocolService _protocolService;
     private readonly IAECService _aecService;
@@ -245,12 +256,12 @@ public class AcquisitionViewModel : ViewModelBase
             if (result.Success)
             {
                 Debug.WriteLine($"[AcquisitionViewModel] Exposure complete: {result.ImageId}");
-                // TODO: Navigate to image review
+                NavigationRequested?.Invoke(this, "ImageReview");
             }
             else
             {
                 Debug.WriteLine($"[AcquisitionViewModel] Exposure failed: {result.ErrorMessage}");
-                // TODO: Show error dialog
+                ErrorOccurred?.Invoke(this, result.ErrorMessage ?? "Exposure failed");
             }
         }
         catch (Exception ex)

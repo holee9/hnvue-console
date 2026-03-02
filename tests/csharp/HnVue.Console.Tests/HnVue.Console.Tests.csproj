@@ -10,7 +10,7 @@
     <Description>HnVue Console ViewModels Unit Tests</Description>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,8 +29,7 @@
 
   <ItemGroup>
     <!-- Project References -->
-    <ProjectReference Include="..\..\..\src\HnVue.Workflow\HnVue.Workflow.csproj" />
-    <ProjectReference Include="..\..\..\src\HnVue.Ipc.Client\HnVue.Ipc.Client.csproj" />
+    <ProjectReference Include="..\..\..\src\HnVue.Console\HnVue.Console.csproj" />
   </ItemGroup>
 
   <ItemGroup>

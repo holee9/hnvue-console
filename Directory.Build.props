@@ -30,9 +30,13 @@
     <!-- Deterministic Build -->
     <Deterministic>true</Deterministic>
 
-    <!-- Output Path -->
-    <BaseOutputPath>$(SolutionDir)artifacts\bin\$(MSBuildProjectName)\</BaseOutputPath>
-    <BaseIntermediateOutputPath>$(SolutionDir)artifacts\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+    <!-- Output Path
+         Use $(SolutionDir) when available (solution build), fall back to Directory.Build.props dir.
+         This prevents src/*/artifacts/ stale files when building individual projects. -->
+    <_HnVueRoot Condition="'$(SolutionDir)' != '' and '$(SolutionDir)' != '*Undefined*'">$(SolutionDir)</_HnVueRoot>
+    <_HnVueRoot Condition="'$(_HnVueRoot)' == ''">$(MSBuildThisFileDirectory)</_HnVueRoot>
+    <BaseOutputPath>$(_HnVueRoot)artifacts\bin\$(MSBuildProjectName)\</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(_HnVueRoot)artifacts\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
     <OutputPath>$(BaseOutputPath)$(Configuration)\</OutputPath>
     <IntermediateOutputPath>$(BaseIntermediateOutputPath)$(Configuration)\</IntermediateOutputPath>
 
@@ -42,8 +46,22 @@
     <!-- Disable auto-generated AssemblyInfo (WPF handles this) -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 
-      <!-- NoWarn -->
-    <NoWarn>$(NoWarn);CS1591</NoWarn> <!-- Missing XML comment -->
+    <!-- Fix CS0579: .NET 10 SDK generates duplicate TargetFrameworkAttribute in some project types.
+         Globally disable to prevent 'duplicate attribute' hard compiler errors.
+         TargetFrameworkAttribute is not required for runtime behavior. -->
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+
+    <!-- NoWarn -->
+    <!-- CS1591: Missing XML comment for public API -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(MSBuildProjectName.Contains('_wpftmp'))">
+    <!-- Fix CS0579: WPF wpftmp inherits main project's AssemblyAttributes.cs via Compile items.
+         If wpftmp also runs GenerateTargetFrameworkAttribute, it generates a second copy in its
+         own obj dir → duplicate [assembly: TargetFramework] → CS0579 (hard compiler error).
+         Setting false prevents wpftmp from generating its own copy; the inherited copy suffices. -->
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
 
   <PropertyGroup>

@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using HnVue.Console.ViewModels;
 using HnVue.Console.Services;
+using HnVue.Console.Services.Adapters;
 using HnVue.Console.Rendering;
 
 namespace HnVue.Console.DependencyInjection;
@@ -38,33 +39,20 @@ public static class ServiceCollectionExtensions
         services.AddTransient<AuditLogViewModel>();
 
         // Register gRPC Service Adapters (Singleton lifetime - shared channel)
-        // Mock services for development - replace with real adapters when gRPC is ready
-        services.AddSingleton<IPatientService, MockPatientService>();
-        services.AddSingleton<IWorklistService, MockWorklistService>();
-        services.AddSingleton<IExposureService, MockExposureService>();
-        services.AddSingleton<IProtocolService, MockProtocolService>();
-        services.AddSingleton<IAECService, MockAECService>();
-        services.AddSingleton<IDoseService, MockDoseService>();
-        services.AddSingleton<IImageService, MockImageService>();
-        services.AddSingleton<IQCService, MockQCService>();
-        services.AddSingleton<ISystemStatusService, MockSystemStatusService>();
-        services.AddSingleton<ISystemConfigService, MockSystemConfigService>();
-        services.AddSingleton<IUserService, MockUserService>();
-        services.AddSingleton<IAuditLogService, MockAuditLogService>();
+        services.AddSingleton<IPatientService, PatientServiceAdapter>();
+        services.AddSingleton<IWorklistService, WorklistServiceAdapter>();
+        services.AddSingleton<IExposureService, ExposureServiceAdapter>();
+        services.AddSingleton<IProtocolService, ProtocolServiceAdapter>();
+        services.AddSingleton<IAECService, AECServiceAdapter>();
+        services.AddSingleton<IDoseService, DoseServiceAdapter>();
+        services.AddSingleton<IImageService, ImageServiceAdapter>();
+        services.AddSingleton<IQCService, QCServiceAdapter>();
+        services.AddSingleton<ISystemStatusService, SystemStatusServiceAdapter>();
+        services.AddSingleton<ISystemConfigService, SystemConfigServiceAdapter>();
+        services.AddSingleton<IUserService, UserServiceAdapter>();
+        services.AddSingleton<INetworkService, NetworkServiceAdapter>();
+        services.AddSingleton<IAuditLogService, AuditLogServiceAdapter>();
         services.AddSingleton<MeasurementOverlayService>();
-        // services.AddSingleton<IPatientService, PatientServiceAdapter>();
-        // services.AddSingleton<IWorklistService, WorklistServiceAdapter>();
-        // services.AddSingleton<IExposureService, ExposureServiceAdapter>();
-        // services.AddSingleton<IProtocolService, ProtocolServiceAdapter>();
-        // services.AddSingleton<IAECService, AECServiceAdapter>();
-        // services.AddSingleton<IDoseService, DoseServiceAdapter>();
-        // services.AddSingleton<IImageService, ImageServiceAdapter>();
-        // services.AddSingleton<IQCService, QCServiceAdapter>();
-        // services.AddSingleton<ISystemStatusService, SystemStatusServiceAdapter>();
-        // services.AddSingleton<ISystemConfigService, SystemConfigServiceAdapter>();
-        // services.AddSingleton<IUserService, UserServiceAdapter>();
-        // services.AddSingleton<INetworkService, NetworkServiceAdapter>();
-        // services.AddSingleton<IAuditLogService, AuditLogServiceAdapter>();
 
         // Register Rendering Services
         services.AddSingleton<GrayscaleRenderer>();

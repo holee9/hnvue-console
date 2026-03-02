@@ -12,6 +12,27 @@ namespace HnVue.Console.ViewModels;
 /// </summary>
 public class PatientViewModel : ViewModelBase
 {
+    /// <summary>
+    /// Raised when navigation to another view is requested.
+    /// The string argument is the view name (e.g., "Worklist").
+    /// </summary>
+    public event EventHandler<string>? NavigationRequested;
+
+    /// <summary>
+    /// Raised when an error occurs that should be displayed to the user.
+    /// </summary>
+    public event EventHandler<string>? ErrorOccurred;
+
+    /// <summary>
+    /// Raised when the patient registration dialog should be opened.
+    /// </summary>
+    public event EventHandler? RegistrationRequested;
+
+    /// <summary>
+    /// Raised when the patient edit dialog should be opened.
+    /// The Patient argument is the patient to edit.
+    /// </summary>
+    public event EventHandler<Patient>? EditPatientRequested;
     private readonly IPatientService _patientService;
     private string _searchQuery = string.Empty;
     private Patient? _selectedPatient;
@@ -141,7 +162,7 @@ public class PatientViewModel : ViewModelBase
         catch (Exception ex)
         {
             Debug.WriteLine($"Patient search failed: {ex.Message}");
-            // TODO: Show error dialog
+            ErrorOccurred?.Invoke(this, ex.Message);
         }
         finally
         {
@@ -155,16 +176,26 @@ public class PatientViewModel : ViewModelBase
     private void ExecuteRegister(object? parameter)
     {
         Debug.WriteLine("Opening patient registration dialog");
-        // TODO: Open PatientRegistrationDialog
+        RegistrationRequested?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
     /// Opens emergency patient registration (skips demographics).
+    /// Creates a temporary patient and navigates to WorklistView.
     /// </summary>
     private void ExecuteEmergencyRegister(object? parameter)
     {
         Debug.WriteLine("Opening emergency patient registration");
-        // TODO: Create temporary patient and navigate to WorklistView
+        var emergencyPatient = new Patient
+        {
+            PatientId = $"EMRG-{DateTime.UtcNow:yyyyMMddHHmmss}",
+            PatientName = "EMERGENCY",
+            DateOfBirth = DateOnly.MinValue,
+            Sex = Sex.Unknown
+        };
+        SelectedPatient = emergencyPatient;
+        Patients.Add(emergencyPatient);
+        NavigationRequested?.Invoke(this, "Worklist");
     }
 
     /// <summary>
@@ -177,7 +208,7 @@ public class PatientViewModel : ViewModelBase
 
         Debug.WriteLine($"Editing patient: {patient.PatientId}");
         SelectedPatient = patient;
-        // TODO: Open PatientEditDialog with patient data
+        EditPatientRequested?.Invoke(this, patient);
     }
 
     /// <summary>
@@ -190,6 +221,6 @@ public class PatientViewModel : ViewModelBase
 
         SelectedPatient = patient;
         Debug.WriteLine($"Selected patient {patient.PatientName}, navigating to worklist");
-        // TODO: Navigate to WorklistView with patient context
+        NavigationRequested?.Invoke(this, "Worklist");
     }
 }

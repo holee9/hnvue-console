@@ -120,7 +120,7 @@ public class SystemStatusViewModelTests : ViewModelTestBase
     [InlineData(ComponentHealth.Healthy, "SuccessBrush")]
     [InlineData(ComponentHealth.Degraded, "WarningBrush")]
     [InlineData(ComponentHealth.Error, "ErrorBrush")]
-    [InlineData(ComponentHealth.Offline, "SecondaryTextBrush")]
+    [InlineData(ComponentHealth.Offline, "SecondaryBrush")]
     public async Task OverallHealthBrushKey_Maps_Health_To_Brush(
         ComponentHealth health, string expectedBrush)
     {
