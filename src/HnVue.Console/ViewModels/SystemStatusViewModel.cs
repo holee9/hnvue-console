@@ -194,4 +194,13 @@ public class SystemStatusViewModel : ViewModelBase
             OnPropertyChanged(nameof(OverallHealthBrushKey));
         }
     }
+
+    /// <summary>
+    /// Disposes resources used by this ViewModel.
+    /// </summary>
+    public override void Dispose()
+    {
+        DisposeCommand(RefreshCommand);
+        base.Dispose();
+    }
 }

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace HnVue.Console.Views;
@@ -21,6 +22,18 @@ public partial class SystemStatusView : UserControl
         if (viewModel != null)
         {
             Loaded += async (s, e) => await viewModel.InitializeAsync();
+            Unloaded += OnUnloaded;
+        }
+    }
+
+    /// <summary>
+    /// Handles the Unloaded event to dispose the ViewModel.
+    /// </summary>
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is IDisposable disposable)
+        {
+            disposable.Dispose();
         }
     }
 }

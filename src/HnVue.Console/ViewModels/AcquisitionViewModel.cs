@@ -332,9 +332,15 @@ public class AcquisitionViewModel : ViewModelBase
     /// <summary>
     /// Disposes resources.
     /// </summary>
-    public void Dispose()
+    public override void Dispose()
     {
         _previewCancellation.Cancel();
         _previewCancellation.Dispose();
+
+        DisposeCommand(StartPreviewCommand);
+        DisposeCommand(StopPreviewCommand);
+        DisposeCommand(TriggerExposureCommand);
+
+        base.Dispose();
     }
 }

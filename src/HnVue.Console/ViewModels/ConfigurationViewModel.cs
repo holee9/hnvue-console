@@ -321,6 +321,17 @@ public class ConfigurationViewModel : ViewModelBase
             _ => throw new ArgumentException($"Unknown section: {section}")
         };
     }
+
+    /// <summary>
+    /// Disposes resources used by this ViewModel.
+    /// </summary>
+    public override void Dispose()
+    {
+        DisposeCommand(SaveCommand);
+        DisposeCommand(RefreshCommand);
+        DisposeCommand(StartCalibrationCommand);
+        base.Dispose();
+    }
 }
 
 /// <summary>

@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Windows.Input;
 
 namespace HnVue.Console.ViewModels;
 
@@ -9,7 +10,7 @@ namespace HnVue.Console.ViewModels;
 /// Provides SetProperty helper for change notification.
 /// SPEC-UI-001: MVVM infrastructure foundation.
 /// </summary>
-public abstract class ViewModelBase : INotifyPropertyChanged
+public abstract class ViewModelBase : INotifyPropertyChanged, IDisposable
 {
     /// <inheritdoc/>
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -64,5 +65,26 @@ public abstract class ViewModelBase : INotifyPropertyChanged
     protected void LogPropertyChange(string propertyName, object? value)
     {
         Debug.WriteLine($"PropertyChanged: {propertyName} = {value ?? "null"}");
+    }
+
+    /// <summary>
+    /// Releases all resources used by this ViewModel.
+    /// Derived classes should override this method to dispose their commands.
+    /// </summary>
+    public virtual void Dispose()
+    {
+        // Base implementation - derived classes override to dispose commands
+    }
+
+    /// <summary>
+    /// Disposes a command if it implements IDisposable.
+    /// Helper method for derived ViewModels.
+    /// </summary>
+    protected void DisposeCommand(ICommand? command)
+    {
+        if (command is IDisposable disposable)
+        {
+            disposable.Dispose();
+        }
     }
 }

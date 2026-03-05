@@ -366,4 +366,16 @@ public class AuditLogViewModel : ViewModelBase
         AuditOutcome.Failure => "ErrorBrush",
         _ => "DisabledTextBrush"
     };
+
+    /// <summary>
+    /// Disposes resources used by this ViewModel.
+    /// </summary>
+    public override void Dispose()
+    {
+        DisposeCommand(SearchCommand);
+        DisposeCommand(NextPageCommand);
+        DisposeCommand(PreviousPageCommand);
+        DisposeCommand(ExportCommand);
+        base.Dispose();
+    }
 }

@@ -223,4 +223,13 @@ public class PatientViewModel : ViewModelBase
         Debug.WriteLine($"Selected patient {patient.PatientName}, navigating to worklist");
         NavigationRequested?.Invoke(this, "Worklist");
     }
+
+    /// <summary>
+    /// Disposes resources used by this ViewModel.
+    /// </summary>
+    public override void Dispose()
+    {
+        DisposeCommand(SearchCommand);
+        base.Dispose();
+    }
 }

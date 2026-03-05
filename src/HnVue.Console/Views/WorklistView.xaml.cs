@@ -29,4 +29,15 @@ public partial class WorklistView : UserControl
             await viewModel.ActivateAsync();
         }
     }
+
+    /// <summary>
+    /// Handles the Unloaded event to dispose the ViewModel.
+    /// </summary>
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is IDisposable disposable)
+        {
+            disposable.Dispose();
+        }
+    }
 }

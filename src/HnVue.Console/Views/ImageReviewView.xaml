@@ -6,7 +6,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
              d:DesignHeight="800" d:DesignWidth="1200"
-             Loaded="OnLoaded">
+             Loaded="OnLoaded"
+             Unloaded="OnUnloaded">
 
     <Grid>
         <Grid.ColumnDefinitions>

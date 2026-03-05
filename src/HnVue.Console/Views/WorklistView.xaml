@@ -5,7 +5,8 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="1000"
-             Loaded="OnLoaded">
+             Loaded="OnLoaded"
+             Unloaded="OnUnloaded">
 
     <Border Style="{StaticResource CardStyle}">
         <Grid>

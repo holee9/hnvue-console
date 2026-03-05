@@ -263,4 +263,13 @@ public class ExposureParameterViewModel : ViewModelBase
         IsReadOnly = isAec;
         Debug.WriteLine($"AEC mode: {(isAec ? "ENABLED" : "DISABLED")}");
     }
+
+    /// <summary>
+    /// Disposes resources used by this ViewModel.
+    /// </summary>
+    public override void Dispose()
+    {
+        DisposeCommand(ApplyCommand);
+        base.Dispose();
+    }
 }

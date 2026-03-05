@@ -144,4 +144,63 @@ public abstract class ViewModelTestBase : IDisposable
 
         return changedProperties;
     }
+
+    /// <summary>
+    /// Creates a delay task that completes after the specified duration.
+    /// Useful for testing async command execution timing.
+    /// </summary>
+    protected static Task CreateDelay(int milliseconds)
+    {
+        return Task.Delay(milliseconds);
+    }
+
+    /// <summary>
+    /// Creates a task that completes successfully after a delay.
+    /// </summary>
+    protected static async Task<T> CreateDelayedResult<T>(T result, int milliseconds = 10)
+    {
+        await Task.Delay(milliseconds);
+        return result;
+    }
+
+    /// <summary>
+    /// Creates a task that throws an exception after a delay.
+    /// </summary>
+    protected static async Task CreateDelayedFailure(int milliseconds = 10)
+    {
+        await Task.Delay(milliseconds);
+        throw new InvalidOperationException("Test exception");
+    }
+
+    /// <summary>
+    /// Runs an async action with a timeout.
+    /// </summary>
+    protected static async Task TimeoutAfter(Task task, int millisecondsTimeout)
+    {
+        var delayTask = Task.Delay(millisecondsTimeout);
+        var completedTask = await Task.WhenAny(task, delayTask);
+
+        if (completedTask == delayTask)
+        {
+            throw new TimeoutException($"Operation timed out after {millisecondsTimeout}ms");
+        }
+
+        await task;
+    }
+
+    /// <summary>
+    /// Runs an async action with a timeout and returns result.
+    /// </summary>
+    protected static async Task<T> TimeoutAfter<T>(Task<T> task, int millisecondsTimeout)
+    {
+        var delayTask = Task.Delay(millisecondsTimeout);
+        var completedTask = await Task.WhenAny(task, delayTask);
+
+        if (completedTask == delayTask)
+        {
+            throw new TimeoutException($"Operation timed out after {millisecondsTimeout}ms");
+        }
+
+        return await task;
+    }
 }

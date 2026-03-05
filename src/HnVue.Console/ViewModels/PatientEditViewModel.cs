@@ -214,4 +214,13 @@ public class PatientEditViewModel : ViewModelBase
     {
         EditCompleted?.Invoke(this, EventArgs.Empty);
     }
+
+    /// <summary>
+    /// Disposes resources used by this ViewModel.
+    /// </summary>
+    public override void Dispose()
+    {
+        DisposeCommand(SaveCommand);
+        base.Dispose();
+    }
 }

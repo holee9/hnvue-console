@@ -166,4 +166,13 @@ public class WorklistViewModel : ViewModelBase
             await ExecuteRefreshAsync(ct);
         }
     }
+
+    /// <summary>
+    /// Disposes resources used by this ViewModel.
+    /// </summary>
+    public override void Dispose()
+    {
+        DisposeCommand(RefreshCommand);
+        base.Dispose();
+    }
 }

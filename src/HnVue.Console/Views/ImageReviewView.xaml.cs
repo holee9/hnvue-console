@@ -30,4 +30,15 @@ public partial class ImageReviewView : UserControl
             await viewModel.LoadImageAsync("TEST_IMAGE_001");
         }
     }
+
+    /// <summary>
+    /// Handles the Unloaded event to dispose the ViewModel.
+    /// </summary>
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is IDisposable disposable)
+        {
+            disposable.Dispose();
+        }
+    }
 }

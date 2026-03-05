@@ -224,4 +224,13 @@ public class PatientRegistrationViewModel : ViewModelBase
     {
         RegistrationCompleted?.Invoke(this, EventArgs.Empty);
     }
+
+    /// <summary>
+    /// Disposes resources used by this ViewModel.
+    /// </summary>
+    public override void Dispose()
+    {
+        DisposeCommand(RegisterCommand);
+        base.Dispose();
+    }
 }

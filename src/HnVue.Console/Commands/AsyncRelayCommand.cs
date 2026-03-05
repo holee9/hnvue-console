@@ -1,6 +1,8 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Threading;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace HnVue.Console.Commands;
 
@@ -10,13 +12,11 @@ namespace HnVue.Console.Commands;
 /// busy state management for UI binding.
 /// SPEC-UI-001: MVVM infrastructure for async operations.
 /// </summary>
-public class AsyncRelayCommand : ICommand
+public class AsyncRelayCommand : AsyncRelayCommandBase, ICommand
 {
     private readonly Func<CancellationToken, Task> _execute;
     private readonly Func<bool>? _canExecute;
     private readonly Action<Exception>? _onError;
-    private CancellationTokenSource? _cancellationTokenSource;
-    private bool _isExecuting;
 
     /// <summary>
     /// Initializes a new instance of <see cref="AsyncRelayCommand"/>.
@@ -24,39 +24,37 @@ public class AsyncRelayCommand : ICommand
     /// <param name="execute">The asynchronous execution logic.</param>
     /// <param name="canExecute">The execution status logic.</param>
     /// <param name="onError">Optional error handler.</param>
+    /// <param name="dispatcher">Optional dispatcher for UI thread marshaling.
+    /// SPEC-UI-002: When null, events are raised directly (test mode).
+    /// When omitted, CurrentDispatcher is captured automatically.</param>
     public AsyncRelayCommand(
         Func<CancellationToken, Task> execute,
         Func<bool>? canExecute = null,
-        Action<Exception>? onError = null)
+        Action<Exception>? onError = null,
+        Dispatcher? dispatcher = null) : base(dispatcher)
     {
         _execute = execute ?? throw new ArgumentNullException(nameof(execute));
         _canExecute = canExecute;
         _onError = onError;
     }
 
-    /// <summary>
-    /// Gets a value indicating whether a command is currently executing.
-    /// </summary>
-    public bool IsExecuting
-    {
-        get => _isExecuting;
-        private set
-        {
-            if (_isExecuting != value)
-            {
-                _isExecuting = value;
-                RaiseCanExecuteChanged();
-            }
-        }
-    }
-
-    /// <inheritdoc/>
-    public event EventHandler? CanExecuteChanged;
-
     /// <inheritdoc/>
     public bool CanExecute(object? parameter)
     {
-        return !_isExecuting && (_canExecute is null || _canExecute());
+        if (!CanExecuteCore()) return false;
+        return _canExecute is null || _canExecute();
+    }
+
+    /// <summary>
+    /// Core execution logic. Override in derived classes for custom behavior.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token for the operation.
+    /// IMPORTANT: This token is only valid during the execution of this method.
+    /// Do NOT store this token or pass it to long-running operations that may outlive
+    /// the command execution. The token will be canceled when the command is disposed.</param>
+    protected virtual async Task ExecuteAsync(CancellationToken cancellationToken)
+    {
+        await _execute(cancellationToken);
     }
 
     /// <inheritdoc/>
@@ -68,15 +66,12 @@ public class AsyncRelayCommand : ICommand
             return;
         }
 
-        // Cancel previous operation if still running
-        _cancellationTokenSource?.Cancel();
-        _cancellationTokenSource = new CancellationTokenSource();
-
+        var localCts = StartNewExecution();
         IsExecuting = true;
 
         try
         {
-            await _execute(_cancellationTokenSource.Token);
+            await ExecuteAsync(localCts.Token);
         }
         catch (OperationCanceledException)
         {
@@ -90,24 +85,15 @@ public class AsyncRelayCommand : ICommand
         }
         finally
         {
-            IsExecuting = false;
+            // SPEC-UI-002: Clean up CTS BEFORE marking execution as complete
+            var currentCts = Interlocked.CompareExchange(ref _cancellationTokenSource, null, localCts);
+            if (currentCts == localCts)
+            {
+                localCts.Dispose();
+            }
+
+            EndExecution();
         }
-    }
-
-    /// <summary>
-    /// Cancels the currently executing command.
-    /// </summary>
-    public void Cancel()
-    {
-        _cancellationTokenSource?.Cancel();
-    }
-
-    /// <summary>
-    /// Raises the <see cref="CanExecuteChanged"/> event.
-    /// </summary>
-    public void RaiseCanExecuteChanged()
-    {
-        CanExecuteChanged?.Invoke(this, EventArgs.Empty);
     }
 }
 
@@ -118,13 +104,11 @@ public class AsyncRelayCommand : ICommand
 /// SPEC-UI-001: MVVM infrastructure for async operations with parameters.
 /// </summary>
 /// <typeparam name="T">The type of the command parameter.</typeparam>
-public class AsyncRelayCommand<T> : ICommand
+public class AsyncRelayCommand<T> : AsyncRelayCommandBase, ICommand
 {
     private readonly Func<T?, CancellationToken, Task> _execute;
     private readonly Func<T?, bool>? _canExecute;
     private readonly Action<Exception>? _onError;
-    private CancellationTokenSource? _cancellationTokenSource;
-    private bool _isExecuting;
 
     /// <summary>
     /// Initializes a new instance of <see cref="AsyncRelayCommand{T}"/>.
@@ -132,39 +116,38 @@ public class AsyncRelayCommand<T> : ICommand
     /// <param name="execute">The asynchronous execution logic.</param>
     /// <param name="canExecute">The execution status logic.</param>
     /// <param name="onError">Optional error handler.</param>
+    /// <param name="dispatcher">Optional dispatcher for UI thread marshaling.
+    /// SPEC-UI-002: When null, events are raised directly (test mode).
+    /// When omitted, CurrentDispatcher is captured automatically.</param>
     public AsyncRelayCommand(
         Func<T?, CancellationToken, Task> execute,
         Func<T?, bool>? canExecute = null,
-        Action<Exception>? onError = null)
+        Action<Exception>? onError = null,
+        Dispatcher? dispatcher = null) : base(dispatcher)
     {
         _execute = execute ?? throw new ArgumentNullException(nameof(execute));
         _canExecute = canExecute;
         _onError = onError;
     }
 
-    /// <summary>
-    /// Gets a value indicating whether a command is currently executing.
-    /// </summary>
-    public bool IsExecuting
-    {
-        get => _isExecuting;
-        private set
-        {
-            if (_isExecuting != value)
-            {
-                _isExecuting = value;
-                RaiseCanExecuteChanged();
-            }
-        }
-    }
-
-    /// <inheritdoc/>
-    public event EventHandler? CanExecuteChanged;
-
     /// <inheritdoc/>
     public bool CanExecute(object? parameter)
     {
-        return !_isExecuting && (_canExecute is null || _canExecute((T?)parameter));
+        if (!CanExecuteCore()) return false;
+        return _canExecute is null || _canExecute((T?)parameter);
+    }
+
+    /// <summary>
+    /// Core execution logic. Override in derived classes for custom behavior.
+    /// </summary>
+    /// <param name="parameter">The command parameter.</param>
+    /// <param name="cancellationToken">Cancellation token for the operation.
+    /// IMPORTANT: This token is only valid during the execution of this method.
+    /// Do NOT store this token or pass it to long-running operations that may outlive
+    /// the command execution. The token will be canceled when the command is disposed.</param>
+    protected virtual async Task ExecuteAsync(T? parameter, CancellationToken cancellationToken)
+    {
+        await _execute(parameter, cancellationToken);
     }
 
     /// <inheritdoc/>
@@ -176,15 +159,12 @@ public class AsyncRelayCommand<T> : ICommand
             return;
         }
 
-        // Cancel previous operation if still running
-        _cancellationTokenSource?.Cancel();
-        _cancellationTokenSource = new CancellationTokenSource();
-
+        var localCts = StartNewExecution();
         IsExecuting = true;
 
         try
         {
-            await _execute((T?)parameter, _cancellationTokenSource.Token);
+            await ExecuteAsync((T?)parameter, localCts.Token);
         }
         catch (OperationCanceledException)
         {
@@ -198,23 +178,14 @@ public class AsyncRelayCommand<T> : ICommand
         }
         finally
         {
-            IsExecuting = false;
+            // SPEC-UI-002: Clean up CTS BEFORE marking execution as complete
+            var currentCts = Interlocked.CompareExchange(ref _cancellationTokenSource, null, localCts);
+            if (currentCts == localCts)
+            {
+                localCts.Dispose();
+            }
+
+            EndExecution();
         }
-    }
-
-    /// <summary>
-    /// Cancels the currently executing command.
-    /// </summary>
-    public void Cancel()
-    {
-        _cancellationTokenSource?.Cancel();
-    }
-
-    /// <summary>
-    /// Raises the <see cref="CanExecuteChanged"/> event.
-    /// </summary>
-    public void RaiseCanExecuteChanged()
-    {
-        CanExecuteChanged?.Invoke(this, EventArgs.Empty);
     }
 }

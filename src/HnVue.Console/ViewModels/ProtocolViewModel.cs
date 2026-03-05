@@ -186,4 +186,13 @@ public class ProtocolViewModel : ViewModelBase
             IsLoading = false;
         }
     }
+
+    /// <summary>
+    /// Disposes resources used by this ViewModel.
+    /// </summary>
+    public override void Dispose()
+    {
+        DisposeCommand(SelectProtocolCommand);
+        base.Dispose();
+    }
 }

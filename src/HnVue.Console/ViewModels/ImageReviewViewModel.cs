@@ -644,4 +644,15 @@ public class ImageReviewViewModel : ViewModelBase
             Debug.WriteLine($"[ImageReviewViewModel] Reprocess error: {ex.Message}");
         }
     }
+
+    /// <summary>
+    /// Disposes resources used by this ViewModel.
+    /// </summary>
+    public override void Dispose()
+    {
+        DisposeCommand(AcceptImageCommand);
+        DisposeCommand(RejectImageCommand);
+        DisposeCommand(ReprocessImageCommand);
+        base.Dispose();
+    }
 }
