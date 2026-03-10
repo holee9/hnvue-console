@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - SPEC-UI-001: WPF Console UI ViewModel 구현 완성
+
+완료일: 2026-03-10 | 테스트: 219/219 통과 | 커버리지: 85%+
+
+#### ViewModel 테스트 추가 (3개 파일, 181개 ViewModel 테스트)
+
+**AcquisitionViewModelTests.cs** (FR-UI-06, 07, 09, 10, 11)
+- Protocol 선택, Exposure Parameter, 실시간 Preview, Dose 표시, AEC 토글 검증
+- AECViewModel, ProtocolViewModel, DoseViewModel 서브 ViewModel 통합 테스트
+
+**ExposureParameterViewModelTests.cs** (FR-UI-07)
+- kVp/mA/ExposureTime/SID/FocalSpotSize 기본값 및 허용 범위 검증
+- 범위 제한(ClampToRange), IsReadOnly 상태 전환 테스트
+
+**ImageReviewViewModelTests.cs** (FR-UI-03, 04, 05)
+- Image Viewer: W/L 조정, Zoom/Pan, Rotate/Flip 커맨드 검증
+- Measurement Tool: Distance/Angle/Cobb/Annotation 타입 선택 및 포인트 추가
+- QC Action: Accept/Reject/Reprocess 커맨드 및 QC 노트 검증
+
+#### GrayscaleRenderer 개선 (FR-UI-03)
+- GSDF 렌더링 모드 추가 (DICOM PS 3.14 기반 지각적 선형 변환)
+- LUT 캐싱 (WindowCenter/WindowWidth 변경 시만 재생성)
+- WriteableBitmap 렌더 파이프라인 성능 최적화
+
+#### ImageReviewViewModel 개선 (FR-UI-03, 04, 05)
+- W/L 조정 커맨드 완성 (Increase/Decrease Window/Level + Reset)
+- Zoom/Pan/Rotate/Flip 커맨드 구현
+- Measurement 포인트 누적 및 결과 계산 로직
+- QC Accept/Reject/Reprocess 서비스 호출 완성
+
+---
+
 ### Added - SPEC-UI-002: AsyncRelayCommand Code Review Improvements
 
 완료일: 2026-03-10 | 테스트: 38/38 통과 | 커버리지: 96%+
