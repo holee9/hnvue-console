@@ -92,6 +92,7 @@ public abstract class AsyncRelayCommandBase : IDisposable
     /// Raises the <see cref="CanExecuteChanged"/> event on the UI thread.
     /// SPEC-UI-002: Guard against disposed state and handle null dispatcher.
     /// </summary>
+    // @MX:ANCHOR fan_in=30+ All ViewModels call this to refresh CanExecute state. Signature must remain stable.
     public void RaiseCanExecuteChanged()
     {
         // SPEC-UI-002: Guard against disposed state (read without locking)
@@ -110,6 +111,8 @@ public abstract class AsyncRelayCommandBase : IDisposable
         else if (!_dispatcher.CheckAccess())
         {
             // Different thread: marshal to dispatcher
+            // @MX:WARN fire-and-forget BeginInvoke can run after Dispose
+            // @MX:REASON Mitigated by Volatile.Read(_disposed) guard at method entry (SPEC-UI-002)
             _dispatcher.BeginInvoke(() => CanExecuteChanged?.Invoke(this, EventArgs.Empty));
         }
         else

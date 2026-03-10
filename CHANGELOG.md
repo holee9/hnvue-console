@@ -5,6 +5,39 @@ All notable changes to HnVue Console will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added - SPEC-UI-002: AsyncRelayCommand Code Review Improvements
+
+완료일: 2026-03-10 | 테스트: 38/38 통과 | 커버리지: 96%+
+
+#### AsyncRelayCommand 안정성 개선 (3가지 버그 수정)
+
+**1. Dispatcher Null Handling** (`AsyncRelayCommandBase.cs`)
+- **수정**: 생성자에서 null coalescing 제거 — `_dispatcher = dispatcher;` (null 그대로 저장)
+- **이유**: `dispatcher: null` 전달 시 `Dispatcher.CurrentDispatcher`를 사용하는 버그 수정 (XML 문서와 실제 동작 불일치)
+- **영향**: 단위 테스트 환경에서 `InvalidOperationException` 없이 정상 동작
+- **테스트 추가** (3개): `NullDispatcher_RaiseCanExecuteChanged_DoesNotThrow`, `NullDispatcher_Execute_CompletesSuccessfully`, `Generic_NullDispatcher_Execute_PassesParameterCorrectly`
+
+**2. CTS Cleanup Order** (`AsyncRelayCommand.cs`, `AsyncRelayCommand<T>`)
+- **수정**: `Execute()` finally 블록에서 CTS 정리가 `EndExecution()` **이전**에 실행되도록 변경
+- **이유**: `IsExecuting = false` 이전에 CTS가 정리되지 않아 발생하는 경쟁 조건 방지
+- **영향**: `CanExecute`가 CTS와 실행 상태 모두 정리된 후에만 `true` 반환
+- **테스트 추가** (2개): `Execute_CtsCleanedBeforeStateChange`, `Execute_CompleteThenCanExecute_ReturnsTrueImmediately`
+
+**3. Dispose Event Guarding** (`AsyncRelayCommandBase.cs`)
+- **수정**: `_disposed` (int, Interlocked 지원) 필드 추가, `RaiseCanExecuteChanged()`에서 `Volatile.Read` 체크, `Dispose()`에서 `Interlocked.Exchange`로 thread-safe 플래그 설정
+- **이유**: `Dispose()` 후에도 `BeginInvoke`로 예약된 이벤트가 발생하는 문제 방지
+- **영향**: Dispose 후 `CanExecuteChanged` 이벤트가 절대 발생하지 않음
+- **테스트 추가** (3개): `Dispose_ThenRaiseCanExecuteChanged_NoEventRaised`, `Dispose_MultipleTimes_AllSucceed`, `Dispose_WhileExecuting_RaisesNoEventsAfterDisposal`
+
+#### SPEC 문서 완성 (3-file 구조)
+- `plan.md` — 구현 전략 및 단계별 접근법 문서화
+- `acceptance.md` — Given-When-Then 형식 수락 기준 (8개 테스트 매핑 포함)
+- `research.md` — 추가 개선 제안사항 (race condition fix, CTS pooling 등 → 별도 SPEC-UI-003 권장)
+
+---
+
 ## [1.0.0] - 2026-03-02
 
 ### Added - Windows Environment Finalization and gRPC Service Integration

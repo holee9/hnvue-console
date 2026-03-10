@@ -233,9 +233,10 @@ dotnet test tests/csharp/HnVue.Workflow.IntegrationTests/
 | SPEC-DOSE-001 | Radiation Dose Management (DAP, Cumulative Tracking, RDSR, Audit Trail) | ✅ 완료 | 100% |
 | SPEC-WORKFLOW-001 | Workflow Engine (Phase 1-4: State Machine, Protocol, Dose, HAL, DICOM, GUI) | ✅ 완료 | 100% |
 | SPEC-UI-001 | WPF Console UI (MVVM + gRPC Adapters + DI 완료, WPF 런타임 검증 대기) | 🔄 Windows 검증중 | 80% |
+| SPEC-UI-002 | AsyncRelayCommand Code Review Improvements (Dispatcher null, CTS order, Dispose guard) | ✅ 완료 | 100% |
 | SPEC-TEST-001 | Test Infrastructure (96/96 Windows 테스트 통과) | ✅ 완료 | 90% |
 
-**전체 진행률: 7/9 SPEC (78%), Windows 환경 빌드/테스트 완료 — WPF 런타임 실행 검증 단계**
+**전체 진행률: 8/10 SPEC (80%), SPEC-UI-002 완료 — AsyncRelayCommand 안정성 개선**
 
 ---
 
