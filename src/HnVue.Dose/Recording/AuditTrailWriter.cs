@@ -183,7 +183,7 @@ public sealed class AuditTrailWriter : IDisposable
             };
 
             // Write atomically
-            var filePath = GetAuditFilePath(entry.AuditId);
+            var filePath = GetAuditFilePath(entry.AuditId, entry.TimestampUtc);
             WriteEntryAtomically(entry, filePath);
 
             // Update last hash for next entry
@@ -299,10 +299,11 @@ public sealed class AuditTrailWriter : IDisposable
     /// <summary>
     /// Gets the file path for an audit entry.
     /// </summary>
-    private string GetAuditFilePath(Guid auditId)
+    private string GetAuditFilePath(Guid auditId, DateTime timestampUtc)
     {
-        var datePrefix = DateTime.UtcNow.ToString("yyyyMMdd");
-        return Path.Combine(_auditDirectory, $"{datePrefix}_{auditId}.audit");
+        // Include full timestamp (sortable) + GUID for unique chronological ordering
+        var sortableTimestamp = timestampUtc.ToString("yyyyMMddHHmmss_fffffff");
+        return Path.Combine(_auditDirectory, $"{sortableTimestamp}_{auditId}.audit");
     }
 
     /// <summary>

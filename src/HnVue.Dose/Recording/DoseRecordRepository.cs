@@ -29,7 +29,7 @@ public sealed class DoseRecordRepository : IDoseRecordRepository
     private readonly string _dataDirectory;
     private readonly string _studiesDirectory;
     private readonly string _indexDirectory;
-    private readonly object _lock = new();
+    private readonly SemaphoreSlim _asyncLock = new(1, 1);
     private readonly JsonSerializerOptions _jsonOptions;
 
     /// <summary>
@@ -73,15 +73,12 @@ public sealed class DoseRecordRepository : IDoseRecordRepository
             throw new ArgumentNullException(nameof(record));
         }
 
-        lock (_lock)
+        if (string.IsNullOrWhiteSpace(record.StudyInstanceUid))
         {
-            // Validation within lock to ensure consistency
-            if (string.IsNullOrWhiteSpace(record.StudyInstanceUid))
-            {
-                throw new ArgumentException("Study Instance UID is required.", nameof(record));
-            }
+            throw new ArgumentException("Study Instance UID is required.", nameof(record));
         }
 
+        await _asyncLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             await PersistRecordAtomicallyAsync(record, cancellationToken);
@@ -101,6 +98,10 @@ public sealed class DoseRecordRepository : IDoseRecordRepository
                 record.ExposureEventId,
                 "Failed to persist dose record to non-volatile storage.",
                 ex);
+        }
+        finally
+        {
+            _asyncLock.Release();
         }
     }
 

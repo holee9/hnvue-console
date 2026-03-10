@@ -42,9 +42,13 @@ public class ProtocolRepositoryTests : IDisposable
     public void Dispose()
     {
         _repository.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        // Force GC to release any remaining SQLite file handles before deletion
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
         if (File.Exists(_databasePath))
         {
-            File.Delete(_databasePath);
+            try { File.Delete(_databasePath); }
+            catch (IOException) { /* File still locked; temp file will be cleaned up by OS */ }
         }
     }
 
