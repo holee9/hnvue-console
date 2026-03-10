@@ -8,6 +8,22 @@ using HnVue.Console.Models;
 namespace HnVue.Console.Rendering;
 
 /// <summary>
+/// Specifies the rendering mode for grayscale image display.
+/// </summary>
+public enum RenderingMode
+{
+    /// <summary>
+    /// Linear window/level transformation (DICOM PS 3.11 C.11.2.1.2).
+    /// </summary>
+    Linear,
+
+    /// <summary>
+    /// GSDF perceptually linear transformation (DICOM PS 3.14).
+    /// </summary>
+    Gsdf
+}
+
+/// <summary>
 /// Renders 16-bit grayscale DICOM images to WPF WriteableBitmap.
 /// SPEC-UI-001: FR-UI-03 Image Viewer with high-performance rendering.
 /// </summary>
@@ -19,12 +35,34 @@ public class GrayscaleRenderer
     private int _height;
     private const int BitsPerPixel = 16;
 
+    private RenderingMode _renderingMode = RenderingMode.Linear;
+    private ushort[]? _cachedGsdfLut;
+    private int _cachedGsdfWindowCenter;
+    private int _cachedGsdfWindowWidth;
+
     /// <summary>
     /// Initializes a new instance of <see cref="GrayscaleRenderer"/>.
     /// </summary>
     public GrayscaleRenderer()
     {
         _windowLevelTransform = new WindowLevelTransform();
+    }
+
+    /// <summary>
+    /// Gets or sets the rendering mode (Linear or GSDF).
+    /// Changing the mode invalidates the cached GSDF LUT.
+    /// </summary>
+    public RenderingMode RenderingMode
+    {
+        get => _renderingMode;
+        set
+        {
+            if (_renderingMode != value)
+            {
+                _renderingMode = value;
+                Debug.WriteLine($"[GrayscaleRenderer] RenderingMode changed to {value}");
+            }
+        }
     }
 
     /// <summary>
@@ -79,7 +117,7 @@ public class GrayscaleRenderer
 
         // Update window/level transform
         _windowLevelTransform.SetWindowLevel(windowCenter, windowWidth);
-        var lut = _windowLevelTransform.GetLookupTable();
+        var lut = GetActiveLookupTable(windowCenter, windowWidth);
 
         // Get bitmap back buffer
         var bitmap = _bitmap!;
@@ -107,7 +145,7 @@ public class GrayscaleRenderer
             bitmap.Unlock();
         }
 
-        Debug.WriteLine($"[GrayscaleRenderer] Rendered {width}x{height} with W/L ({windowCenter}/{windowWidth})");
+        Debug.WriteLine($"[GrayscaleRenderer] Rendered {width}x{height} with W/L ({windowCenter}/{windowWidth}) mode={_renderingMode}");
     }
 
     /// <summary>
@@ -125,7 +163,7 @@ public class GrayscaleRenderer
 
         // Update window/level transform
         _windowLevelTransform.SetWindowLevel(windowCenter, windowWidth);
-        var lut = _windowLevelTransform.GetLookupTable();
+        var lut = GetActiveLookupTable(windowCenter, windowWidth);
 
         var bitmap = _bitmap!;
         bitmap.Lock();
@@ -203,6 +241,32 @@ public class GrayscaleRenderer
         {
             _bitmap.Unlock();
         }
+    }
+
+    /// <summary>
+    /// Returns the appropriate LUT based on the current rendering mode.
+    /// For GSDF mode, the LUT is cached and only recomputed when window/level changes.
+    /// </summary>
+    private ushort[] GetActiveLookupTable(int windowCenter, int windowWidth)
+    {
+        if (_renderingMode == RenderingMode.Linear)
+        {
+            return _windowLevelTransform.GetLookupTable();
+        }
+
+        // GSDF mode: use cached LUT if window/level unchanged
+        if (_cachedGsdfLut != null
+            && _cachedGsdfWindowCenter == windowCenter
+            && _cachedGsdfWindowWidth == windowWidth)
+        {
+            return _cachedGsdfLut;
+        }
+
+        _cachedGsdfLut = WindowLevelTransform.CreateGSDFLookupTable(windowCenter, windowWidth);
+        _cachedGsdfWindowCenter = windowCenter;
+        _cachedGsdfWindowWidth = windowWidth;
+        Debug.WriteLine($"[GrayscaleRenderer] Built GSDF LUT: center={windowCenter}, width={windowWidth}");
+        return _cachedGsdfLut;
     }
 
     /// <summary>

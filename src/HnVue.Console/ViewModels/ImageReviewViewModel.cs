@@ -46,6 +46,9 @@ public class ImageReviewViewModel : ViewModelBase
     private double _panY = 0.0;
     private ImageOrientation _orientation = ImageOrientation.None;
 
+    // Current display W/L (independent from original image W/L after user adjustments)
+    private WindowLevel _currentDisplayWindowLevel = new() { WindowCenter = 32768, WindowWidth = 65536 };
+
     /// <summary>
     /// Initializes a new instance of <see cref="ImageReviewViewModel"/>.
     /// </summary>
@@ -238,6 +241,13 @@ public class ImageReviewViewModel : ViewModelBase
             CurrentImageId = imageId;
             _currentImage = await _imageService.GetImageAsync(imageId, ct);
 
+            // Initialize display W/L from image data or use default
+            _currentDisplayWindowLevel = _currentImage.CurrentWindowLevel ?? new WindowLevel
+            {
+                WindowCenter = 32768,
+                WindowWidth = 65536
+            };
+
             RenderImage();
             LoadMeasurements();
 
@@ -252,19 +262,15 @@ public class ImageReviewViewModel : ViewModelBase
     }
 
     /// <summary>
-    /// Renders the current image with window/level applied.
+    /// Renders the current image with the current display window/level.
     /// </summary>
     private void RenderImage()
     {
         if (_currentImage == null)
             return;
 
-        // Get current W/L from image or use default
-        var wl = _currentImage.CurrentWindowLevel ?? new WindowLevel
-        {
-            WindowCenter = 32768,
-            WindowWidth = 65536
-        };
+        // Use current display W/L (not the original image W/L, which may differ after user adjustments)
+        var wl = _currentDisplayWindowLevel;
 
         // Update transform
         _windowLevelTransform.SetWindowLevel(wl.WindowCenter, wl.WindowWidth);
@@ -307,11 +313,11 @@ public class ImageReviewViewModel : ViewModelBase
     /// </summary>
     private void AdjustWindowLevel(int levelDelta, int windowDelta)
     {
-        var current = _windowLevelTransform.CurrentWindowLevel;
-        int newCenter = Math.Clamp(current.WindowCenter + levelDelta, 1, 65535);
-        int newWidth = Math.Clamp(current.WindowWidth + windowDelta, 1, 65535);
+        int newCenter = Math.Clamp(_currentDisplayWindowLevel.WindowCenter + levelDelta, 1, 65535);
+        int newWidth = Math.Clamp(_currentDisplayWindowLevel.WindowWidth + windowDelta, 1, 65535);
 
-        _windowLevelTransform.SetWindowLevel(newCenter, newWidth);
+        // Persist the adjusted W/L so RenderImage uses it (not the original image W/L)
+        _currentDisplayWindowLevel = new WindowLevel { WindowCenter = newCenter, WindowWidth = newWidth };
 
         // Re-render image
         RenderImage();
@@ -321,7 +327,7 @@ public class ImageReviewViewModel : ViewModelBase
         {
             _ = Task.Run(async () =>
             {
-                await _imageService.ApplyWindowLevelAsync(_currentImage.ImageId, current, CancellationToken.None);
+                await _imageService.ApplyWindowLevelAsync(_currentImage.ImageId, _currentDisplayWindowLevel, CancellationToken.None);
             });
         }
     }
@@ -331,7 +337,7 @@ public class ImageReviewViewModel : ViewModelBase
     /// </summary>
     private void ResetWindowLevel()
     {
-        _windowLevelTransform.SetWindowLevel(32768, 65536);
+        _currentDisplayWindowLevel = new WindowLevel { WindowCenter = 32768, WindowWidth = 65536 };
         RenderImage();
     }
 
