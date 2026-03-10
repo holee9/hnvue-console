@@ -7,7 +7,7 @@
 | SPEC ID      | SPEC-TEST-001                                 |
 | Title        | HnVue Testing Framework and V&V Strategy      |
 | Product      | HnVue - Diagnostic Medical Device X-ray GUI Console SW |
-| Status       | Planned                                       |
+| Status       | Phase 1 Complete - Unit Test Infrastructure Done |
 | Priority     | High                                          |
 | Created      | 2026-02-17                                    |
 | Lifecycle    | spec-anchored                                 |

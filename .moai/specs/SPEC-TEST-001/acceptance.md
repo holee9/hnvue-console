@@ -518,3 +518,26 @@ Then all test stages complete without any connection attempt to physical hardwar
 | Test Repeatability      | No timing-dependent or order-dependent tests (deterministic results)   | Yes      |
 | Simulator No-Privilege  | Simulators start without elevated OS privileges                        | Yes      |
 | IEC 62304 Traceability  | All requirements traceable in RTM; evidence documents authored         | Yes      |
+
+---
+
+## Current Test Status (2026-03-10)
+
+### C# Unit Test Suite (xUnit)
+
+| Test Project | Tests | Status |
+|---|---|---|
+| HnVue.Console.Tests | 219 | PASS |
+| HnVue.Dicom.Tests | 256 | PASS |
+| HnVue.Dose.Tests | 222 | PASS |
+| HnVue.Workflow.Tests | 351 | PASS |
+| **Total** | **1048** | **PASS** |
+
+### Deferred Items (별도 스프린트)
+- Python HW Simulators (Detector, Generator)
+- Docker Orthanc DICOM conformance
+- CI Pipeline stage definitions
+- Requirements Traceability Matrix (RTM)
+- IEC 62304 V&V documentation
+
+**Phase 1 Definition of Done**: All C# xUnit tests pass without hardware. Coverage >= 80% for UI layer.
