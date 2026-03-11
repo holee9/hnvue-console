@@ -25,6 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 파일: `docs/adapter-audit.md`
   - 내용: 13개 어댑터 현황 (4개 Partial 구현, 9개 Stub)
 
+- **ci(test)**: SPEC-TEST-001 Phase 3&4 CI 파이프라인 강화
+  - 파일: `.gitea/workflows/ci.yml`, `tests/python/requirements.txt`
+  - 내용: Python 테스트 job, DICOM Conformance 테스트, 통합 커버리지 리포트, 85% 임계값 검증
+
 ---
 
 ### Added - SPEC-UI-001: WPF Console UI ViewModel 구현 완성
