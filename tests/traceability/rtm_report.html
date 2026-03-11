@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requirements Traceability Matrix - SPEC-TEST-001</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #4a90d9;
+            padding-bottom: 10px;
+        }
+        .summary {
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .summary-item {
+            display: inline-block;
+            margin-right: 30px;
+        }
+        .summary-label {
+            font-weight: bold;
+            color: #666;
+        }
+        .summary-value {
+            color: #333;
+            font-size: 1.2em;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #4a90d9;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .status-pass {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .status-fail {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .status-skip {
+            color: #6c757d;
+        }
+        .status-pending {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .safety-class-c {
+            background-color: #ffebee;
+            font-weight: bold;
+        }
+        .safety-class-b {
+            background-color: #fff8e1;
+        }
+        .safety-class-a {
+            background-color: #e8f5e9;
+        }
+        .generated-at {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Requirements Traceability Matrix</h1>
+    <h2>SPEC-TEST-001: HnVue Testing Framework and V&V Strategy</h2>
+
+    <div class="summary">
+        <div class="summary-item">
+            <span class="summary-label">Total Requirements:</span>
+            <span class="summary-value">10</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Total Test Cases:</span>
+            <span class="summary-value">57</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Pass:</span>
+            <span class="summary-value status-pass">57</span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Fail:</span>
+            <span class="summary-value status-fail">0</span>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Requirement ID</th>
+                <th>Test Case ID</th>
+                <th>Test Suite</th>
+                <th>Safety Class</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="safety-class-a">
+                <td>FR-TEST-01.1</td>
+                <td>test_unit_cpp_framework_exists</td>
+                <td>unit/cpp</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-01.2</td>
+                <td>test_unit_csharp_framework_exists</td>
+                <td>unit/csharp</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-01.3</td>
+                <td>test_unit_python_framework_exists</td>
+                <td>unit/python</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-01.4</td>
+                <td>test_cpp_files_require_test</td>
+                <td>unit/cpp</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-01.5</td>
+                <td>test_csharp_files_require_test</td>
+                <td>unit/csharp</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-01.6</td>
+                <td>test_unit_directory_structure</td>
+                <td>unit/cpp</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-c">
+                <td>FR-TEST-01.7</td>
+                <td>test_class_c_failure_blocks_ci</td>
+                <td>unit/cpp</td>
+                <td>C</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-01.8</td>
+                <td>test_unit_no_external_connections</td>
+                <td>unit/cpp</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-02.1</td>
+                <td>test_integration_ipc_framework</td>
+                <td>integration/ipc</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-02.2</td>
+                <td>test_simulators_auto_start</td>
+                <td>integration/hal_simulator</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-02.3</td>
+                <td>test_simulators_auto_terminate</td>
+                <td>integration/hal_simulator</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-c">
+                <td>FR-TEST-02.4</td>
+                <td>test_hal_routing_to_mocks</td>
+                <td>integration/hal_simulator</td>
+                <td>C</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-02.5</td>
+                <td>test_integration_directory_structure</td>
+                <td>integration/ipc</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-02.6</td>
+                <td>test_no_production_config_modification</td>
+                <td>integration/ipc</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-03.1</td>
+                <td>test_system_e2e_framework</td>
+                <td>system/workflows</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-03.2</td>
+                <td>test_full_stack_launch</td>
+                <td>system/workflows</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-03.3</td>
+                <td>test_inter_component_message_capture</td>
+                <td>system/workflows</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-03.4</td>
+                <td>test_system_directory_structure</td>
+                <td>system/workflows</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-03.5</td>
+                <td>test_no_partial_startup_state</td>
+                <td>system/workflows</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-04.1</td>
+                <td>test_dicom_dvtk_conformance</td>
+                <td>dicom/conformance</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-04.2</td>
+                <td>test_orthanc_pacs_reference</td>
+                <td>dicom/conformance</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-04.3</td>
+                <td>test_dicom_service_classes</td>
+                <td>dicom/conformance</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-04.4</td>
+                <td>test_dicom_mandatory_attributes</td>
+                <td>dicom/conformance</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-04.5</td>
+                <td>test_dicom_encoding_compliance</td>
+                <td>dicom/conformance</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-04.6</td>
+                <td>test_dicom_directory_structure</td>
+                <td>dicom/conformance</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-04.7</td>
+                <td>test_dicom_no_missing_attributes</td>
+                <td>dicom/conformance</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-05.1</td>
+                <td>test_usability_framework</td>
+                <td>usability/plans</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-05.2</td>
+                <td>test_usability_plan_document</td>
+                <td>usability/plans</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-05.3</td>
+                <td>test_usability_directory_structure</td>
+                <td>usability/plans</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-05.4</td>
+                <td>test_usability_session_recording</td>
+                <td>usability/protocols</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-05.5</td>
+                <td>test_critical_tasks_defined</td>
+                <td>usability/plans</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-06.1</td>
+                <td>test_hw_simulator_testbench</td>
+                <td>simulators/detector</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-c">
+                <td>FR-TEST-06.2</td>
+                <td>test_detector_usb_protocol</td>
+                <td>simulators/detector</td>
+                <td>C</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-c">
+                <td>FR-TEST-06.3</td>
+                <td>test_generator_serial_protocol</td>
+                <td>simulators/generator</td>
+                <td>C</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-c">
+                <td>FR-TEST-06.4</td>
+                <td>test_detector_acquisition_trigger</td>
+                <td>simulators/detector</td>
+                <td>C</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-c">
+                <td>FR-TEST-06.5</td>
+                <td>test_generator_state_sequence</td>
+                <td>simulators/generator</td>
+                <td>C</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-c">
+                <td>FR-TEST-06.6</td>
+                <td>test_fault_injection_mode</td>
+                <td>simulators/generator</td>
+                <td>C</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-06.7</td>
+                <td>test_simulators_directory_structure</td>
+                <td>simulators/detector</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-06.8</td>
+                <td>test_no_elevated_privileges</td>
+                <td>simulators/detector</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-07.1</td>
+                <td>test_interop_suite</td>
+                <td>interop/pacs_vendor_a</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-07.2</td>
+                <td>test_multi_vendor_pacs</td>
+                <td>interop/pacs_vendor_a</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-07.3</td>
+                <td>test_image_retrieval_validation</td>
+                <td>interop/pacs_vendor_a</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-07.4</td>
+                <td>test_interop_directory_structure</td>
+                <td>interop/pacs_vendor_a</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-08.1</td>
+                <td>test_junit_xml_reports</td>
+                <td>ci/reporting</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-08.2</td>
+                <td>test_consolidated_junit_report</td>
+                <td>ci/reporting</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-08.3</td>
+                <td>test_junit_xml_structure</td>
+                <td>ci/reporting</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-08.4</td>
+                <td>test_cobertura_coverage_report</td>
+                <td>ci/reporting</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-08.5</td>
+                <td>test_report_retention_90_days</td>
+                <td>ci/reporting</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-09.1</td>
+                <td>test_rtm_requirement_to_test</td>
+                <td>traceability</td>
+                <td>A</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-09.2</td>
+                <td>test_rtm_test_to_requirement</td>
+                <td>traceability</td>
+                <td>A</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-09.3</td>
+                <td>test_test_case_references_requirement</td>
+                <td>traceability</td>
+                <td>A</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-09.4</td>
+                <td>test_new_requirement_flagged</td>
+                <td>traceability</td>
+                <td>A</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-09.5</td>
+                <td>test_rtm_csv_exists</td>
+                <td>traceability</td>
+                <td>A</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-09.6</td>
+                <td>test_rtm_html_report</td>
+                <td>traceability</td>
+                <td>A</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-10.1</td>
+                <td>test_synthetic_data_generator</td>
+                <td>data/generators</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-10.2</td>
+                <td>test_dicom_modality_support</td>
+                <td>data/generators</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-10.3</td>
+                <td>test_synthetic_dicom_attributes</td>
+                <td>data/generators</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-10.4</td>
+                <td>test_no_real_patient_data</td>
+                <td>data/generators</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+            <tr class="safety-class-a">
+                <td>FR-TEST-10.5</td>
+                <td>test_data_directory_structure</td>
+                <td>data/generators</td>
+                <td>NA</td>
+                <td class="status-pass">pass</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p class="generated-at">
+        Generated: 2026-03-11 |
+        SPEC: SPEC-TEST-001 |
+        Product: HnVue - Diagnostic Medical Device X-ray GUI Console SW
+    </p>
+</body>
+</html>

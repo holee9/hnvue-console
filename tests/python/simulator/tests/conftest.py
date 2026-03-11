@@ -12,9 +12,7 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "requirement(id): Link test to SPEC requirement ID (e.g., FR-TEST-06.2)"
     )
-    config.addinivalue_line(
-        "markers", "safety_class(class): IEC 62304 safety class (A, B, C)"
-    )
+    config.addinivalue_line("markers", "safety_class(class): IEC 62304 safety class (A, B, C)")
 
 
 @pytest.fixture

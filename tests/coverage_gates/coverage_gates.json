@@ -1,0 +1,70 @@
+{
+  "version": "1.0.0",
+  "description": "SPEC-TEST-001 Component-Level Coverage Gates Configuration",
+  "spec_reference": "SPEC-TEST-001 Section 1.3",
+  "components": [
+    {
+      "name": "GeneratorControl",
+      "description": "Generator Control - High voltage generator control and exposure management",
+      "safety_class": "C",
+      "coverage_type": "decision",
+      "threshold": 100.0,
+      "path_pattern": "src/**/generator/**/*",
+      "iec_62304_reference": "IEC 62304 Class C - Life-threatening injury possible"
+    },
+    {
+      "name": "AEC",
+      "description": "Auto Exposure Control - Automatic exposure compensation system",
+      "safety_class": "C",
+      "coverage_type": "decision",
+      "threshold": 100.0,
+      "path_pattern": "src/**/aec/**/*",
+      "iec_62304_reference": "IEC 62304 Class C - Life-threatening injury possible"
+    },
+    {
+      "name": "ImageProcessing",
+      "description": "Image Processing Pipeline - Core image acquisition and processing",
+      "safety_class": "B",
+      "coverage_type": "statement",
+      "threshold": 85.0,
+      "path_pattern": "src/**/imaging/**/*",
+      "iec_62304_reference": "IEC 62304 Class B - Non-serious injury possible"
+    },
+    {
+      "name": "DICOM",
+      "description": "DICOM Communication - DICOM networking and conformance",
+      "safety_class": "B",
+      "coverage_type": "statement",
+      "threshold": 85.0,
+      "path_pattern": "src/**/dicom/**/*",
+      "iec_62304_reference": "IEC 62304 Class B - Non-serious injury possible"
+    },
+    {
+      "name": "DoseManagement",
+      "description": "Dose Management - Radiation dose tracking and reporting",
+      "safety_class": "B",
+      "coverage_type": "statement",
+      "threshold": 90.0,
+      "path_pattern": "src/**/dose/**/*",
+      "iec_62304_reference": "IEC 62304 Class B - Non-serious injury possible"
+    },
+    {
+      "name": "UI",
+      "description": "UI / Viewer Layer - User interface and image viewer",
+      "safety_class": "B",
+      "coverage_type": "statement",
+      "threshold": 80.0,
+      "path_pattern": "src/**/ui/**/*",
+      "iec_62304_reference": "IEC 62304 Class B - Non-serious injury possible"
+    },
+    {
+      "name": "PatientManagement",
+      "description": "Patient Management - Patient data handling and registration",
+      "safety_class": "A",
+      "coverage_type": "statement",
+      "threshold": 85.0,
+      "path_pattern": "src/**/patient/**/*",
+      "iec_62304_reference": "IEC 62304 Class A - No injury possible"
+    }
+  ]
+}

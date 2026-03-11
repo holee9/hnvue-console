@@ -9,12 +9,10 @@ State Machine: IDLE -> ARMING -> READY -> ACQUIRING -> TRANSFERRING -> IDLE
 @MX:SPEC: SPEC-TEST-001 FR-TEST-06.2
 """
 
-from enum import Enum
-from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Optional
 import threading
 import time
+from dataclasses import dataclass
+from enum import Enum
 
 
 class DetectorState(Enum):
@@ -61,7 +59,7 @@ class DetectorStatus:
 
     state: DetectorState = DetectorState.INITIALIZING
     is_ready: bool = False
-    error_message: Optional[str] = None
+    error_message: str | None = None
     acquisition_count: int = 0
 
 
@@ -76,11 +74,11 @@ class DetectorStateMachine:
     @MX:WARN: Thread safety - uses lock for all state changes
     """
 
-    def __init__(self, info: Optional[DetectorInfo] = None):
+    def __init__(self, info: DetectorInfo | None = None):
         self._lock = threading.Lock()
         self._state = DetectorState.INITIALIZING
         self._is_ready = False
-        self._error_message: Optional[str] = None
+        self._error_message: str | None = None
         self._fault_mode_enabled = False
         self._acquisition_count = 0
         self._acquisition_time_ms = 100
@@ -98,7 +96,7 @@ class DetectorStateMachine:
             return self._is_ready
 
     @property
-    def error_message(self) -> Optional[str]:
+    def error_message(self) -> str | None:
         with self._lock:
             return self._error_message
 

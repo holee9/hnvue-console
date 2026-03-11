@@ -10,12 +10,11 @@ State Machine: STANDBY -> READY -> PREPARING -> EXPOSING -> COMPLETE -> STANDBY
 @MX:WARN: IEC 62304 Class C - Safety-critical radiation control
 """
 
-from enum import Enum
-from dataclasses import dataclass, field
-from typing import Optional, Callable
 import threading
 import time
-import asyncio
+from collections.abc import Callable
+from dataclasses import dataclass
+from enum import Enum
 
 
 class GeneratorState(Enum):
@@ -45,8 +44,8 @@ class ExposureParams:
     """Exposure parameters matching hvg_control.proto."""
 
     kvp: float = 0.0  # kV: range 40.0-150.0
-    ma: float = 0.0   # mA: range 0.1-1000.0
-    ms: float = 0.0   # Exposure time: 1-10000 ms
+    ma: float = 0.0  # mA: range 0.1-1000.0
+    ms: float = 0.0  # Exposure time: 1-10000 ms
     mas: float = 0.0  # mAs (alternative to ma+ms)
     aec_mode: int = 1  # AEC_MANUAL
     focus: str = "large"
@@ -75,7 +74,7 @@ class HvgStatus:
 
     state: GeneratorState = GeneratorState.IDLE
     is_ready: bool = False
-    fault_code: Optional[str] = None
+    fault_code: str | None = None
     actual_kvp: float = 0.0
     actual_ma: float = 0.0
     interlock_ok: bool = True
@@ -114,13 +113,13 @@ class GeneratorStateMachine:
 
     def __init__(
         self,
-        capabilities: Optional[HvgCapabilities] = None,
-        safety_interlock_callback: Optional[Callable[[], bool]] = None,
+        capabilities: HvgCapabilities | None = None,
+        safety_interlock_callback: Callable[[], bool] | None = None,
     ):
         self._lock = threading.Lock()
         self._state = GeneratorState.IDLE
         self._is_ready = False
-        self._fault_code: Optional[str] = None
+        self._fault_code: str | None = None
         self._fault_mode_enabled = False
         self._last_exposure_params = ExposureParams()
         self._exposure_count = 0
@@ -140,7 +139,7 @@ class GeneratorStateMachine:
             return self._is_ready
 
     @property
-    def fault_code(self) -> Optional[str]:
+    def fault_code(self) -> str | None:
         with self._lock:
             return self._fault_code
 
@@ -280,7 +279,13 @@ class GeneratorStateMachine:
                         with self._lock:
                             self._state = GeneratorState.IDLE
                             self._is_ready = False
-                        return False, "Exposure aborted by safety interlock", actual_kvp, actual_ma, actual_ms
+                        return (
+                            False,
+                            "Exposure aborted by safety interlock",
+                            actual_kvp,
+                            actual_ma,
+                            actual_ms,
+                        )
 
                 # Check for external cancellation
                 with self._lock:

@@ -18,20 +18,18 @@ import argparse
 import asyncio
 import logging
 import time
+from collections.abc import AsyncIterator
 from concurrent import futures
-from typing import AsyncIterator
 
 import grpc
 from grpc import aio
 
 # Note: Generated protobuf files should be placed in simulator/generated/
 # For now, we define message classes inline for standalone operation
-
 from models.detector_state import (
-    DetectorStateMachine,
-    DetectorState,
     AcquisitionConfig,
-    DetectorInfo,
+    DetectorState,
+    DetectorStateMachine,
 )
 
 # Configure logging
@@ -44,6 +42,7 @@ logger = logging.getLogger(__name__)
 
 # Protobuf message definitions (inline for standalone operation)
 # These match detector_acquisition.proto definitions
+
 
 class DetectorAcquisitionServicer:
     """

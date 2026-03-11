@@ -19,19 +19,14 @@ import argparse
 import asyncio
 import logging
 import time
+from collections.abc import AsyncIterator
 from concurrent import futures
-from typing import AsyncIterator
 
 import grpc
 from grpc import aio
-
 from models.generator_state import (
-    GeneratorStateMachine,
-    GeneratorState,
     ExposureParams,
-    HvgCapabilities,
-    HvgAlarm,
-    AlarmSeverity,
+    GeneratorStateMachine,
 )
 
 # Configure logging
@@ -255,9 +250,7 @@ class HvgControlServicer:
 
 async def serve(port: int, safety_interlock: SafetyInterlockCallback = None) -> None:
     """Start the gRPC server."""
-    state_machine = GeneratorStateMachine(
-        safety_interlock_callback=safety_interlock
-    )
+    state_machine = GeneratorStateMachine(safety_interlock_callback=safety_interlock)
     state_machine.initialize()
 
     server = aio.server(futures.ThreadPoolExecutor(max_workers=10))

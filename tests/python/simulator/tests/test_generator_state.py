@@ -10,22 +10,20 @@ pytest markers:
 @MX:WARN: IEC 62304 Class C - These tests verify safety-critical behavior
 """
 
-import pytest
-import time
-import threading
-
-import sys
 import os
+import sys
+import threading
+import time
+
+import pytest
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models.generator_state import (
+    ExposureParams,
     GeneratorState,
     GeneratorStateMachine,
-    ExposureParams,
     HvgCapabilities,
-    HvgStatus,
-    HvgAlarm,
-    AlarmSeverity,
 )
 
 
@@ -147,9 +145,7 @@ class TestGeneratorStateMachine:
     def test_safety_interlock_blocks_exposure(self):
         """Test that safety interlock blocks exposure."""
         # Safety interlock returns False (unsafe)
-        state_machine = GeneratorStateMachine(
-            safety_interlock_callback=lambda: False
-        )
+        state_machine = GeneratorStateMachine(safety_interlock_callback=lambda: False)
         state_machine.initialize()
         state_machine.prepare()
 
@@ -169,9 +165,7 @@ class TestGeneratorStateMachine:
         def interlock_callback():
             return interlock_safe[0]
 
-        state_machine = GeneratorStateMachine(
-            safety_interlock_callback=interlock_callback
-        )
+        state_machine = GeneratorStateMachine(safety_interlock_callback=interlock_callback)
         state_machine.initialize()
         state_machine.prepare()
 
@@ -311,9 +305,7 @@ class TestGeneratorStateMachine:
         def interlock_callback():
             return interlock_safe[0]
 
-        state_machine = GeneratorStateMachine(
-            safety_interlock_callback=interlock_callback
-        )
+        state_machine = GeneratorStateMachine(safety_interlock_callback=interlock_callback)
         state_machine.initialize()
         state_machine.prepare()
 

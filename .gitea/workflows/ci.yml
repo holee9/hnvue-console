@@ -407,8 +407,8 @@ jobs:
             TestResults/**/integration-test-results.xml
           retention-days: 90
 
-  coverage-report:
-    name: Generate Coverage Report
+  coverage-gate:
+    name: Component-Level Coverage Gates
     runs-on: [self-hosted, windows]
     needs: [test-cpp, test-csharp, test-python]
     if: always()
@@ -416,64 +416,94 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: tests/python/requirements.txt
+
       - name: Download all coverage artifacts
         uses: actions/download-artifact@v3
         with:
           path: coverage-artifacts
 
-      - name: Merge coverage reports
+      - name: Run component-level coverage verification
         run: |
-          # Create consolidated coverage directory
-          New-Item -ItemType Directory -Force -Path "consolidated-coverage"
+          # Find all Cobertura coverage files
+          $CoberturaFiles = Get-ChildItem -Path coverage-artifacts -Filter "*.xml" -Recurse | Where-Object {
+            $Content = Get-Content $_.FullName -Raw
+            $Content -match "coverage|cobertura"
+          }
 
-          # Copy all coverage files
-          Copy-Item -Path "coverage-artifacts/**/coverage.cobertura.xml" -Destination "consolidated-coverage/" -Recurse -Force
-          Copy-Item -Path "coverage-artifacts/**/coverage.xml" -Destination "consolidated-coverage/" -Recurse -Force
+          Write-Host "Found $($CoberturaFiles.Count) coverage files"
 
-          Write-Host "Coverage files consolidated"
+          foreach ($File in $CoberturaFiles) {
+            Write-Host "Processing: $($File.FullName)"
+            python tests/coverage_gates/verify_coverage.py --cobertura $File.FullName --fail-on-error --json-output coverage-result.json
+          }
 
-      - name: Upload consolidated coverage
+      - name: Upload coverage gate results
         uses: actions/upload-artifact@v3
+        if: always()
         with:
-          name: consolidated-coverage-reports
-          path: consolidated-coverage/
+          name: coverage-gate-results
+          path: |
+            coverage-result.json
+            coverage-artifacts/**/coverage.cobertura.xml
+            coverage-artifacts/**/coverage.xml
           retention-days: 90
 
-      - name: Generate coverage summary
+      - name: Generate coverage gate summary
         run: |
           $Summary = @"
-          # Coverage Report Summary
+          # Component-Level Coverage Gate Report
 
           **Generated**: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
           **Commit**: ${{ github.sha }}
           **Branch**: ${{ github.ref_name }}
 
-          ## Coverage Reports Generated
-          - C# Cobertura XML
-          - Python Coverage XML
+          ## SPEC-TEST-001 Compliance
 
-          ## Threshold (SPEC-TEST-001 NFR-TEST-01)
-          - Minimum: 85% statement coverage
-          - Class C components: 100% decision coverage
+          ### NFR-TEST-01: 85% Minimum Coverage
+          All Class A/B components must meet their respective thresholds.
+
+          ### NFR-TEST-01.1: Class C 100% Decision Coverage
+          Generator Control and AEC must have 100% decision coverage.
+
+          ### NFR-TEST-04: Class C Merge Gate
+          Merge is blocked if Class C components fall below 100% decision coverage.
+
+          ## Component Thresholds (Section 1.3)
+
+          | Component | Class | Type | Threshold |
+          |-----------|-------|------|-----------|
+          | Generator Control | C | Decision | 100% |
+          | AEC | C | Decision | 100% |
+          | Image Processing | B | Statement | 85% |
+          | DICOM | B | Statement | 85% |
+          | Dose Management | B | Statement | 90% |
+          | UI/Viewer | B | Statement | 80% |
+          | Patient Management | A | Statement | 85% |
 
           ## Artifacts
-          All coverage reports archived with 90-day retention per SPEC-TEST-001 FR-TEST-08.5
+          All coverage reports archived with 90-day retention per FR-TEST-08.5
           "@
 
-          $Summary | Out-File -FilePath coverage-summary.md
+          $Summary | Out-File -FilePath coverage-gate-summary.md
           Write-Host $Summary
 
-      - name: Upload coverage summary
+      - name: Upload coverage gate summary
         uses: actions/upload-artifact@v3
         with:
-          name: coverage-summary
-          path: coverage-summary.md
+          name: coverage-gate-summary
+          path: coverage-gate-summary.md
           retention-days: 90
 
   archive:
     name: Archive Artifacts
     runs-on: [self-hosted, windows]
-    needs: [test-cpp, test-csharp, test-python, test-dicom-conformance, test-integration, coverage-report]
+    needs: [test-cpp, test-csharp, test-python, test-dicom-conformance, test-integration, coverage-gate, rtm-gate]
     if: always()
     steps:
       - name: Download all artifacts
@@ -500,7 +530,8 @@ jobs:
           - Integration Tests: ${{ needs.test-integration.result }}
 
           ## Coverage Report
-          - Coverage Report: ${{ needs.coverage-report.result }}
+          - Coverage Gate: ${{ needs.coverage-gate.result }}
+          - RTM Gate: ${{ needs.rtm-gate.result }}
 
           ## Artifacts (90-day retention)
           - cpp-build-artifacts
@@ -527,3 +558,43 @@ jobs:
           name: build-summary
           path: build-summary.md
           retention-days: 90
+
+  # SPEC-TEST-001 Phase 3.3: RTM Gate
+  rtm-gate:
+    name: RTM Validation Gate
+    runs-on: [self-hosted, windows]
+    needs: [test-cpp, test-csharp, test-python]
+    if: always()
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: tests/python/requirements.txt
+
+      - name: Run RTM validation
+        run: |
+          python tests/scripts/rtm_gate.py `
+            tests/traceability/rtm.csv `
+            --output rtm-gate-result.json `
+            --markdown rtm-gate-report.md
+
+      - name: Upload RTM gate results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: rtm-gate-results
+          path: |
+            rtm-gate-result.json
+            rtm-gate-report.md
+          retention-days: 90
+
+      - name: Fail if RTM incomplete
+        if: failure()
+        run: |
+          Write-Error "RTM validation failed - requirements missing test coverage"
+          exit 1
