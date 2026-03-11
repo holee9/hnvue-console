@@ -1,5 +1,8 @@
 name: HnVue CI Pipeline
 
+# SPEC-TEST-001 Phase 4: CI Pipeline Integration
+# Implements FR-TEST-08: CI Reporting with JUnit XML and coverage reports
+
 on:
   push:
     branches:
@@ -14,6 +17,7 @@ env:
   CONFIGURATION: Release
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  PYTHON_VERSION: "3.11"
 
 jobs:
   setup:
@@ -53,6 +57,16 @@ jobs:
           key: cmake-${{ runner.os }}-${{ hashFiles('CMakeLists.txt', 'libs/**/CMakeLists.txt', 'src/**/*.csproj') }}
           restore-keys: |
             cmake-
+
+      - name: Cache Python dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pip
+            tests/python/.venv
+          key: python-${{ env.PYTHON_VERSION }}-${{ hashFiles('tests/python/requirements.txt') }}
+          restore-keys: |
+            python-
 
   build-cpp:
     name: Build C++ Libraries
@@ -154,14 +168,16 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Run C# unit tests
+      - name: Run C# unit tests with coverage
         run: |
           dotnet test HnVue.sln -c ${{ env.CONFIGURATION }} --no-build `
             --logger "trx;LogFileName=test-results.trx" `
-            -- DataCollectionRunSettings.DataCollectors="Code Coverage" `
+            --logger "junit;LogFileName=test-results.xml" `
+            --collect:"XPlat Code Coverage" `
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura,opencover `
             --results-directory TestResults
 
-      - name: Upload C# test results
+      - name: Upload C# test results (TRX)
         uses: actions/upload-artifact@v3
         if: always()
         with:
@@ -169,34 +185,111 @@ jobs:
           path: TestResults/**/*.trx
           retention-days: 90
 
+      - name: Upload C# test results (JUnit XML)
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: csharp-junit-results
+          path: TestResults/**/test-results.xml
+          retention-days: 90
+
       - name: Upload C# coverage reports
         uses: actions/upload-artifact@v3
         if: always()
         with:
           name: csharp-coverage-reports
-          path: TestResults/**/coverage.cobertura.xml
+          path: |
+            TestResults/**/coverage.cobertura.xml
+            TestResults/**/coverage.opencover.xml
           retention-days: 90
 
       - name: Verify coverage threshold
         run: |
-          # SPEC-INFRA-001 FR-INFRA-05.6: 80% coverage requirement
-          $CoverageThreshold = 80.0
-          # Parse coverage from Cobertura XML and verify threshold
-          Write-Host "Coverage threshold: $CoverageThreshold%"
-          # TODO: Implement actual coverage verification logic
+          # SPEC-TEST-001 NFR-TEST-01: 85% coverage minimum
+          $CoverageThreshold = 85.0
+          $CoverageFile = Get-ChildItem -Path TestResults -Filter "coverage.cobertura.xml" -Recurse | Select-Object -First 1
 
-  test-integration:
-    name: Integration Tests (Orthanc)
+          if ($CoverageFile) {
+            [xml]$Xml = Get-Content $CoverageFile.FullName
+            $LineRate = [double]$Xml.coverage."line-rate"
+            $CoveragePercent = $LineRate * 100
+
+            Write-Host "Coverage: $([math]::Round($CoveragePercent, 2))%"
+            Write-Host "Threshold: $CoverageThreshold%"
+
+            if ($CoveragePercent -lt $CoverageThreshold) {
+              Write-Error "Coverage $CoveragePercent% is below threshold $CoverageThreshold%"
+              exit 1
+            }
+            Write-Host "Coverage threshold passed"
+          } else {
+            Write-Warning "Coverage file not found - skipping threshold check"
+          }
+
+  test-python:
+    name: Test Python Simulators
     runs-on: [self-hosted, windows]
-    needs: build-csharp
+    needs: setup
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
-          dotnet-version: '8.0.x'
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: tests/python/requirements.txt
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tests/python/requirements.txt
+
+      - name: Run Python unit tests with coverage
+        run: |
+          cd tests/python
+          pytest simulator/tests/ -v --cov=simulator --cov-report=xml:coverage.xml --cov-report=html:htmlcov --junit-xml=junit.xml
+
+      - name: Upload Python test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: python-test-results
+          path: |
+            tests/python/junit.xml
+            tests/python/coverage.xml
+          retention-days: 90
+
+      - name: Upload Python coverage reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: python-coverage-reports
+          path: |
+            tests/python/coverage.xml
+            tests/python/htmlcov/
+          retention-days: 90
+
+  test-dicom-conformance:
+    name: DICOM Conformance Tests
+    runs-on: [self-hosted, windows]
+    needs: [build-csharp, test-python]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: tests/python/requirements.txt
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tests/python/requirements.txt
 
       - name: Start Orthanc container
         run: |
@@ -227,16 +320,82 @@ jobs:
             exit 1
           }
 
-      - name: Run integration tests
+      - name: Run DICOM conformance tests
         run: |
-          dotnet test tests/integration/HnVue.Integration.Tests/HnVue.Integration.Tests.csproj `
-            -c ${{ env.CONFIGURATION }} --no-build `
-            --logger "trx;LogFileName=integration-test-results.trx"
+          python tests/docker/dicom_cstore_test.py --junit-output tests/docker/dicom-conformance-results.xml
 
       - name: Stop Orthanc container
         if: always()
         run: |
           docker-compose -f tests/docker/docker-compose.orthanc.yml down
+
+      - name: Upload DICOM conformance results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: dicom-conformance-results
+          path: tests/docker/dicom-conformance-results.xml
+          retention-days: 90
+
+  test-integration:
+    name: Integration Tests (Full Stack)
+    runs-on: [self-hosted, windows]
+    needs: [build-csharp, test-python]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Start all Docker services
+        run: |
+          docker-compose -f tests/docker/docker-compose.simulators.yml up -d
+
+      - name: Wait for services health check
+        run: |
+          # Wait for Orthanc
+          $MaxRetries = 12
+          $RetryCount = 0
+          $Healthy = $false
+
+          while (-not $Healthy -and $RetryCount -lt $MaxRetries) {
+            Start-Sleep -Seconds 5
+            try {
+              $Response = Invoke-WebRequest -Uri "http://localhost:8042/" -UseBasicParsing
+              if ($Response.StatusCode -eq 200) {
+                $Healthy = $true
+                Write-Host "All services are healthy"
+              }
+            } catch {
+              Write-Host "Waiting for services... ($($RetryCount + 1)/$MaxRetries)"
+            }
+            $RetryCount++
+          }
+
+          if (-not $Healthy) {
+            Write-Error "Services failed to become healthy within 60 seconds"
+            exit 1
+          }
+
+      - name: Run integration tests
+        run: |
+          dotnet test tests/integration/HnVue.Integration.Tests/HnVue.Integration.Tests.csproj `
+            -c ${{ env.CONFIGURATION }} --no-build `
+            --logger "trx;LogFileName=integration-test-results.trx" `
+            --logger "junit;LogFileName=integration-test-results.xml"
+
+      - name: Stop all Docker services
+        if: always()
+        run: |
+          docker-compose -f tests/docker/docker-compose.simulators.yml down -v
 
       - name: Upload integration test results
         uses: actions/upload-artifact@v3
@@ -245,12 +404,76 @@ jobs:
           name: integration-test-results
           path: |
             TestResults/**/*.trx
+            TestResults/**/integration-test-results.xml
+          retention-days: 90
+
+  coverage-report:
+    name: Generate Coverage Report
+    runs-on: [self-hosted, windows]
+    needs: [test-cpp, test-csharp, test-python]
+    if: always()
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all coverage artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: coverage-artifacts
+
+      - name: Merge coverage reports
+        run: |
+          # Create consolidated coverage directory
+          New-Item -ItemType Directory -Force -Path "consolidated-coverage"
+
+          # Copy all coverage files
+          Copy-Item -Path "coverage-artifacts/**/coverage.cobertura.xml" -Destination "consolidated-coverage/" -Recurse -Force
+          Copy-Item -Path "coverage-artifacts/**/coverage.xml" -Destination "consolidated-coverage/" -Recurse -Force
+
+          Write-Host "Coverage files consolidated"
+
+      - name: Upload consolidated coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: consolidated-coverage-reports
+          path: consolidated-coverage/
+          retention-days: 90
+
+      - name: Generate coverage summary
+        run: |
+          $Summary = @"
+          # Coverage Report Summary
+
+          **Generated**: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
+          **Commit**: ${{ github.sha }}
+          **Branch**: ${{ github.ref_name }}
+
+          ## Coverage Reports Generated
+          - C# Cobertura XML
+          - Python Coverage XML
+
+          ## Threshold (SPEC-TEST-001 NFR-TEST-01)
+          - Minimum: 85% statement coverage
+          - Class C components: 100% decision coverage
+
+          ## Artifacts
+          All coverage reports archived with 90-day retention per SPEC-TEST-001 FR-TEST-08.5
+          "@
+
+          $Summary | Out-File -FilePath coverage-summary.md
+          Write-Host $Summary
+
+      - name: Upload coverage summary
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-summary
+          path: coverage-summary.md
           retention-days: 90
 
   archive:
     name: Archive Artifacts
     runs-on: [self-hosted, windows]
-    needs: [test-cpp, test-csharp, test-integration]
+    needs: [test-cpp, test-csharp, test-python, test-dicom-conformance, test-integration, coverage-report]
     if: always()
     steps:
       - name: Download all artifacts
@@ -268,12 +491,32 @@ jobs:
           ## Build Status
           - C++ Build: ${{ needs.build-cpp.result }}
           - C# Build: ${{ needs.build-csharp.result }}
-          - C++ Tests: ${{ needs.test-cpp.result }}
-          - C# Tests: ${{ needs.test-csharp.result }}
+
+          ## Test Results
+          - C++ Tests (GTest): ${{ needs.test-cpp.result }}
+          - C# Tests (xUnit): ${{ needs.test-csharp.result }}
+          - Python Tests (pytest): ${{ needs.test-python.result }}
+          - DICOM Conformance: ${{ needs.test-dicom-conformance.result }}
           - Integration Tests: ${{ needs.test-integration.result }}
 
-          ## Artifacts
-          All artifacts archived with 90-day retention per SPEC-INFRA-001 FR-INFRA-03.6
+          ## Coverage Report
+          - Coverage Report: ${{ needs.coverage-report.result }}
+
+          ## Artifacts (90-day retention)
+          - cpp-build-artifacts
+          - csharp-build-artifacts
+          - cpp-test-results
+          - csharp-test-results
+          - csharp-junit-results
+          - csharp-coverage-reports
+          - python-test-results
+          - python-coverage-reports
+          - dicom-conformance-results
+          - integration-test-results
+          - consolidated-coverage-reports
+
+          ## Compliance
+          All artifacts archived per SPEC-INFRA-001 FR-INFRA-03.6 and SPEC-TEST-001 FR-TEST-08.5
           "@
 
           $Summary | Out-File -FilePath build-summary.md

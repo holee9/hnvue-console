@@ -1,10 +1,14 @@
 # HnVue Python HAL Simulator Dependencies
 # SPEC-TEST-001 Phase 2: Python HAL Simulator
+# SPEC-TEST-001 Phase 3: DICOM Conformance Testing
 
 # gRPC
 grpcio>=1.60.0
 grpcio-tools>=1.60.0
 protobuf>=4.25.0
+
+# HTTP Client (for Orthanc REST API)
+requests>=2.31.0
 
 # Testing
 pytest>=7.4.0
@@ -20,3 +24,6 @@ mypy-protobuf>=3.6.0
 
 # Code quality
 ruff>=0.1.0
+
+# DICOM support (optional, for synthetic DICOM generation)
+# pydicom>=2.4.0
