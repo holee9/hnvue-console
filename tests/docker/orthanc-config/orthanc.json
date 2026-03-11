@@ -1,0 +1,46 @@
+{
+  "Name": "HnVue Orthanc Test Server",
+  "StorageDirectory": "/var/lib/orthanc/db",
+  "IndexDirectory": "/var/lib/orthanc/db",
+  "StorageCompression": "zlib",
+  "MaximumStorageSize": 1024,
+  "MaximumPatientCount": 1000,
+
+  "RemoteAccessAllowed": true,
+  "SslEnabled": false,
+  "SslCertificate": "certificate.pem",
+
+  "AuthenticationEnabled": false,
+
+  "RegisteredUsers": {
+    "hnvue": "hnvue123"
+  },
+
+  "DicomAet": "HNVUE",
+  "DicomPort": 4242,
+  "DicomModalities": {
+    "HNVUE_SCU": ["HNVUE", "localhost", 4242],
+    "ANY_SCU": ["ANY", "*", 4242]
+  },
+
+  "DicomAlwaysAllowFind": true,
+  "DicomAlwaysAllowMove": true,
+  "DicomAlwaysAllowStore": true,
+
+  "HttpPort": 8042,
+  "HttpDescribeErrors": true,
+  "HttpCompressionEnabled": true,
+
+  "SQLite": {
+    "EnableThreads": true
+  },
+
+  "Plugins": [
+    "/usr/share/orthanc/plugins"
+  ],
+
+  "Logging": {
+    "LogLevel": "info",
+    "LogCategory": "default"
+  }
+}

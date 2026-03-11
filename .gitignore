@@ -238,3 +238,6 @@ TestResults/
 .moai/backups/
 .moai/config/sections/llm.yaml
 .worktrees/
+
+# Documentation reference files (temporary)
+docs/ref/

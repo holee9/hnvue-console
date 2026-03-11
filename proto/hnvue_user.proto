@@ -1,0 +1,196 @@
+syntax = "proto3";
+
+package hnvue.ipc;
+import "hnvue_common.proto";
+option csharp_namespace = "HnVue.Ipc";
+
+// User service: User authentication and authorization (RBAC)
+// GUI -> Core Engine (unary)
+service UserService {
+  // Authenticate user with credentials
+  rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse);
+
+  // Logout current user
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+
+  // Get current user session info
+  rpc GetCurrentSession(GetCurrentSessionRequest) returns (GetCurrentSessionResponse);
+
+  // Validate user session token
+  rpc ValidateSession(ValidateSessionRequest) returns (ValidateSessionResponse);
+
+  // Get user by ID
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+
+  // List all users (admin only)
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+
+  // Create new user (admin only)
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+
+  // Update user (admin only)
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+
+  // Change user password
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+
+  // Get user permissions
+  rpc GetUserPermissions(GetUserPermissionsRequest) returns (GetUserPermissionsResponse);
+}
+
+message AuthenticateRequest {
+  string username = 1;
+  string password = 2;              // Should be hashed client-side in production
+  string workstation_id = 3;        // Identifies the GUI workstation
+  Timestamp request_timestamp = 4;
+}
+
+message AuthenticateResponse {
+  bool success = 1;
+  UserSession session = 2;
+  IpcError error = 3;
+  Timestamp response_timestamp = 4;
+}
+
+message UserSession {
+  string session_id = 1;
+  User user = 2;
+  string access_token = 3;
+  Timestamp expires_at = 4;
+  repeated string granted_roles = 5;
+}
+
+message User {
+  string user_id = 1;
+  string username = 2;
+  string display_name = 3;
+  string email = 4;
+  UserRole primary_role = 5;
+  repeated UserRole roles = 6;
+  bool is_active = 7;
+  Timestamp last_login = 8;
+  Timestamp created_at = 9;
+}
+
+enum UserRole {
+  USER_ROLE_UNSPECIFIED = 0;
+  USER_ROLE_ADMINISTRATOR = 1;      // Full system access
+  USER_ROLE_RADIOLOGIST = 2;        // Physician - can sign reports
+  USER_ROLE_TECHNOLOGIST = 3;       // Radiologic technologist
+  USER_ROLE_PHYSICIST = 4;          // Medical physicist
+  USER_ROLE_OPERATOR = 5;           // Basic operator
+  USER_ROLE_VIEWER = 6;             // Read-only access
+  USER_ROLE_SERVICE = 7;            // Service/maintenance engineer
+}
+
+message LogoutRequest {
+  string session_id = 1;
+  Timestamp request_timestamp = 2;
+}
+
+message LogoutResponse {
+  bool success = 1;
+  IpcError error = 2;
+  Timestamp response_timestamp = 3;
+}
+
+message GetCurrentSessionRequest {
+  string session_id = 1;
+  Timestamp request_timestamp = 2;
+}
+
+message GetCurrentSessionResponse {
+  UserSession session = 1;
+  IpcError error = 2;
+}
+
+message ValidateSessionRequest {
+  string session_id = 1;
+  string access_token = 2;
+  Timestamp request_timestamp = 3;
+}
+
+message ValidateSessionResponse {
+  bool is_valid = 1;
+  UserSession session = 2;          // Only returned if valid
+  IpcError error = 3;
+}
+
+message GetUserRequest {
+  string user_id = 1;
+  Timestamp request_timestamp = 2;
+}
+
+message GetUserResponse {
+  User user = 1;
+  IpcError error = 2;
+}
+
+message ListUsersRequest {
+  bool include_inactive = 1;
+  Timestamp request_timestamp = 2;
+}
+
+message ListUsersResponse {
+  repeated User users = 1;
+  IpcError error = 2;
+}
+
+message CreateUserRequest {
+  User user = 1;
+  string initial_password = 2;      // Must be changed on first login
+  string created_by = 3;            // User ID of admin
+  Timestamp request_timestamp = 4;
+}
+
+message CreateUserResponse {
+  bool success = 1;
+  string user_id = 2;               // Assigned user ID
+  IpcError error = 3;
+  Timestamp response_timestamp = 4;
+}
+
+message UpdateUserRequest {
+  string user_id = 1;
+  User updated_user = 2;            // Partial update supported
+  string updated_by = 3;            // User ID of admin
+  Timestamp request_timestamp = 4;
+}
+
+message UpdateUserResponse {
+  bool success = 1;
+  User user = 2;                    // Updated user record
+  IpcError error = 3;
+  Timestamp response_timestamp = 4;
+}
+
+message ChangePasswordRequest {
+  string user_id = 1;
+  string current_password = 2;
+  string new_password = 3;
+  Timestamp request_timestamp = 4;
+}
+
+message ChangePasswordResponse {
+  bool success = 1;
+  IpcError error = 2;
+  Timestamp response_timestamp = 3;
+}
+
+message GetUserPermissionsRequest {
+  string user_id = 1;
+  Timestamp request_timestamp = 2;
+}
+
+message GetUserPermissionsResponse {
+  repeated Permission permissions = 1;
+  IpcError error = 2;
+}
+
+message Permission {
+  string permission_id = 1;
+  string name = 2;
+  string description = 3;
+  string resource_type = 4;         // Patient, Study, Image, System, etc.
+  repeated string allowed_actions = 5;  // Read, Write, Delete, etc.
+}

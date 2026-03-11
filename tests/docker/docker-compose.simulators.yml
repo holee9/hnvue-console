@@ -1,0 +1,67 @@
+# HnVue Simulator Services Docker Compose
+# SPEC-TEST-001 Phase 2: HW simulator testbench
+
+version: '3.8'
+
+services:
+  # Detector Acquisition Simulator
+  detector-simulator:
+    build:
+      context: ../python
+      dockerfile: Dockerfile.simulator
+    container_name: hnvue-detector-simulator
+    command: python -m simulator.detector_server --port 50051
+    ports:
+      - "50051:50051"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import grpc; print('healthy')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - hnvue-simulator-net
+
+  # HVG (Generator) Control Simulator
+  hvg-simulator:
+    build:
+      context: ../python
+      dockerfile: Dockerfile.simulator
+    container_name: hnvue-hvg-simulator
+    command: python -m simulator.generator_server --port 50052
+    ports:
+      - "50052:50052"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import grpc; print('healthy')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - hnvue-simulator-net
+
+  # Orthanc PACS for DICOM testing
+  orthanc:
+    image: jodogne/orthanc:24.1.2
+    container_name: hnvue-orthanc-test
+    ports:
+      - "4242:4242"  # DICOM port
+      - "8042:8042"  # REST API port
+    volumes:
+      - ./orthanc-config:/etc/orthanc:ro
+      - orthanc-data:/var/lib/orthanc/db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8042/"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - hnvue-simulator-net
+
+volumes:
+  orthanc-data:
+
+networks:
+  hnvue-simulator-net:
+    driver: bridge

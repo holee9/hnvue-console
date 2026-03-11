@@ -14,6 +14,14 @@ option csharp_namespace = "HnVue.Ipc";
 // - ImageService: Core Engine -> GUI (server-streaming)
 // - HealthService: Core Engine -> GUI (server-streaming)
 // - ConfigService: GUI <-> Core Engine (bidirectional unary + streaming)
+// - DoseService: GUI <-> Core Engine (unary + streaming alerts)
+// - PatientService: GUI <-> Core Engine (unary)
+// - UserService: GUI <-> Core Engine (unary)
+// - WorklistService: GUI <-> Core Engine (unary + streaming)
+// - AECService: GUI <-> Core Engine (bidirectional + streaming)
+// - ProtocolService: GUI <-> Core Engine (bidirectional unary)
+// - AuditLogService: GUI <-> Core Engine (unary + streaming)
+// - QCService: GUI <-> Core Engine (bidirectional + streaming)
 //
 // Import order is important: common types must be imported first.
 
@@ -25,3 +33,11 @@ import "hnvue_command.proto";
 import "hnvue_image.proto";
 import "hnvue_health.proto";
 import "hnvue_config.proto";
+import "hnvue_dose.proto";
+import "hnvue_patient.proto";
+import "hnvue_user.proto";
+import "hnvue_worklist.proto";
+import "hnvue_aec.proto";
+import "hnvue_protocol.proto";
+import "hnvue_audit_log.proto";
+import "hnvue_qc.proto";

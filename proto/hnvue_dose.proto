@@ -1,0 +1,136 @@
+syntax = "proto3";
+
+package hnvue.ipc;
+import "hnvue_common.proto";
+option csharp_namespace = "HnVue.Ipc";
+
+// Dose service: Dose tracking and radiation monitoring (IEC 62304 Class B/C)
+// GUI -> Core Engine (unary) + Core Engine -> GUI (streaming alerts)
+service DoseService {
+  // Record a new dose entry after exposure
+  rpc RecordDose(RecordDoseRequest) returns (RecordDoseResponse);
+
+  // Get dose history for a patient
+  rpc GetDoseHistory(GetDoseHistoryRequest) returns (GetDoseHistoryResponse);
+
+  // Get cumulative dose summary
+  rpc GetDoseSummary(GetDoseSummaryRequest) returns (GetDoseSummaryResponse);
+
+  // Subscribe to dose alerts (threshold exceeded warnings)
+  rpc SubscribeDoseAlerts(DoseAlertSubscribeRequest) returns (stream DoseAlertEvent);
+
+  // Acknowledge a dose alert
+  rpc AcknowledgeDoseAlert(AcknowledgeDoseAlertRequest) returns (AcknowledgeDoseAlertResponse);
+}
+
+message RecordDoseRequest {
+  string patient_id = 1;
+  string study_id = 2;
+  string acquisition_id = 3;
+  DoseMetrics dose_metrics = 4;
+  Timestamp request_timestamp = 5;
+}
+
+message DoseMetrics {
+  double entrance_skin_dose_mgy = 1;      // Entrance Skin Dose in mGy
+  double kerma_area_product_gycm2 = 2;    // Kerma-Area Product in Gy.cm2
+  double effective_dose_msv = 3;           // Effective Dose in mSv (estimated)
+  double kvp = 4;                          // kVp used
+  double mas = 5;                          // mAs used
+  float exposure_time_ms = 6;              // Exposure time in ms
+  float source_image_distance_cm = 7;      // SID in cm
+  string body_part = 8;                    // Body part examined
+  string projection = 9;                   // Projection (AP, PA, Lateral, etc.)
+}
+
+message RecordDoseResponse {
+  bool success = 1;
+  string dose_record_id = 2;
+  IpcError error = 3;
+  Timestamp response_timestamp = 4;
+}
+
+message GetDoseHistoryRequest {
+  string patient_id = 1;
+  int32 max_records = 2;           // 0 = all records
+  Timestamp start_date = 3;        // Optional date range filter
+  Timestamp end_date = 4;
+}
+
+message GetDoseHistoryResponse {
+  repeated DoseRecord records = 1;
+  int32 total_count = 2;
+  IpcError error = 3;
+}
+
+message DoseRecord {
+  string dose_record_id = 1;
+  string patient_id = 2;
+  string study_id = 3;
+  string acquisition_id = 4;
+  DoseMetrics metrics = 5;
+  Timestamp recorded_timestamp = 6;
+  string operator_id = 7;
+  string device_id = 8;
+}
+
+message GetDoseSummaryRequest {
+  string patient_id = 1;
+  SummaryPeriod period = 2;
+}
+
+enum SummaryPeriod {
+  SUMMARY_PERIOD_UNSPECIFIED = 0;
+  SUMMARY_PERIOD_LAST_30_DAYS = 1;
+  SUMMARY_PERIOD_LAST_90_DAYS = 2;
+  SUMMARY_PERIOD_LAST_YEAR = 3;
+  SUMMARY_PERIOD_LIFETIME = 4;
+}
+
+message GetDoseSummaryResponse {
+  string patient_id = 1;
+  double cumulative_skin_dose_mgy = 2;
+  double cumulative_kap_gycm2 = 3;
+  double cumulative_effective_dose_msv = 4;
+  int32 exam_count = 5;
+  DoseAlertLevel alert_level = 6;
+  string alert_message = 7;
+  IpcError error = 8;
+}
+
+enum DoseAlertLevel {
+  DOSE_ALERT_LEVEL_UNSPECIFIED = 0;
+  DOSE_ALERT_LEVEL_NORMAL = 1;      // Within normal limits
+  DOSE_ALERT_LEVEL_ELEVATED = 2;    // Approaching threshold
+  DOSE_ALERT_LEVEL_WARNING = 3;     // Threshold exceeded
+  DOSE_ALERT_LEVEL_CRITICAL = 4;    // Significantly exceeded
+}
+
+message DoseAlertSubscribeRequest {
+  string patient_id = 1;            // Optional: filter by patient
+  bool include_all_patients = 2;    // Subscribe to all patient alerts
+}
+
+message DoseAlertEvent {
+  string alert_id = 1;
+  string patient_id = 2;
+  DoseAlertLevel level = 3;
+  string alert_message = 4;
+  double current_dose_msv = 5;
+  double threshold_msv = 6;
+  Timestamp event_timestamp = 7;
+  bool requires_acknowledgment = 8;
+}
+
+message AcknowledgeDoseAlertRequest {
+  string alert_id = 1;
+  string acknowledged_by = 2;       // User ID
+  string acknowledgment_note = 3;   // Optional note
+  Timestamp request_timestamp = 4;
+}
+
+message AcknowledgeDoseAlertResponse {
+  bool success = 1;
+  IpcError error = 2;
+  Timestamp response_timestamp = 3;
+}

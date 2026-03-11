@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **fix(dose)**: AuditTrailWriter timestamp 정밀도 개선 및 DoseRecordRepository async lock 교체
+  - 파일: `src/HnVue.Dose/Audit/AuditTrailWriter.cs`, `Persistence/DoseRecordRepository.cs`
+  - 내용: Timestamp 정밀도 개선 (DateTime → DateTimeOffset), AsyncLock 교체 (SemaphoreSlim)
+
+### Changed
+
+- **chore(config)**: git-strategy team mode 및 quality tdd mode 확정
+  - 파일: `.moai/config/sections/git-strategy.yaml`, `.moai/config/sections/quality.yaml`
+  - 내용: `git-strategy.mode: team`, `quality.constitution.development_mode: tdd`
+
+### Added
+
+- **docs(adapters)**: gRPC Service Adapter 구현 현황 감사 보고서 추가
+  - 파일: `docs/adapter-audit.md`
+  - 내용: 13개 어댑터 현황 (4개 Partial 구현, 9개 Stub)
+
+---
+
 ### Added - SPEC-UI-001: WPF Console UI ViewModel 구현 완성
 
 완료일: 2026-03-10 | 테스트: 219/219 통과 | 커버리지: 85%+

@@ -1,0 +1,128 @@
+syntax = "proto3";
+
+package hnvue.ipc;
+import "hnvue_common.proto";
+option csharp_namespace = "HnVue.Ipc";
+
+// AEC service: Automatic Exposure Control monitoring and configuration
+// GUI <-> Core Engine (bidirectional) + Core Engine -> GUI (streaming)
+service AECService {
+  // Get current AEC status and settings
+  rpc GetAecStatus(GetAecStatusRequest) returns (GetAecStatusResponse);
+
+  // Enable or disable AEC
+  rpc SetAecEnabled(SetAecEnabledRequest) returns (SetAecEnabledResponse);
+
+  // Configure AEC parameters
+  rpc ConfigureAec(ConfigureAecRequest) returns (ConfigureAecResponse);
+
+  // Subscribe to AEC state changes
+  rpc SubscribeAecChanges(AecChangeSubscribeRequest) returns (stream AecChangeEvent);
+}
+
+message GetAecStatusRequest {
+  Timestamp request_timestamp = 1;
+}
+
+message GetAecStatusResponse {
+  bool is_enabled = 1;
+  AecMode mode = 2;
+  AecSensorSelection sensor_selection = 3;
+  double target_exposure_index = 4;  // Target EI
+  double current_exposure_index = 5; // Current EI (if exposure in progress)
+  AecCompensation compensation = 6;
+  repeated AecRegionOfInterest regions = 7;
+  IpcError error = 8;
+}
+
+enum AecMode {
+  AEC_MODE_UNSPECIFIED = 0;
+  AEC_MODE_AUTO = 1;                // Fully automatic
+  AEC_MODE_SEMI_AUTO = 2;           // Semi-automatic (user selects region)
+  AEC_MODE_MANUAL = 3;              // Manual mode (AEC disabled)
+}
+
+enum AecSensorSelection {
+  AEC_SENSOR_SELECTION_UNSPECIFIED = 0;
+  AEC_SENSOR_SELECTION_LEFT = 1;
+  AEC_SENSOR_SELECTION_CENTER = 2;
+  AEC_SENSOR_SELECTION_RIGHT = 3;
+  AEC_SENSOR_SELECTION_LEFT_CENTER = 4;
+  AEC_SENSOR_SELECTION_CENTER_RIGHT = 5;
+  AEC_SENSOR_SELECTION_LEFT_RIGHT = 6;
+  AEC_SENSOR_SELECTION_ALL = 7;
+}
+
+message AecCompensation {
+  double compensation_value = 1;    // -3 to +3 stops
+  bool is_auto_compensation = 2;    // Auto compensation based on body part
+}
+
+message AecRegionOfInterest {
+  string region_id = 1;
+  double center_x = 2;              // 0.0 to 1.0 (normalized)
+  double center_y = 3;              // 0.0 to 1.0 (normalized)
+  double width = 4;                 // 0.0 to 1.0 (normalized)
+  double height = 5;                // 0.0 to 1.0 (normalized)
+  double weight = 6;                // 0.0 to 1.0 (contribution to exposure)
+  bool is_active = 7;
+}
+
+message SetAecEnabledRequest {
+  bool enabled = 1;
+  Timestamp request_timestamp = 2;
+}
+
+message SetAecEnabledResponse {
+  bool success = 1;
+  bool is_enabled = 2;              // Current state after change
+  IpcError error = 3;
+  Timestamp response_timestamp = 4;
+}
+
+message ConfigureAecRequest {
+  AecMode mode = 1;
+  AecSensorSelection sensor_selection = 2;
+  double target_exposure_index = 3;
+  AecCompensation compensation = 4;
+  repeated AecRegionOfInterest regions = 5;
+  Timestamp request_timestamp = 6;
+}
+
+message ConfigureAecResponse {
+  bool success = 1;
+  AecConfiguration applied_config = 2;
+  IpcError error = 3;
+  Timestamp response_timestamp = 4;
+}
+
+message AecConfiguration {
+  AecMode mode = 1;
+  AecSensorSelection sensor_selection = 2;
+  double target_exposure_index = 3;
+  AecCompensation compensation = 4;
+  repeated AecRegionOfInterest regions = 5;
+}
+
+message AecChangeSubscribeRequest {
+  // No filters - subscribe to all AEC changes
+}
+
+message AecChangeEvent {
+  AecChangeType change_type = 1;
+  bool is_enabled = 2;
+  AecConfiguration current_config = 3;
+  double current_exposure_index = 4;
+  string message = 5;
+  Timestamp event_timestamp = 6;
+}
+
+enum AecChangeType {
+  AEC_CHANGE_TYPE_UNSPECIFIED = 0;
+  AEC_CHANGE_TYPE_ENABLED = 1;
+  AEC_CHANGE_TYPE_DISABLED = 2;
+  AEC_CHANGE_TYPE_MODE_CHANGED = 3;
+  AEC_CHANGE_TYPE_CONFIG_CHANGED = 4;
+  AEC_CHANGE_TYPE_EI_UPDATED = 5;   // Exposure Index updated during exposure
+  AEC_CHANGE_TYPE_REGION_UPDATED = 6;
+}

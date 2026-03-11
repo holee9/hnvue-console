@@ -1,0 +1,114 @@
+syntax = "proto3";
+
+package hnvue.ipc;
+import "hnvue_common.proto";
+import "hnvue_patient.proto";
+option csharp_namespace = "HnVue.Ipc";
+
+// Worklist service: DICOM Modality Worklist (MWL) integration
+// GUI -> Core Engine (unary) + Core Engine -> GUI (streaming updates)
+service WorklistService {
+  // Query worklist entries from RIS/PACS
+  rpc QueryWorklist(QueryWorklistRequest) returns (QueryWorklistResponse);
+
+  // Get a single worklist entry by ID
+  rpc GetWorklistEntry(GetWorklistEntryRequest) returns (GetWorklistEntryResponse);
+
+  // Subscribe to worklist changes (new orders, status updates)
+  rpc SubscribeWorklistChanges(WorklistChangeSubscribeRequest) returns (stream WorklistChangeEvent);
+
+  // Update worklist entry status (started, completed, etc.)
+  rpc UpdateWorklistStatus(UpdateWorklistStatusRequest) returns (UpdateWorklistStatusResponse);
+}
+
+message QueryWorklistRequest {
+  string patient_id = 1;            // Filter by patient ID
+  string patient_name = 2;          // Filter by patient name (wildcard)
+  string accession_number = 3;      // Filter by accession number
+  string modality = 4;              // Filter by modality (CR, DX, etc.)
+  string scheduled_date_start = 5;  // YYYY-MM-DD
+  string scheduled_date_end = 6;    // YYYY-MM-DD
+  WorklistStatus status_filter = 7; // Filter by status
+  int32 max_results = 8;
+  Timestamp request_timestamp = 9;
+}
+
+enum WorklistStatus {
+  WORKLIST_STATUS_UNSPECIFIED = 0;
+  WORKLIST_STATUS_SCHEDULED = 1;    // Order received, not started
+  WORKLIST_STATUS_IN_PROGRESS = 2;  // Patient checked in, exam started
+  WORKLIST_STATUS_COMPLETED = 3;    // Exam completed, images acquired
+  WORKLIST_STATUS_CANCELLED = 4;    // Order cancelled
+  WORKLIST_STATUS_DISCONTINUED = 5; // Order discontinued by physician
+}
+
+message QueryWorklistResponse {
+  repeated WorklistEntry entries = 1;
+  int32 total_count = 2;
+  bool has_more = 3;
+  IpcError error = 4;
+}
+
+message WorklistEntry {
+  string worklist_entry_id = 1;
+  string accession_number = 2;      // DICOM (0008,0050)
+  string requested_procedure_id = 3;
+  Patient patient = 4;
+  string referring_physician = 5;   // Referring physician name
+  string requesting_physician = 6;  // Requesting physician name
+  string scheduled_station_ae_title = 7;  // Scheduled Station AE Title
+  string scheduled_date = 8;        // YYYY-MM-DD
+  string scheduled_time = 9;        // HH:MM:SS
+  string modality = 10;             // CR, DX, etc.
+  string study_description = 11;    // Study description
+  string requested_procedure_description = 12;
+  WorklistStatus status = 13;
+  string study_instance_uid = 14;   // Assigned when study starts
+  Timestamp created_timestamp = 15;
+  Timestamp updated_timestamp = 16;
+}
+
+message GetWorklistEntryRequest {
+  string worklist_entry_id = 1;
+  Timestamp request_timestamp = 2;
+}
+
+message GetWorklistEntryResponse {
+  WorklistEntry entry = 1;
+  IpcError error = 2;
+}
+
+message WorklistChangeSubscribeRequest {
+  string station_ae_title = 1;      // Filter by station
+  bool include_all_stations = 2;    // Subscribe to all stations
+}
+
+message WorklistChangeEvent {
+  WorklistEntry entry = 1;
+  WorklistChangeType change_type = 2;
+  Timestamp event_timestamp = 3;
+}
+
+enum WorklistChangeType {
+  WORKLIST_CHANGE_TYPE_UNSPECIFIED = 0;
+  WORKLIST_CHANGE_TYPE_NEW = 1;           // New order received
+  WORKLIST_CHANGE_TYPE_UPDATED = 2;       // Order details updated
+  WORKLIST_CHANGE_TYPE_STATUS_CHANGED = 3; // Status changed
+  WORKLIST_CHANGE_TYPE_REMOVED = 4;       // Order cancelled/discontinued
+}
+
+message UpdateWorklistStatusRequest {
+  string worklist_entry_id = 1;
+  WorklistStatus new_status = 2;
+  string study_instance_uid = 3;    // Required when marking COMPLETED
+  string updated_by = 4;            // User ID
+  string status_note = 5;           // Optional note
+  Timestamp request_timestamp = 6;
+}
+
+message UpdateWorklistStatusResponse {
+  bool success = 1;
+  WorklistEntry entry = 2;          // Updated entry
+  IpcError error = 3;
+  Timestamp response_timestamp = 4;
+}

@@ -242,6 +242,54 @@ dotnet test tests/csharp/HnVue.Workflow.IntegrationTests/
 
 ## 최근 업데이트
 
+### 2026-03-11: gRPC Service Adapters 완료 및 Python 시뮬레이터 구조 추가 ✅
+
+#### gRPC Proto 정의 8개 추가
+- `proto/hnvue_dose.proto` - Dose tracking and radiation monitoring
+- `proto/hnvue_patient.proto` - Patient management
+- `proto/hnvue_user.proto` - User authentication and authorization
+- `proto/hnvue_worklist.proto` - DICOM Modality Worklist
+- `proto/hnvue_aec.proto` - Automatic Exposure Control
+- `proto/hnvue_protocol.proto` - Protocol selection and validation
+- `proto/hnvue_audit_log.proto` - Regulatory compliance audit trail
+- `proto/hnvue_qc.proto` - Quality control review workflow
+
+#### gRPC Service Adapters 9개 완료
+- **DoseServiceAdapter** - 방사선량 추적 및 알림 (IEC 62304 Class B/C)
+- **PatientServiceAdapter** - 환자 CRUD 및 검색
+- **UserServiceAdapter** - 사용자 인증 및 권한
+- **WorklistServiceAdapter** - DICOM MWL 쿼리
+- **AECServiceAdapter** - 자동 노출 제어
+- **ProtocolServiceAdapter** - 프로토콜 선택 및 검증
+- **AuditLogServiceAdapter** - 감사 로그 (IEC 62304, FDA 21 CFR Part 11)
+- **QCServiceAdapter** - 이미지 품질 관리 리뷰
+- **ImageServiceAdapter** - 이미지 데이터 (proto 미정의로 Stub 유지)
+
+#### Python HAL 시뮬레이터 구조 완성
+```
+tests/python/
+├── requirements.txt
+├── pyproject.toml
+└── simulator/
+    ├── detector_server.py
+    ├── generator_server.py
+    └── models/
+        ├── detector_state.py
+        └── generator_state.py
+```
+
+#### 설정 업데이트
+- `.gitignore` - `docs/ref/` 추가
+- `CHANGELOG.md` - [Unreleased] 섹션 업데이트
+- `.moai/config/` - git-strategy team mode, quality tdd mode 확정
+
+#### 빌드 상태
+- ✅ Build 성공 (0 errors, acceptable warnings)
+- ✅ gRPC stub 생성 완료
+- ✅ 9개 어댑터 실제 gRPC 호출 구현
+
+---
+
 ### 2026-03-02: Windows Environment Finalization ✅
 
 #### Build System Fixes

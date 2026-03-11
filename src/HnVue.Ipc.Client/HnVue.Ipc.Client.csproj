@@ -30,12 +30,22 @@
   <!-- Protobuf Generation -->
   <!-- SPEC-IPC-001: All proto files from shared directory -->
   <ItemGroup>
+    <!-- Core proto files -->
     <Protobuf Include="..\..\proto\hnvue_common.proto" GrpcServices="Client" Link="Protos\%(Filename)%(Extension)" />
     <Protobuf Include="..\..\proto\hnvue_command.proto" GrpcServices="Client" Link="Protos\%(Filename)%(Extension)" />
     <Protobuf Include="..\..\proto\hnvue_image.proto" GrpcServices="Client" Link="Protos\%(Filename)%(Extension)" />
     <Protobuf Include="..\..\proto\hnvue_health.proto" GrpcServices="Client" Link="Protos\%(Filename)%(Extension)" />
     <Protobuf Include="..\..\proto\hnvue_config.proto" GrpcServices="Client" Link="Protos\%(Filename)%(Extension)" />
     <Protobuf Include="..\..\proto\hnvue_ipc.proto" GrpcServices="Client" Link="Protos\%(Filename)%(Extension)" />
+    <!-- New service proto files (SPEC-ADAPTER-001) -->
+    <Protobuf Include="..\..\proto\hnvue_dose.proto" GrpcServices="Client" Link="Protos\%(Filename)%(Extension)" />
+    <Protobuf Include="..\..\proto\hnvue_patient.proto" GrpcServices="Client" Link="Protos\%(Filename)%(Extension)" />
+    <Protobuf Include="..\..\proto\hnvue_user.proto" GrpcServices="Client" Link="Protos\%(Filename)%(Extension)" />
+    <Protobuf Include="..\..\proto\hnvue_worklist.proto" GrpcServices="Client" Link="Protos\%(Filename)%(Extension)" />
+    <Protobuf Include="..\..\proto\hnvue_aec.proto" GrpcServices="Client" Link="Protos\%(Filename)%(Extension)" />
+    <Protobuf Include="..\..\proto\hnvue_protocol.proto" GrpcServices="Client" Link="Protos\%(Filename)%(Extension)" />
+    <Protobuf Include="..\..\proto\hnvue_audit_log.proto" GrpcServices="Client" Link="Protos\%(Filename)%(Extension)" />
+    <Protobuf Include="..\..\proto\hnvue_qc.proto" GrpcServices="Client" Link="Protos\%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

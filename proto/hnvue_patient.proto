@@ -1,0 +1,137 @@
+syntax = "proto3";
+
+package hnvue.ipc;
+import "hnvue_common.proto";
+option csharp_namespace = "HnVue.Ipc";
+
+// Patient service: Patient CRUD and search operations
+// GUI -> Core Engine (unary)
+service PatientService {
+  // Search for patients by various criteria
+  rpc SearchPatients(SearchPatientsRequest) returns (SearchPatientsResponse);
+
+  // Get a single patient by ID
+  rpc GetPatient(GetPatientRequest) returns (GetPatientResponse);
+
+  // Register a new patient
+  rpc RegisterPatient(RegisterPatientRequest) returns (RegisterPatientResponse);
+
+  // Update an existing patient record
+  rpc UpdatePatient(UpdatePatientRequest) returns (UpdatePatientResponse);
+
+  // Merge duplicate patient records
+  rpc MergePatients(MergePatientsRequest) returns (MergePatientsResponse);
+}
+
+message SearchPatientsRequest {
+  string query = 1;                 // Free-text search (name, ID, etc.)
+  string patient_id = 2;            // Specific patient ID filter
+  string family_name = 3;           // Family name filter
+  string given_name = 4;            // Given name filter
+  string date_of_birth = 5;         // YYYY-MM-DD format
+  int32 max_results = 6;            // Maximum results to return
+  Timestamp request_timestamp = 7;
+}
+
+message SearchPatientsResponse {
+  repeated Patient patients = 1;
+  int32 total_count = 2;            // Total matching records (may exceed returned)
+  bool has_more = 3;                // More results available
+  IpcError error = 4;
+}
+
+message Patient {
+  string patient_id = 1;            // Internal system ID
+  string patient_id_type = 2;       // MRN, SSN, etc.
+  string family_name = 3;
+  string given_name = 4;
+  string middle_name = 5;
+  string name_prefix = 6;           // Dr., Mr., Ms., etc.
+  string name_suffix = 7;           // Jr., Sr., III, etc.
+  string date_of_birth = 8;         // YYYY-MM-DD
+  PatientSex sex = 9;
+  string primary_language = 10;     // ISO 639-1 code
+  repeated PatientIdentifier identifiers = 11;
+  PatientContactInfo contact_info = 12;
+  Timestamp created_timestamp = 13;
+  Timestamp updated_timestamp = 14;
+}
+
+enum PatientSex {
+  PATIENT_SEX_UNSPECIFIED = 0;
+  PATIENT_SEX_MALE = 1;
+  PATIENT_SEX_FEMALE = 2;
+  PATIENT_SEX_OTHER = 3;
+  PATIENT_SEX_UNKNOWN = 4;
+}
+
+message PatientIdentifier {
+  string identifier_type = 1;       // MRN, SSN, etc.
+  string identifier_value = 2;
+  string assigning_authority = 3;   // Hospital, organization, etc.
+}
+
+message PatientContactInfo {
+  string phone_home = 1;
+  string phone_work = 2;
+  string phone_mobile = 3;
+  string email = 4;
+  string address_line1 = 5;
+  string address_line2 = 6;
+  string city = 7;
+  string state_province = 8;
+  string postal_code = 9;
+  string country = 10;              // ISO 3166-1 alpha-2
+}
+
+message GetPatientRequest {
+  string patient_id = 1;
+  Timestamp request_timestamp = 2;
+}
+
+message GetPatientResponse {
+  Patient patient = 1;
+  IpcError error = 2;
+}
+
+message RegisterPatientRequest {
+  Patient patient = 1;
+  string registered_by = 2;         // User ID
+  Timestamp request_timestamp = 3;
+}
+
+message RegisterPatientResponse {
+  bool success = 1;
+  string patient_id = 2;            // Assigned patient ID
+  IpcError error = 3;
+  Timestamp response_timestamp = 4;
+}
+
+message UpdatePatientRequest {
+  string patient_id = 1;
+  Patient updated_patient = 2;      // Partial update supported
+  string updated_by = 3;            // User ID
+  Timestamp request_timestamp = 4;
+}
+
+message UpdatePatientResponse {
+  bool success = 1;
+  Patient patient = 2;              // Updated patient record
+  IpcError error = 3;
+  Timestamp response_timestamp = 4;
+}
+
+message MergePatientsRequest {
+  string primary_patient_id = 1;    // Patient record to keep
+  string secondary_patient_id = 2;  // Patient record to merge and deactivate
+  string merged_by = 3;             // User ID
+  string merge_reason = 4;          // Reason for merge
+  Timestamp request_timestamp = 5;
+}
+
+message MergePatientsResponse {
+  bool success = 1;
+  string merged_patient_id = 2;     // Should match primary_patient_id
+  IpcError error = 3;
+  Timestamp response_timestamp = 4;
+}

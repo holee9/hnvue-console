@@ -1,0 +1,173 @@
+syntax = "proto3";
+
+package hnvue.ipc;
+import "hnvue_common.proto";
+option csharp_namespace = "HnVue.Ipc";
+
+// QC (Quality Control) service: Image quality review and rejection workflow
+// GUI <-> Core Engine (bidirectional unary) + Core Engine -> GUI (streaming)
+service QCService {
+  // Submit an image for QC review
+  rpc SubmitForQcReview(SubmitForQcReviewRequest) returns (SubmitForQcReviewResponse);
+
+  // Get QC review status for an image
+  rpc GetQcStatus(GetQcStatusRequest) returns (GetQcStatusResponse);
+
+  // List pending QC reviews
+  rpc ListPendingQcReviews(ListPendingQcReviewsRequest) returns (ListPendingQcReviewsResponse);
+
+  // Perform QC action (accept, reject, request reprocess)
+  rpc PerformQcAction(PerformQcActionRequest) returns (PerformQcActionResponse);
+
+  // Subscribe to QC status changes
+  rpc SubscribeQcChanges(QcChangeSubscribeRequest) returns (stream QcChangeEvent);
+}
+
+message SubmitForQcReviewRequest {
+  string image_id = 1;
+  string acquisition_id = 2;
+  string study_id = 3;
+  string patient_id = 4;
+  string protocol_id = 5;
+  QcPriority priority = 6;
+  string submitted_by = 7;          // User ID
+  string initial_notes = 8;
+  Timestamp request_timestamp = 9;
+}
+
+enum QcPriority {
+  QC_PRIORITY_UNSPECIFIED = 0;
+  QC_PRIORITY_LOW = 1;
+  QC_PRIORITY_NORMAL = 2;
+  QC_PRIORITY_HIGH = 3;
+  QC_PRIORITY_URGENT = 4;
+}
+
+message SubmitForQcReviewResponse {
+  bool success = 1;
+  string qc_review_id = 2;
+  QcStatus initial_status = 3;
+  IpcError error = 4;
+  Timestamp response_timestamp = 5;
+}
+
+enum QcStatus {
+  QC_STATUS_UNSPECIFIED = 0;
+  QC_STATUS_PENDING = 1;            // Awaiting QC review
+  QC_STATUS_IN_REVIEW = 2;          // Being reviewed
+  QC_STATUS_ACCEPTED = 3;           // Passed QC
+  QC_STATUS_REJECTED = 4;           // Failed QC, needs retake
+  QC_STATUS_REPROCESSING = 5;       // Sent for reprocessing
+  QC_STATUS_REPROCESSED = 6;        // Reprocessed, awaiting re-review
+  QC_STATUS_ARCHIVED = 7;           // Archived after acceptance
+}
+
+message GetQcStatusRequest {
+  string qc_review_id = 1;
+  string image_id = 2;              // Alternative lookup by image ID
+  Timestamp request_timestamp = 3;
+}
+
+message GetQcStatusResponse {
+  QcReview review = 1;
+  IpcError error = 2;
+}
+
+message QcReview {
+  string qc_review_id = 1;
+  string image_id = 2;
+  string acquisition_id = 3;
+  string study_id = 4;
+  string patient_id = 5;
+  QcStatus status = 6;
+  QcPriority priority = 7;
+  string submitted_by = 8;
+  Timestamp submitted_at = 9;
+  string reviewed_by = 10;
+  Timestamp reviewed_at = 11;
+  QcDecision decision = 12;
+  repeated QcDefect defects = 13;
+  string notes = 14;
+}
+
+enum QcDecision {
+  QC_DECISION_UNSPECIFIED = 0;
+  QC_DECISION_ACCEPT = 1;
+  QC_DECISION_MINOR_DEFECTS_ACCEPT = 2;  // Accept with minor defects noted
+  QC_DECISION_REJECT_RETAKE = 3;          // Reject, requires retake
+  QC_DECISION_REPROCESS = 4;              // Send for reprocessing
+}
+
+message QcDefect {
+  string defect_id = 1;
+  QcDefectType defect_type = 2;
+  string description = 3;
+  double severity_score = 4;        // 0.0 to 1.0
+  string location = 5;              // Image region if localized
+  bool requires_retake = 6;
+}
+
+enum QcDefectType {
+  QC_DEFECT_TYPE_UNSPECIFIED = 0;
+  QC_DEFECT_TYPE_MOTION_ARTIFACT = 1;
+  QC_DEFECT_TYPE_UNDEREXPOSURE = 2;
+  QC_DEFECT_TYPE_OVEREXPOSURE = 3;
+  QC_DEFECT_TYPE_POSITIONING = 4;
+  QC_DEFECT_TYPE_COLLIMATION = 5;
+  QC_DEFECT_TYPE_ARTIFACT = 6;
+  QC_DEFECT_TYPE_NOISE = 7;
+  QC_DEFECT_TYPE_CONTRAST = 8;
+  QC_DEFECT_TYPE_ANATOMICAL_CUTOFF = 9;
+  QC_DEFECT_TYPE_OTHER = 10;
+}
+
+message ListPendingQcReviewsRequest {
+  string user_id = 1;               // Filter by assigned reviewer
+  QcPriority min_priority = 2;
+  int32 max_results = 3;
+  Timestamp request_timestamp = 4;
+}
+
+message ListPendingQcReviewsResponse {
+  repeated QcReview reviews = 1;
+  int32 total_count = 2;
+  IpcError error = 3;
+}
+
+message PerformQcActionRequest {
+  string qc_review_id = 1;
+  QcDecision decision = 2;
+  repeated QcDefect defects = 3;
+  string notes = 4;
+  string performed_by = 5;          // User ID
+  Timestamp request_timestamp = 6;
+}
+
+message PerformQcActionResponse {
+  bool success = 1;
+  QcReview updated_review = 2;
+  IpcError error = 3;
+  Timestamp response_timestamp = 4;
+}
+
+message QcChangeSubscribeRequest {
+  string study_id = 1;              // Optional filter
+  string user_id = 2;               // Optional filter for assigned reviews
+}
+
+message QcChangeEvent {
+  QcReview review = 1;
+  QcChangeType change_type = 2;
+  string changed_by = 3;
+  Timestamp event_timestamp = 4;
+}
+
+enum QcChangeType {
+  QC_CHANGE_TYPE_UNSPECIFIED = 0;
+  QC_CHANGE_TYPE_SUBMITTED = 1;
+  QC_CHANGE_TYPE_REVIEW_STARTED = 2;
+  QC_CHANGE_TYPE_DECISION_MADE = 3;
+  QC_CHANGE_TYPE_REPROCESSING_REQUESTED = 4;
+  QC_CHANGE_TYPE_REPROCESSING_COMPLETED = 5;
+  QC_CHANGE_TYPE_ARCHIVED = 6;
+}

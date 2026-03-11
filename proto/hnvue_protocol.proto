@@ -1,0 +1,119 @@
+syntax = "proto3";
+
+package hnvue.ipc;
+import "hnvue_common.proto";
+option csharp_namespace = "HnVue.Ipc";
+
+// Protocol service: Examination protocol selection and validation
+// GUI <-> Core Engine (bidirectional unary)
+service ProtocolService {
+  // List available protocols
+  rpc ListProtocols(ListProtocolsRequest) returns (ListProtocolsResponse);
+
+  // Get a specific protocol by ID
+  rpc GetProtocol(GetProtocolRequest) returns (GetProtocolResponse);
+
+  // Validate protocol parameters against system constraints
+  rpc ValidateProtocol(ValidateProtocolRequest) returns (ValidateProtocolResponse);
+
+  // Apply protocol to current study
+  rpc ApplyProtocol(ApplyProtocolRequest) returns (ApplyProtocolResponse);
+}
+
+message ListProtocolsRequest {
+  string body_part = 1;             // Filter by body part (CHEST, ABDOMEN, etc.)
+  string modality = 2;              // Filter by modality (CR, DX, etc.)
+  string projection = 3;            // Filter by projection (AP, PA, LATERAL, etc.)
+  bool include_custom = 4;          // Include user-defined protocols
+  Timestamp request_timestamp = 5;
+}
+
+message ListProtocolsResponse {
+  repeated Protocol protocols = 1;
+  IpcError error = 2;
+}
+
+message Protocol {
+  string protocol_id = 1;
+  string name = 2;
+  string description = 3;
+  string body_part = 4;
+  string projection = 5;
+  string modality = 6;
+  ProtocolParameters default_parameters = 7;
+  ProtocolParameters min_parameters = 8;
+  ProtocolParameters max_parameters = 9;
+  repeated string patient_position_hints = 10;
+  string clinical_indication = 11;
+  bool is_custom = 12;              // User-defined protocol
+  string created_by = 13;           // User ID if custom
+  Timestamp created_at = 14;
+}
+
+message ProtocolParameters {
+  double kvp = 1;
+  double mas = 2;
+  double exposure_time_ms = 3;
+  double source_image_distance_cm = 4;
+  string focal_spot_size = 5;       // SMALL, LARGE, FINE, COARSE
+  bool aec_enabled = 6;
+  double grid_ratio = 7;
+  double target_exposure_index = 8;
+}
+
+message GetProtocolRequest {
+  string protocol_id = 1;
+  Timestamp request_timestamp = 2;
+}
+
+message GetProtocolResponse {
+  Protocol protocol = 1;
+  IpcError error = 2;
+}
+
+message ValidateProtocolRequest {
+  string protocol_id = 1;
+  ProtocolParameters parameters = 2;
+  string patient_id = 3;            // For patient-specific validation
+  Timestamp request_timestamp = 4;
+}
+
+message ValidateProtocolResponse {
+  bool is_valid = 1;
+  repeated ProtocolValidationWarning warnings = 2;
+  repeated ProtocolValidationError errors = 3;
+  ProtocolParameters recommended_parameters = 4;  // If auto-adjustment possible
+  IpcError error = 5;
+}
+
+message ProtocolValidationWarning {
+  string code = 1;
+  string message = 2;
+  string parameter_name = 3;
+  double current_value = 4;
+  double recommended_value = 5;
+}
+
+message ProtocolValidationError {
+  string code = 1;
+  string message = 2;
+  string parameter_name = 3;
+  double current_value = 4;
+  double min_value = 5;
+  double max_value = 6;
+}
+
+message ApplyProtocolRequest {
+  string protocol_id = 1;
+  string study_id = 2;
+  ProtocolParameters parameters = 3;  // Override defaults
+  string applied_by = 4;              // User ID
+  Timestamp request_timestamp = 5;
+}
+
+message ApplyProtocolResponse {
+  bool success = 1;
+  ProtocolParameters applied_parameters = 2;
+  IpcError error = 3;
+  Timestamp response_timestamp = 4;
+}

@@ -1,0 +1,22 @@
+# HnVue Python HAL Simulator Dependencies
+# SPEC-TEST-001 Phase 2: Python HAL Simulator
+
+# gRPC
+grpcio>=1.60.0
+grpcio-tools>=1.60.0
+protobuf>=4.25.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.23.0
+pytest-cov>=4.1.0
+
+# Async support
+asyncio>=3.4.3
+
+# Type hints
+mypy>=1.8.0
+mypy-protobuf>=3.6.0
+
+# Code quality
+ruff>=0.1.0
