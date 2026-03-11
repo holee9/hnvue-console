@@ -241,3 +241,9 @@ TestResults/
 
 # Documentation reference files (temporary)
 docs/ref/
+
+# Python test artifacts
+coverage.xml
+junit-python.xml
+**/junit-python.xml
+coverage.json
