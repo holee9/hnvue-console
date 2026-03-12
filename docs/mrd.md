@@ -15,7 +15,7 @@
 
 ### 1.1 제품 개요
 
-HnVue Console은 진단 의료용 디지털 X-ray 시스템을 위한 통합 제어 콘솔 소프트웨어입니다. FPGA 기반 Flat Panel Detector와 X-ray Generator를 제어하고, 영상 획득/처리/판독/전송의 전체 임상 워크플로우를 지원하며, 병원 IT 인프라(PACS/HIS/RIS)와 표준 기반으로 연동합니다.
+HnVue Console은 진단 의료용 디지털 X-ray 시스템을 위한 통합 제어 콘솔 소프트웨어입니다. Flat Panel Detector와 X-ray Generator를 제어하고, 영상 획득/처리/판독/전송의 전체 임상 워크플로우를 지원하며, 병원 IT 인프라(PACS/HIS/RIS)와 표준 기반으로 연동합니다.
 
 #### 제품 식별 정보
 

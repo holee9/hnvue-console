@@ -15,7 +15,7 @@
 
 ### 1.1 제품 정의
 
-HnVue Console은 **하이브리드 아키텍처 기반 진단 의료용 X-ray Console Software**로, C++ Core Engine(실시간 성능)과 C# WPF GUI(생산성)를 gRPC IPC로 통합합니다. FPGA 기반 Flat Panel Detector와 X-ray Generator를 제어하며, 영상 획득/처리/판독/전송의 전체 임상 워크플로우를 지원합니다.
+HnVue Console은 **하이브리드 아키텍처 기반 진단 의료용 X-ray Console Software**로, C++ Core Engine(실시간 성능)과 C# WPF GUI(생산성)를 gRPC IPC로 통합합니다. Flat Panel Detector와 X-ray Generator를 제어하며, 영상 획득/처리/판독/전송의 전체 임상 워크플로우를 지원합니다.
 
 #### 제품 식별 정보
 
@@ -50,6 +50,43 @@ HnVue Console은 **하이브리드 아키텍처 기반 진단 의료용 X-ray Co
 | **임상 효율** | 빠르고 직관적인 촬영 워크플로우 | 10-state FSM, One-Touch 촬영, <3초 프리뷰 |
 | **표준 준수** | DICOM, IHE, 규제 인허가 준비 | 100% SCU, MFDS/FDA 제출 준비 |
 | **품질 보증** | 85%+ 테스트 커버리지, TRUST 5 | 1,048개 테스트, 0 LSP errors |
+
+### 1.3 개발 방법론 (Development Approach)
+
+HnVue Console은 **시뮬레이터 우선 개발 (Simulator-First Development)** 방식을 채택하여 하드웨어 의존성을 최소화하고 개발 효율을 극대화합니다.
+
+**시뮬레이터 기반 개발 계층 구조:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Application Layer (WPF GUI, Workflow, DICOM, Dose)         │
+├─────────────────────────────────────────────────────────────┤
+│  Hardware Abstraction Layer (HAL Interfaces)                │
+│  - IDetector, IGenerator, IAec, ISafetyInterlock           │
+├─────────────────────────────────────────────────────────────┤
+│  Simulator Layer (Python-based gRPC Servers)               │
+│  - Detector Simulator (hnvue-simulators repo)              │
+│  - Generator Simulator (hnvue-simulators repo)             │
+│  - AEC Simulator (hnvue-simulators repo)                   │
+├─────────────────────────────────────────────────────────────┤
+│  Physical Hardware (별도 저장소)                            │
+│  - fpga-imx8mp repo (FPGA Detector 하드웨어)              │
+│  - fpga-work repo (FPGA Workflow)                           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**시뮬레이터 활용 전략:**
+
+| 개발 단계 | 시뮬레이터 역할 | 실제 하드웨어 |
+|-----------|----------------|-------------|
+| **Alpha (개발 초기)** | 모든 HAL 인터페이스 구현 및 테스트 | 미연결 |
+| **Beta (파일럿 병원)** | 실제 하드웨어 연동 전까지 사용 | 단계적 연결 |
+| **정식 출시** | CI/CD 테스트, A/S 시뮬레이션, 교육용 | 실제 운영 |
+
+**시뮬레이터 저장소 (별도 관리):**
+- **Repository**: `hnvue-simulators` (Python gRPC 서버)
+- **목적**: HAL 인터페이스 테스트, CI/CD 자동화, 개발 환경 제공
+- **기술**: Python 3.10+, gRPC, asyncio
 
 ### 1.3 타겟 하드웨어
 

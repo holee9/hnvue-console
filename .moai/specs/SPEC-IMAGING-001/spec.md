@@ -22,7 +22,7 @@
 
 ### 1.1 System Context
 
-HnVue is a diagnostic medical device X-ray GUI console software running on a host PC. The image processing pipeline receives raw 16-bit grayscale frames from an FPGA-based flat-panel X-ray detector via USB 3.x or PCIe and produces corrected, display-ready images for the diagnostic viewer.
+HnVue is a diagnostic medical device X-ray GUI console software running on a host PC. The image processing pipeline receives raw 16-bit grayscale frames from a flat-panel X-ray detector via USB 3.x or PCIe and produces corrected, display-ready images for the diagnostic viewer.
 
 The pipeline operates within the larger HnVue system architecture:
 

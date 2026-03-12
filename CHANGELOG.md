@@ -5,6 +5,51 @@ All notable changes to HnVue Console will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Summary of Key Milestones
+
+### Phase 1 Complete (2026-03-12) ✅
+- **10/10 SPEC 완료** (100%)
+- **1,048 tests 전체 통과**
+- **IEC 62304 Class B/C 준수**
+- **빌드 상태**: 0 errors, acceptable warnings
+
+**Key Achievements**:
+- Clinical Workflow Engine (10-state state machine)
+- Radiation Dose Management (DAP, RDSR, audit trail)
+- DICOM Services (Worklist, MPPS, Storage)
+- WPF MVVM Console UI (16 ViewModels)
+- gRPC IPC Infrastructure
+- HAL with simulators for testing
+
+### Major Releases
+
+**2026-03-12**: Project plan cross-validation, P0 critical issues fixed
+- DoseService offline warning added
+- Service status indicators implemented
+- Adapter audit: 13 adapters (16% implementation rate)
+
+**2026-03-11**: gRPC Service Adapters completed
+- 9 gRPC adapters implemented (Patient, Worklist, User, Dose, AEC, Protocol, AuditLog, QC, Image)
+- Python simulator structure added
+
+**2026-03-02**: Windows environment finalized
+- Build system fixes (CS2001, CS0579)
+- 14 gRPC adapters implemented
+- ViewModels API corrected
+- 96/96 tests passing
+
+**2026-03-01**: SPEC-WORKFLOW-001 Phase 4 complete
+- HAL Simulators implemented
+- DICOM integration complete
+- GUI components (ViewModels) added
+- Integration tests: 20/20 passing
+
+**2026-02-28**: SPEC-DOSE-001 & SPEC-WORKFLOW-001 Phase 1-3 complete
+- Radiation Dose Management (222 tests)
+- Clinical Workflow Engine Phase 1-3 (311 tests)
+
+---
+
 ## [Unreleased]
 
 ### Fixed

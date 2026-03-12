@@ -20,7 +20,7 @@
 
 ### 1.1 System Context
 
-HnVue is a diagnostic medical device X-ray GUI Console Software operating on a host PC. It interfaces with FPGA-based detectors via USB 3.x/PCIe, MCU-based generator controllers via serial protocol, and external systems via DICOM networking. The software is subject to regulatory requirements for medical device software under IEC 62304 Class B and Class C safety classifications.
+HnVue is a diagnostic medical device X-ray GUI Console Software operating on a host PC. It interfaces with detectors via USB 3.x/PCIe, generator controllers via serial protocol, and external systems via DICOM networking. The software is subject to regulatory requirements for medical device software under IEC 62304 Class B and Class C safety classifications.
 
 The testing framework must operate without physical hardware, relying on software simulators and test doubles to maintain development velocity and enable continuous integration.
 
@@ -147,7 +147,7 @@ Per `.moai/config/sections/quality.yaml`: Hybrid mode.
 
 ### 2.6 Functional Requirements - HW Simulator Testbench (FR-TEST-06)
 
-**FR-TEST-06.1 (EARS - Ubiquitous)** The system shall provide a Python-based HW simulator testbench that emulates the FPGA-based X-ray detector and the MCU-based high-voltage generator (HVG).
+**FR-TEST-06.1 (EARS - Ubiquitous)** The system shall provide a Python-based HW simulator testbench that emulates the X-ray detector and the high-voltage generator (HVG).
 
 **FR-TEST-06.2 (EARS - Ubiquitous)** The detector simulator shall implement the same USB 3.x / PCIe communication protocol as the physical detector, including register read/write and DMA image data transfer.
 
