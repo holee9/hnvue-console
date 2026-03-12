@@ -1023,15 +1023,44 @@ dotnet test tests/csharp/HnVue.Console.Tests/HnVue.Console.Tests.csproj
 
 ## 문서
 
-- [SPEC 문서](.moai/specs/)
-  - [SPEC-UI-001: GUI Console User Interface](.moai/specs/SPEC-UI-001/spec.md) - Phase 1 완료
-  - [SPEC-DOSE-001: Radiation Dose Management](.moai/specs/SPEC-DOSE-001/spec.md)
-  - [SPEC-WORKFLOW-001: Clinical Workflow Engine](.moai/specs/SPEC-WORKFLOW-001/spec.md)
-  - [SPEC-IPC-001: Inter-Process Communication](.moai/specs/SPEC-IPC-001/spec.md)
-  - [SPEC-IMAGING-001: Image Processing Pipeline](.moai/specs/SPEC-IMAGING-001/spec.md)
-  - [SPEC-DICOM-001: DICOM Communication Services](.moai/specs/SPEC-DICOM-001/spec.md)
-  - [SPEC-INFRA-001: Project Infrastructure](.moai/specs/SPEC-INFRA-001/spec.md)
-- [아키텍처](docs/)
+### 요구사항 추적성 매트릭스
+
+| 문서 | 설명 | 링크 |
+|------|------|------|
+| **RTM (Main)** | 전체 요구사항 추적성 매트릭스 | [docs/rtm.md](docs/rtm.md) |
+| **MRD** | 시장 요구사항 문서 | [docs/mrd.md](docs/mrd.md) |
+| **PRD** | 제품 요구사항 문서 | [docs/prd.md](docs/prd.md) |
+
+### Phase별 진행 계획서
+
+#### Phase 1 (완료) - 기반 구축
+- 완료일: 2026-03-12
+- SPEC: 10개 완료 (100%)
+- 테스트: 1,048개 통과
+
+#### Phase 2 (진행 중) - MFDS 인허가 준비
+- 목표: 2026 Q4 MFDS 제출
+- 진행 계획서: [docs/development-roadmap-phase2.md](docs/development-roadmap-phase2.md)
+- 보안 규정 준수 계획: [docs/cybersecurity-compliance-plan.md](docs/cybersecurity-compliance-plan.md)
+
+### 규정 준용 문서
+
+| 문서 | 설명 | 링크 |
+|------|------|------|
+| **보안 규정 준수 계획** | FDA Section 524B, EU MDR, MFDS 사이버보안 준수 | [docs/cybersecurity-compliance-plan.md](docs/cybersecurity-compliance-plan.md) |
+| **어댑터 감사** | gRPC 어댑터 구현 현황 | [docs/adapter-audit.md](docs/adapter-audit.md) |
+
+### SPEC 문서
+
+- [SPEC-UI-001: GUI Console User Interface](.moai/specs/SPEC-UI-001/spec.md) - Phase 1 완료
+- [SPEC-DOSE-001: Radiation Dose Management](.moai/specs/SPEC-DOSE-001/spec.md)
+- [SPEC-WORKFLOW-001: Clinical Workflow Engine](.moai/specs/SPEC-WORKFLOW-001/spec.md)
+- [SPEC-IPC-001: Inter-Process Communication](.moai/specs/SPEC-IPC-001/spec.md)
+- [SPEC-IMAGING-001: Image Processing Pipeline](.moai/specs/SPEC-IMAGING-001/spec.md)
+- [SPEC-DICOM-001: DICOM Communication Services](.moai/specs/SPEC-DICOM-001/spec.md)
+- [SPEC-INFRA-001: Project Infrastructure](.moai/specs/SPEC-INFRA-001/spec.md)
+
+### 참고 문서
 - [연구 보고서](docs/xray-console-sw-research.md)
 - [CHANGELOG](CHANGELOG.md)
 
