@@ -24,7 +24,8 @@
             <TextBlock Grid.Row="0"
                        Text="System Status"
                        Style="{StaticResource TitleTextStyle}"
-                       Margin="{StaticResource MediumPadding}"/>
+                       Margin="{StaticResource MediumPadding}"
+                       AutomationProperties.AutomationId="SystemStatusViewHeader"/>
 
             <!-- Overall Status Bar -->
             <Border Grid.Row="1"

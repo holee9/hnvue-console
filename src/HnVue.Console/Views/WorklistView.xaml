@@ -21,7 +21,8 @@
             <TextBlock Grid.Row="0"
                        Text="Modality Worklist"
                        Style="{StaticResource TitleTextStyle}"
-                       Margin="{StaticResource MediumPadding}"/>
+                       Margin="{StaticResource MediumPadding}"
+                       AutomationProperties.AutomationId="WorklistViewHeader"/>
 
             <!-- Toolbar -->
             <Border Grid.Row="1"
@@ -47,7 +48,8 @@
                             Style="{StaticResource PrimaryButtonStyle}"
                             Command="{Binding RefreshCommand}"
                             MinWidth="100"
-                            Margin="{StaticResource SmallLeftMargin}"/>
+                            Margin="{StaticResource SmallLeftMargin}"
+                            AutomationProperties.AutomationId="WorklistRefreshButton"/>
 
                     <!-- Loading Indicator -->
                     <StackPanel Grid.Column="0"
@@ -133,7 +135,8 @@
                     Background="{StaticResource BackgroundBrush}"
                     Padding="{StaticResource MediumPadding}"
                     Margin="{StaticResource MediumPadding}"
-                    CornerRadius="{StaticResource MediumCornerRadius}">
+                    CornerRadius="{StaticResource MediumCornerRadius}"
+                    AutomationProperties.AutomationId="WorklistStatusBar">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -141,13 +144,15 @@
                     </Grid.ColumnDefinitions>
 
                     <!-- Item Count -->
-                    <TextBlock Grid.Column="0">
+                    <TextBlock Grid.Column="0"
+                               AutomationProperties.AutomationId="WorklistProceduresCount">
                         <Run Text="Procedures: " FontWeight="SemiBold"/>
                         <Run Text="{Binding WorklistItems.Count, Mode=OneWay}"/>
                     </TextBlock>
 
                     <!-- Last Refreshed -->
-                    <TextBlock Grid.Column="1">
+                    <TextBlock Grid.Column="1"
+                               AutomationProperties.AutomationId="WorklistLastRefreshed">
                         <Run Text="Last Refreshed: " FontWeight="SemiBold"/>
                         <Run Text="{Binding LastRefreshedDisplay, Mode=OneWay}"/>
                     </TextBlock>

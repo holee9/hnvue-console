@@ -33,7 +33,7 @@ public sealed class QCServiceAdapter : GrpcAdapterBase, IQCService
                 new HnVue.Ipc.SubmitForQcReviewRequest
                 {
                     ImageId = imageId,
-                    Priority = HnVue.Ipc.QcPriority.QcPriorityNormal,
+                    Priority = HnVue.Ipc.QcPriority.Normal,
                     SubmittedBy = "Operator" // @MX:TODO Get actual user ID
                 },
                 cancellationToken: ct);
@@ -43,7 +43,7 @@ public sealed class QCServiceAdapter : GrpcAdapterBase, IQCService
                 new HnVue.Ipc.PerformQcActionRequest
                 {
                     QcReviewId = response.QcReviewId,
-                    Decision = HnVue.Ipc.QcDecision.QcDecisionAccept,
+                    Decision = HnVue.Ipc.QcDecision.Accept,
                     PerformedBy = "Operator"
                 },
                 cancellationToken: ct);
@@ -95,7 +95,7 @@ public sealed class QCServiceAdapter : GrpcAdapterBase, IQCService
                 new HnVue.Ipc.PerformQcActionRequest
                 {
                     QcReviewId = statusResponse.Review.QcReviewId,
-                    Decision = HnVue.Ipc.QcDecision.QcDecisionRejectRetake,
+                    Decision = HnVue.Ipc.QcDecision.RejectRetake,
                     Defects = { defect },
                     Notes = notes ?? string.Empty,
                     PerformedBy = "Operator"
@@ -142,7 +142,7 @@ public sealed class QCServiceAdapter : GrpcAdapterBase, IQCService
                 new HnVue.Ipc.PerformQcActionRequest
                 {
                     QcReviewId = statusResponse.Review.QcReviewId,
-                    Decision = HnVue.Ipc.QcDecision.QcDecisionReprocess,
+                    Decision = HnVue.Ipc.QcDecision.Reprocess,
                     PerformedBy = "Operator"
                 },
                 cancellationToken: ct);
@@ -210,7 +210,7 @@ public sealed class QCServiceAdapter : GrpcAdapterBase, IQCService
                 {
                     QcReviewId = statusResponse.Review.QcReviewId,
                     Decision = MapQCActionToDecision(request.Action),
-                    Notes = request.Notes ?? string.Empty,
+                    Notes = request.RejectionReason ?? string.Empty,
                     PerformedBy = "Operator"
                 },
                 cancellationToken: ct);
@@ -240,11 +240,13 @@ public sealed class QCServiceAdapter : GrpcAdapterBase, IQCService
     {
         return protoStatus switch
         {
-            HnVue.Ipc.QcStatus.QcStatusPending => QCStatus.Pending,
-            HnVue.Ipc.QcStatus.QcStatusInReview => QCStatus.InReview,
-            HnVue.Ipc.QcStatus.QcStatusAccepted => QCStatus.Accepted,
-            HnVue.Ipc.QcStatus.QcStatusRejected => QCStatus.Rejected,
-            HnVue.Ipc.QcStatus.QcStatusReprocessing => QCStatus.Reprocessing,
+            HnVue.Ipc.QcStatus.Pending => QCStatus.Pending,
+            HnVue.Ipc.QcStatus.InReview => QCStatus.Pending, // Map to Pending as InReview not in model
+            HnVue.Ipc.QcStatus.Accepted => QCStatus.Accepted,
+            HnVue.Ipc.QcStatus.Rejected => QCStatus.Rejected,
+            HnVue.Ipc.QcStatus.Reprocessing => QCStatus.Reprocessed, // Map to Reprocessed
+            HnVue.Ipc.QcStatus.Reprocessed => QCStatus.Reprocessed,
+            HnVue.Ipc.QcStatus.Archived => QCStatus.Accepted, // Map archived to accepted
             _ => QCStatus.Pending
         };
     }
@@ -253,10 +255,10 @@ public sealed class QCServiceAdapter : GrpcAdapterBase, IQCService
     {
         return action switch
         {
-            QCAction.Accept => HnVue.Ipc.QcDecision.QcDecisionAccept,
-            QCAction.Reject => HnVue.Ipc.QcDecision.QcDecisionRejectRetake,
-            QCAction.Reprocess => HnVue.Ipc.QcDecision.QcDecisionReprocess,
-            _ => HnVue.Ipc.QcDecision.QcDecisionUnspecified
+            QCAction.Accept => HnVue.Ipc.QcDecision.Accept,
+            QCAction.Reject => HnVue.Ipc.QcDecision.RejectRetake,
+            QCAction.Reprocess => HnVue.Ipc.QcDecision.Reprocess,
+            _ => HnVue.Ipc.QcDecision.Unspecified
         };
     }
 
@@ -264,12 +266,15 @@ public sealed class QCServiceAdapter : GrpcAdapterBase, IQCService
     {
         return reason switch
         {
-            RejectionReason.Motion => HnVue.Ipc.QcDefectType.QcDefectTypeMotionArtifact,
-            RejectionReason.Positioning => HnVue.Ipc.QcDefectType.QcDefectTypePositioning,
-            RejectionReason.ExposureError => HnVue.Ipc.QcDefectType.QcDefectTypeUnderexposure,
-            RejectionReason.EquipmentArtifact => HnVue.Ipc.QcDefectType.QcDefectTypeArtifact,
-            RejectionReason.Other => HnVue.Ipc.QcDefectType.QcDefectTypeOther,
-            _ => HnVue.Ipc.QcDefectType.QcDefectTypeUnspecified
+            RejectionReason.PatientMotion => HnVue.Ipc.QcDefectType.MotionArtifact,
+            RejectionReason.PositioningError => HnVue.Ipc.QcDefectType.Positioning,
+            RejectionReason.ExposureError => HnVue.Ipc.QcDefectType.Underexposure,
+            RejectionReason.Artifact => HnVue.Ipc.QcDefectType.Artifact,
+            RejectionReason.EquipmentMalfunction => HnVue.Ipc.QcDefectType.Artifact,
+            RejectionReason.WrongProtocol => HnVue.Ipc.QcDefectType.Other,
+            RejectionReason.Duplicate => HnVue.Ipc.QcDefectType.Other,
+            RejectionReason.Other => HnVue.Ipc.QcDefectType.Other,
+            _ => HnVue.Ipc.QcDefectType.Unspecified
         };
     }
 }

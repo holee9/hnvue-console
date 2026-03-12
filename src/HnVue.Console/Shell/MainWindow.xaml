@@ -3,6 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:HnVue.Console.Shell"
+        xmlns:views="clr-namespace:HnVue.Console.Views"
         mc:Ignorable="d"
         Title="HnVue Console"
         Height="900"
@@ -13,6 +15,30 @@
         WindowState="Maximized"
         Background="{StaticResource BackgroundBrush}"
         Foreground="{StaticResource ForegroundBrush}">
+    <Window.Resources>
+        <!-- DataTemplates for View Navigation -->
+        <DataTemplate x:Key="PatientTemplate">
+            <views:PatientView/>
+        </DataTemplate>
+        <DataTemplate x:Key="WorklistTemplate">
+            <views:WorklistView/>
+        </DataTemplate>
+        <DataTemplate x:Key="AcquisitionTemplate">
+            <views:AcquisitionView/>
+        </DataTemplate>
+        <DataTemplate x:Key="ImageReviewTemplate">
+            <views:ImageReviewView/>
+        </DataTemplate>
+        <DataTemplate x:Key="StatusTemplate">
+            <views:SystemStatusView/>
+        </DataTemplate>
+        <DataTemplate x:Key="ConfigTemplate">
+            <views:ConfigurationView/>
+        </DataTemplate>
+        <DataTemplate x:Key="AuditLogTemplate">
+            <views:AuditLogView/>
+        </DataTemplate>
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -45,35 +71,43 @@
                 <!-- Navigation Buttons -->
                 <StackPanel Grid.Column="1"
                             Orientation="Horizontal"
-                            HorizontalAlignment="Center">
+                            HorizontalAlignment="Center"
+                            AutomationProperties.AutomationId="NavigationBar">
                     <Button Content="Patient"
                             Style="{StaticResource NavigationButtonStyle}"
                             Command="{Binding NavigateCommand}"
-                            CommandParameter="Patient"/>
+                            CommandParameter="Patient"
+                            AutomationProperties.AutomationId="NavigatePatientButton"/>
                     <Button Content="Worklist"
                             Style="{StaticResource NavigationButtonStyle}"
                             Command="{Binding NavigateCommand}"
-                            CommandParameter="Worklist"/>
+                            CommandParameter="Worklist"
+                            AutomationProperties.AutomationId="NavigateWorklistButton"/>
                     <Button Content="Acquisition"
                             Style="{StaticResource NavigationButtonStyle}"
                             Command="{Binding NavigateCommand}"
-                            CommandParameter="Acquisition"/>
+                            CommandParameter="Acquisition"
+                            AutomationProperties.AutomationId="NavigateAcquisitionButton"/>
                     <Button Content="Image Review"
                             Style="{StaticResource NavigationButtonStyle}"
                             Command="{Binding NavigateCommand}"
-                            CommandParameter="ImageReview"/>
+                            CommandParameter="ImageReview"
+                            AutomationProperties.AutomationId="NavigateImageReviewButton"/>
                     <Button Content="Status"
                             Style="{StaticResource NavigationButtonStyle}"
                             Command="{Binding NavigateCommand}"
-                            CommandParameter="Status"/>
+                            CommandParameter="Status"
+                            AutomationProperties.AutomationId="NavigateStatusButton"/>
                     <Button Content="Config"
                             Style="{StaticResource NavigationButtonStyle}"
                             Command="{Binding NavigateCommand}"
-                            CommandParameter="Config"/>
+                            CommandParameter="Config"
+                            AutomationProperties.AutomationId="NavigateConfigButton"/>
                     <Button Content="Audit Log"
                             Style="{StaticResource NavigationButtonStyle}"
                             Command="{Binding NavigateCommand}"
-                            CommandParameter="AuditLog"/>
+                            CommandParameter="AuditLog"
+                            AutomationProperties.AutomationId="NavigateAuditLogButton"/>
                 </StackPanel>
 
                 <!-- System Status Badge -->
@@ -92,7 +126,16 @@
         <!-- ContentRegion -->
         <ContentControl Grid.Row="1"
                        x:Name="ContentRegion"
-                       Margin="{StaticResource MediumPadding}"/>
+                       Margin="{StaticResource MediumPadding}"
+                       AutomationProperties.AutomationId="MainContentRegion">
+            <ContentControl.Content>
+                <Binding RelativeSource="{RelativeSource AncestorType=Window}"
+                         Path="DataContext.CurrentView"/>
+            </ContentControl.Content>
+            <ContentControl.ContentTemplateSelector>
+                <local:ViewTemplateSelector/>
+            </ContentControl.ContentTemplateSelector>
+        </ContentControl>
 
         <!-- StatusBar -->
         <Border Grid.Row="2"
@@ -117,7 +160,8 @@
                 <ComboBox Grid.Column="1"
                           Width="120"
                           SelectedIndex="{Binding SelectedLocaleIndex, Mode=TwoWay}"
-                          Margin="{StaticResource SmallLeftMargin}">
+                          Margin="{StaticResource SmallLeftMargin}"
+                          AutomationProperties.AutomationId="LocaleSelectorComboBox">
                     <ComboBoxItem Content="한국어"/>
                     <ComboBoxItem Content="English"/>
                 </ComboBox>

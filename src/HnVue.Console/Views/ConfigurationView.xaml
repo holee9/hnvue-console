@@ -18,7 +18,8 @@
             <TextBlock Grid.Row="0"
                        Text="System Configuration"
                        Style="{StaticResource TitleTextStyle}"
-                       Margin="{StaticResource MediumPadding}"/>
+                       Margin="{StaticResource MediumPadding}"
+                       AutomationProperties.AutomationId="ConfigurationViewHeader"/>
 
             <!-- User Role Indicator -->
             <Border Grid.Row="1"

@@ -10,19 +10,25 @@ namespace HnVue.Console.Views;
 /// </summary>
 public partial class AuditLogView : UserControl
 {
+    private ViewModels.AuditLogViewModel? _viewModel;
+
     public AuditLogView()
     {
         InitializeComponent();
 
         // Resolve ViewModel from DI container
-        var viewModel = App.ServiceProvider?.GetService<ViewModels.AuditLogViewModel>();
-        DataContext = viewModel;
+        _viewModel = App.ServiceProvider?.GetService<ViewModels.AuditLogViewModel>();
+        DataContext = _viewModel;
+    }
 
-        // Initialize async
-        if (viewModel != null)
+    /// <summary>
+    /// Handles the Loaded event to initialize the view.
+    /// </summary>
+    private async void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel != null)
         {
-            Loaded += async (s, e) => await viewModel.InitializeAsync();
-            Unloaded += OnUnloaded;
+            await _viewModel.InitializeAsync();
         }
     }
 
@@ -31,7 +37,7 @@ public partial class AuditLogView : UserControl
     /// </summary>
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
-        if (DataContext is IDisposable disposable)
+        if (_viewModel is IDisposable disposable)
         {
             disposable.Dispose();
         }

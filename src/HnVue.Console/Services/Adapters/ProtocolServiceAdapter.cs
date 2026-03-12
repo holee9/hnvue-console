@@ -44,8 +44,8 @@ public sealed class ProtocolServiceAdapter : GrpcAdapterBase, IProtocolService
                 .Select(bp => new BodyPart
                 {
                     Code = bp,
-                    Name = bp, // @MX:TODO Consider mapping codes to display names
-                    Description = string.Empty
+                    DisplayName = bp,
+                    DisplayNameKorean = MapBodyPartToKorean(bp)
                 })
                 .ToList();
 
@@ -81,8 +81,8 @@ public sealed class ProtocolServiceAdapter : GrpcAdapterBase, IProtocolService
                 .Select(proj => new Projection
                 {
                     Code = proj,
-                    Name = proj, // @MX:TODO Consider mapping codes to display names
-                    Description = string.Empty
+                    DisplayName = proj,
+                    DisplayNameKorean = MapProjectionToKorean(proj)
                 })
                 .ToList();
 
@@ -125,12 +125,12 @@ public sealed class ProtocolServiceAdapter : GrpcAdapterBase, IProtocolService
                 ProjectionCode = protocol.Projection,
                 DefaultExposure = new ExposureParameters
                 {
-                    KVp = (decimal)protocol.DefaultParameters.Kvp,
-                    MA = (decimal)protocol.DefaultParameters.Mas,
-                    ExposureTimeMs = (decimal)protocol.DefaultParameters.ExposureTimeMs,
-                    SourceImageDistanceCm = (decimal)protocol.DefaultParameters.SourceImageDistanceCm,
+                    KVp = (int)protocol.DefaultParameters.Kvp,
+                    MA = (int)protocol.DefaultParameters.Mas,
+                    ExposureTimeMs = (int)protocol.DefaultParameters.ExposureTimeMs,
+                    SourceImageDistanceCm = (int)protocol.DefaultParameters.SourceImageDistanceCm,
                     FocalSpotSize = MapFocalSpotSize(protocol.DefaultParameters.FocalSpotSize),
-                    AecEnabled = protocol.DefaultParameters.AecEnabled
+                    IsAecMode = protocol.DefaultParameters.AecEnabled
                 }
             };
         }
@@ -147,33 +147,44 @@ public sealed class ProtocolServiceAdapter : GrpcAdapterBase, IProtocolService
         try
         {
             var client = CreateClient<HnVue.Ipc.ProtocolService.ProtocolServiceClient>();
+            var preset = await GetProtocolPresetAsync(selection.BodyPartCode, selection.ProjectionCode, ct);
+
+            if (preset == null)
+            {
+                // Return default preset if not found
+                return new ProtocolSelectionResult
+                {
+                    Preset = new ProtocolPreset
+                    {
+                        ProtocolId = string.Empty,
+                        BodyPartCode = selection.BodyPartCode,
+                        ProjectionCode = selection.ProjectionCode,
+                        DefaultExposure = new ExposureParameters
+                        {
+                            KVp = 70,
+                            MA = 100,
+                            ExposureTimeMs = 100,
+                            SourceImageDistanceCm = 100,
+                            FocalSpotSize = FocalSpotSize.Small,
+                            IsAecMode = false
+                        }
+                    },
+                    IsAecRecommended = false
+                };
+            }
+
+            // Validate protocol
             var response = await client.ValidateProtocolAsync(
                 new HnVue.Ipc.ValidateProtocolRequest
                 {
-                    ProtocolId = selection.ProtocolId,
-                    CheckSafetyLimits = true
+                    ProtocolId = preset.ProtocolId
                 },
                 cancellationToken: ct);
 
-            var preset = await GetProtocolPresetAsync(selection.BodyPartCode, selection.ProjectionCode, ct);
-
             return new ProtocolSelectionResult
             {
-                Preset = preset ?? new ProtocolPreset
-                {
-                    ProtocolId = string.Empty,
-                    BodyPartCode = selection.BodyPartCode,
-                    ProjectionCode = selection.ProjectionCode,
-                    DefaultExposure = new ExposureParameters
-                    {
-                        KVp = 70,
-                        MA = 100,
-                        ExposureTimeMs = 100,
-                        SourceImageDistanceCm = 100,
-                        FocalSpotSize = FocalSpotSize.Small
-                    }
-                },
-                IsAecRecommended = response.IsAecRecommended
+                Preset = preset,
+                IsAecRecommended = preset.DefaultExposure.IsAecMode
             };
         }
         catch (RpcException ex)
@@ -192,7 +203,8 @@ public sealed class ProtocolServiceAdapter : GrpcAdapterBase, IProtocolService
                         MA = 100,
                         ExposureTimeMs = 100,
                         SourceImageDistanceCm = 100,
-                        FocalSpotSize = FocalSpotSize.Small
+                        FocalSpotSize = FocalSpotSize.Small,
+                        IsAecMode = false
                     }
                 },
                 IsAecRecommended = false
@@ -200,13 +212,42 @@ public sealed class ProtocolServiceAdapter : GrpcAdapterBase, IProtocolService
         }
     }
 
-    private static FocalSpotSize MapFocalSpotSize(string protoValue)
+    private static FocalSpotSize MapFocalSpotSize(string? protoValue)
     {
         return protoValue?.ToUpperInvariant() switch
         {
             "SMALL" or "FINE" => FocalSpotSize.Small,
             "LARGE" or "COARSE" => FocalSpotSize.Large,
             _ => FocalSpotSize.Small
+        };
+    }
+
+    private static string MapBodyPartToKorean(string code)
+    {
+        return code?.ToUpperInvariant() switch
+        {
+            "CHEST" => "흉부",
+            "ABDOMEN" => "복부",
+            "PELVIS" => "골반",
+            "SKULL" => "두부",
+            "SPINE" => "척추",
+            "EXTREMITY" => "사지",
+            "HAND" => "손",
+            "FOOT" => "발",
+            _ => code ?? ""
+        };
+    }
+
+    private static string MapProjectionToKorean(string code)
+    {
+        return code?.ToUpperInvariant() switch
+        {
+            "AP" => "전후방",
+            "PA" => "후전방",
+            "LATERAL" => "측면",
+            "OBLIQUE" => "사면",
+            "AXIAL" => "축방향",
+            _ => code ?? ""
         };
     }
 }

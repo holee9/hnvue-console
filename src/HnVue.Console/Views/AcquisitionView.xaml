@@ -33,7 +33,8 @@
                 <TextBlock Grid.Column="0"
                            Text="Acquisition"
                            Style="{StaticResource TitleTextStyle}"
-                           Foreground="{StaticResource WhiteBrush}"/>
+                           Foreground="{StaticResource WhiteBrush}"
+                           AutomationProperties.AutomationId="AcquisitionViewHeader"/>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                     <Button Content="Start Preview"

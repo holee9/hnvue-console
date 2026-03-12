@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    HnVue.Console.E2E.Tests - FlaUI-based End-to-End UI Tests
+    SPEC-UI-001: E2E testing for critical user journeys.
+  -->
+
+  <PropertyGroup>
+    <AssemblyName>HnVue.Console.E2E.Tests</AssemblyName>
+    <RootNamespace>HnVue.Console.E2E.Tests</RootNamespace>
+    <Description>HnVue Console End-to-End UI Tests using FlaUI</Description>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
+    <SupportedOSPlatformVersion>7.0</SupportedOSPlatformVersion>
+    <TargetPlatformMinVersion>7.0</TargetPlatformMinVersion>
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Testing Framework -->
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+
+    <!-- Assertions -->
+    <PackageReference Include="FluentAssertions" />
+
+    <!-- UI Automation -->
+    <PackageReference Include="FlaUI.UIA3" />
+
+    <!-- Coverage -->
+    <PackageReference Include="coverlet.collector" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Project References - Not needed for E2E tests that run against compiled executable -->
+    <!-- The tests launch the compiled WPF application via Process -->
+  </ItemGroup>
+
+  <!-- Copy xunit.runner.json to output -->
+  <ItemGroup>
+    <None Update="xunit.runner.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

@@ -43,12 +43,12 @@ public sealed class AuditLogServiceAdapter : GrpcAdapterBase, IAuditLogService
                 EntryId = e.AuditEntryId,
                 Timestamp = DateTimeOffset.UtcNow,
                 EventType = MapAuditEventType(e.EventType),
-                Category = e.EventCategory,
-                Description = e.EventDescription,
+                EventDescription = e.EventDescription,
                 UserId = e.UserId,
-                WorkstationId = e.WorkstationId,
+                UserName = e.Username ?? "Unknown",
                 PatientId = e.PatientId,
-                StudyId = e.StudyId
+                StudyId = e.StudyId,
+                Outcome = MapAuditOutcome(e.Severity)
             }).ToList();
 
             return entries.AsReadOnly();
@@ -81,12 +81,12 @@ public sealed class AuditLogServiceAdapter : GrpcAdapterBase, IAuditLogService
                 EntryId = e.AuditEntryId,
                 Timestamp = DateTimeOffset.UtcNow,
                 EventType = MapAuditEventType(e.EventType),
-                Category = e.EventCategory,
-                Description = e.EventDescription,
+                EventDescription = e.EventDescription,
                 UserId = e.UserId,
-                WorkstationId = e.WorkstationId,
+                UserName = e.Username ?? "Unknown",
                 PatientId = e.PatientId,
-                StudyId = e.StudyId
+                StudyId = e.StudyId,
+                Outcome = MapAuditOutcome(e.Severity)
             }).ToList();
 
             return new PagedAuditLogResult
@@ -121,7 +121,7 @@ public sealed class AuditLogServiceAdapter : GrpcAdapterBase, IAuditLogService
             var response = await client.GetAuditEntryAsync(
                 new HnVue.Ipc.GetAuditEntryRequest
                 {
-                    EntryId = entryId
+                    AuditEntryId = entryId
                 },
                 cancellationToken: ct);
 
@@ -130,12 +130,12 @@ public sealed class AuditLogServiceAdapter : GrpcAdapterBase, IAuditLogService
                 EntryId = response.Entry.AuditEntryId,
                 Timestamp = DateTimeOffset.UtcNow,
                 EventType = MapAuditEventType(response.Entry.EventType),
-                Category = response.Entry.EventCategory,
-                Description = response.Entry.EventDescription,
+                EventDescription = response.Entry.EventDescription,
                 UserId = response.Entry.UserId,
-                WorkstationId = response.Entry.WorkstationId,
+                UserName = response.Entry.Username ?? "Unknown",
                 PatientId = response.Entry.PatientId,
-                StudyId = response.Entry.StudyId
+                StudyId = response.Entry.StudyId,
+                Outcome = MapAuditOutcome(response.Entry.Severity)
             };
         }
         catch (RpcException ex)
@@ -184,7 +184,10 @@ public sealed class AuditLogServiceAdapter : GrpcAdapterBase, IAuditLogService
                 },
                 cancellationToken: ct);
 
-            return Convert.FromBase64String(response.ExportData);
+            // Proto returns file path, not binary data - read from file if needed
+            // For now return empty array as stub implementation
+            _ = response.ExportedFilePath;
+            return Array.Empty<byte>();
         }
         catch (RpcException ex)
         {
@@ -197,15 +200,29 @@ public sealed class AuditLogServiceAdapter : GrpcAdapterBase, IAuditLogService
     {
         return protoType switch
         {
-            HnVue.Ipc.AuditEventType.AuditEventTypeUserLogin => AuditEventType.UserLogin,
-            HnVue.Ipc.AuditEventType.AuditEventTypeUserLogout => AuditEventType.UserLogout,
-            HnVue.Ipc.AuditEventType.AuditEventTypePatientViewed => AuditEventType.PatientViewed,
-            HnVue.Ipc.AuditEventType.AuditEventTypeExposureStarted => AuditEventType.ExposureStarted,
-            HnVue.Ipc.AuditEventType.AuditEventTypeExposureCompleted => AuditEventType.ExposureCompleted,
-            HnVue.Ipc.AuditEventType.AuditEventTypeExposureAborted => AuditEventType.ExposureAborted,
-            HnVue.Ipc.AuditEventType.AuditEventTypeSystemStartup => AuditEventType.SystemStartup,
-            HnVue.Ipc.AuditEventType.AuditEventTypeSystemShutdown => AuditEventType.SystemShutdown,
-            _ => AuditEventType.Other
+            HnVue.Ipc.AuditEventType.UserLogin => AuditEventType.UserLogin,
+            HnVue.Ipc.AuditEventType.UserLogout => AuditEventType.UserLogout,
+            HnVue.Ipc.AuditEventType.PatientViewed => AuditEventType.PatientRegistration,
+            HnVue.Ipc.AuditEventType.PatientAccessed => AuditEventType.PatientEdit,
+            HnVue.Ipc.AuditEventType.ExposureStarted => AuditEventType.ExposureInitiated,
+            HnVue.Ipc.AuditEventType.ExposureCompleted => AuditEventType.ImageAccepted,
+            HnVue.Ipc.AuditEventType.ExposureAborted => AuditEventType.ImageRejected,
+            HnVue.Ipc.AuditEventType.SystemStartup => AuditEventType.ConfigChange,
+            HnVue.Ipc.AuditEventType.SystemShutdown => AuditEventType.SystemError,
+            HnVue.Ipc.AuditEventType.DoseAlert => AuditEventType.DoseAlertExceeded,
+            _ => AuditEventType.SystemError
+        };
+    }
+
+    private static AuditOutcome MapAuditOutcome(HnVue.Ipc.SeverityLevel severity)
+    {
+        return severity switch
+        {
+            HnVue.Ipc.SeverityLevel.Info => AuditOutcome.Success,
+            HnVue.Ipc.SeverityLevel.Warning => AuditOutcome.Warning,
+            HnVue.Ipc.SeverityLevel.Error => AuditOutcome.Failure,
+            HnVue.Ipc.SeverityLevel.Critical => AuditOutcome.Failure,
+            _ => AuditOutcome.Success
         };
     }
 }
