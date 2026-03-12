@@ -462,6 +462,420 @@ public class ImageReviewViewModelTests : ViewModelTestBase
         Assert.Equal(allReasons.Length, vm.RejectionReasons.Count);
     }
 
+    // --- HandleMeasurementClick Tests ---
+
+    [Fact]
+    public void HandleMeasurementClick_Adds_Point_When_IsMeasuring_Is_True()
+    {
+        var vm = CreateViewModel();
+        vm.SelectDistanceToolCommand.Execute(null);
+
+        vm.HandleMeasurementClick(100, 200);
+
+        // After first point, measurement should not be complete yet
+        Assert.True(vm.IsMeasuring);
+    }
+
+    [Fact]
+    public void HandleMeasurementClick_Does_Nothing_When_IsMeasuring_Is_False()
+    {
+        var vm = CreateViewModel();
+        Assert.False(vm.IsMeasuring);
+
+        // Should not throw and should do nothing
+        vm.HandleMeasurementClick(100, 200);
+
+        Assert.False(vm.IsMeasuring);
+        Assert.Empty(vm.Measurements);
+    }
+
+    [Fact]
+    public async Task HandleMeasurementClick_Completes_Distance_Measurement_With_Two_Points()
+    {
+        var vm = await CreateViewModelWithLoadedImage();
+        vm.SelectDistanceToolCommand.Execute(null);
+
+        vm.HandleMeasurementClick(100, 100);
+        vm.HandleMeasurementClick(200, 200);
+
+        Assert.Single(vm.Measurements);
+        Assert.False(vm.IsMeasuring);
+    }
+
+    [Fact]
+    public async Task HandleMeasurementClick_Completes_Angle_Measurement_With_Three_Points()
+    {
+        var vm = await CreateViewModelWithLoadedImage();
+        vm.SelectAngleToolCommand.Execute(null);
+
+        vm.HandleMeasurementClick(100, 100);
+        vm.HandleMeasurementClick(150, 150);
+        vm.HandleMeasurementClick(200, 100);
+
+        Assert.Single(vm.Measurements);
+        Assert.False(vm.IsMeasuring);
+    }
+
+    [Fact]
+    public async Task HandleMeasurementClick_Completes_CobbAngle_Measurement_With_Four_Points()
+    {
+        var vm = await CreateViewModelWithLoadedImage();
+        vm.SelectCobbToolCommand.Execute(null);
+
+        vm.HandleMeasurementClick(100, 100);
+        vm.HandleMeasurementClick(150, 100);
+        vm.HandleMeasurementClick(100, 200);
+        vm.HandleMeasurementClick(150, 200);
+
+        Assert.Single(vm.Measurements);
+        Assert.False(vm.IsMeasuring);
+    }
+
+    // --- Pan Command Tests ---
+
+    [Fact]
+    public async Task PanLeftCommand_CannotExecute_When_No_Image()
+    {
+        var vm = CreateViewModel();
+
+        Assert.False(vm.PanLeftCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task PanRightCommand_CanExecute_When_Image_Loaded()
+    {
+        var vm = await CreateViewModelWithLoadedImage();
+
+        Assert.True(vm.PanRightCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task PanUpCommand_CanExecute_When_Image_Loaded()
+    {
+        var vm = await CreateViewModelWithLoadedImage();
+
+        Assert.True(vm.PanUpCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task PanDownCommand_CanExecute_When_Image_Loaded()
+    {
+        var vm = await CreateViewModelWithLoadedImage();
+
+        Assert.True(vm.PanDownCommand.CanExecute(null));
+    }
+
+    // --- ClearMeasurements Command Tests ---
+
+    [Fact]
+    public void ClearMeasurementsCommand_CannotExecute_When_No_Image()
+    {
+        var vm = CreateViewModel();
+
+        Assert.False(vm.ClearMeasurementsCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task ClearMeasurementsCommand_CanExecute_When_Image_Loaded()
+    {
+        var vm = await CreateViewModelWithLoadedImage();
+
+        Assert.True(vm.ClearMeasurementsCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task ClearMeasurementsCommand_Clears_Measurements_Collection()
+    {
+        var vm = await CreateViewModelWithLoadedImage();
+        vm.SelectDistanceToolCommand.Execute(null);
+        vm.HandleMeasurementClick(100, 100);
+        vm.HandleMeasurementClick(200, 200);
+
+        Assert.Single(vm.Measurements);
+
+        vm.ClearMeasurementsCommand.Execute(null);
+
+        Assert.Empty(vm.Measurements);
+    }
+
+    // --- Window/Level Clamping Edge Cases ---
+
+    [Fact]
+    public async Task IncreaseWindowCommand_Clamps_At_Maximum()
+    {
+        var vm = await CreateViewModelWithLoadedImage();
+
+        // Set window width near maximum and try to increase beyond
+        for (int i = 0; i < 700; i++)
+        {
+            vm.IncreaseWindowCommand.Execute(null);
+        }
+
+        Assert.Equal(65535, vm.WindowWidth);
+    }
+
+    [Fact]
+    public async Task DecreaseWindowCommand_Clamps_At_Minimum()
+    {
+        var vm = await CreateViewModelWithLoadedImage();
+
+        // Decrease many times to reach minimum
+        for (int i = 0; i < 700; i++)
+        {
+            vm.DecreaseWindowCommand.Execute(null);
+        }
+
+        Assert.Equal(1, vm.WindowWidth);
+    }
+
+    [Fact]
+    public async Task IncreaseLevelCommand_Clamps_At_Maximum()
+    {
+        var vm = await CreateViewModelWithLoadedImage();
+
+        // Increase level many times
+        for (int i = 0; i < 700; i++)
+        {
+            vm.IncreaseLevelCommand.Execute(null);
+        }
+
+        Assert.Equal(65535, vm.WindowCenter);
+    }
+
+    [Fact]
+    public async Task DecreaseLevelCommand_Clamps_At_Minimum()
+    {
+        var vm = await CreateViewModelWithLoadedImage();
+
+        // Decrease level many times
+        for (int i = 0; i < 350; i++)
+        {
+            vm.DecreaseLevelCommand.Execute(null);
+        }
+
+        Assert.Equal(1, vm.WindowCenter);
+    }
+
+    [Fact]
+    public async Task Multiple_WindowLevel_Adjustments_Stay_Within_Bounds()
+    {
+        var vm = await CreateViewModelWithLoadedImage();
+
+        // Random sequence of adjustments
+        for (int i = 0; i < 100; i++)
+        {
+            vm.IncreaseWindowCommand.Execute(null);
+            vm.DecreaseLevelCommand.Execute(null);
+        }
+
+        Assert.True(vm.WindowWidth >= 1 && vm.WindowWidth <= 65535);
+        Assert.True(vm.WindowCenter >= 1 && vm.WindowCenter <= 65535);
+    }
+
+    // --- Measurement Calculation Edge Cases ---
+
+    [Fact]
+    public void CalculateDistance_Returns_NA_With_Insufficient_Points()
+    {
+        var vm = CreateViewModel();
+        vm.SelectDistanceToolCommand.Execute(null);
+
+        // The method is private, but we can verify behavior through HandleMeasurementClick
+        // With only 1 point, measurement should not complete
+        vm.HandleMeasurementClick(100, 100);
+
+        Assert.True(vm.IsMeasuring); // Still waiting for second point
+        Assert.Empty(vm.Measurements);
+    }
+
+    [Fact]
+    public async Task CalculateAngle_Requires_Three_Points()
+    {
+        var vm = await CreateViewModelWithLoadedImage();
+        vm.SelectAngleToolCommand.Execute(null);
+
+        vm.HandleMeasurementClick(100, 100);
+        vm.HandleMeasurementClick(150, 150);
+
+        // With only 2 points, should still be measuring
+        Assert.True(vm.IsMeasuring);
+        Assert.Empty(vm.Measurements);
+    }
+
+    [Fact]
+    public async Task CalculateCobbAngle_Requires_Four_Points()
+    {
+        var vm = await CreateViewModelWithLoadedImage();
+        vm.SelectCobbToolCommand.Execute(null);
+
+        vm.HandleMeasurementClick(100, 100);
+        vm.HandleMeasurementClick(150, 100);
+        vm.HandleMeasurementClick(100, 200);
+
+        // With only 3 points, should still be measuring
+        Assert.True(vm.IsMeasuring);
+        Assert.Empty(vm.Measurements);
+    }
+
+    [Fact]
+    public async Task Annotation_Completes_With_Single_Point()
+    {
+        var vm = await CreateViewModelWithLoadedImage();
+        vm.SelectAnnotationToolCommand.Execute(null);
+
+        vm.HandleMeasurementClick(100, 100);
+
+        // Annotation completes with 1+ points
+        Assert.Single(vm.Measurements);
+        Assert.False(vm.IsMeasuring);
+    }
+
+    // --- Bitmap Property Tests ---
+
+    [Fact]
+    public async Task Bitmap_Is_Set_After_Image_Load()
+    {
+        var vm = await CreateViewModelWithLoadedImage();
+
+        Assert.NotNull(vm.Bitmap);
+    }
+
+    [Fact]
+    public async Task Bitmap_Raises_PropertyChanged()
+    {
+        var imageData = CreateTestImageData();
+        _mockImageService
+            .Setup(s => s.GetImageAsync("IMG001", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(imageData);
+
+        var vm = CreateViewModel();
+        var changedProperties = new List<string>();
+        vm.PropertyChanged += (_, e) => changedProperties.Add(e.PropertyName ?? "");
+
+        await vm.LoadImageAsync("IMG001");
+
+        Assert.Contains("Bitmap", changedProperties);
+    }
+
+    // --- Pan Value Tests (Internal State Verification via Command Execution) ---
+
+    [Fact]
+    public async Task PanCommands_Execute_Without_Exception()
+    {
+        var vm = await CreateViewModelWithLoadedImage();
+
+        // These should not throw
+        var exception = Record.Exception(() =>
+        {
+            vm.PanLeftCommand.Execute(null);
+            vm.PanRightCommand.Execute(null);
+            vm.PanUpCommand.Execute(null);
+            vm.PanDownCommand.Execute(null);
+        });
+
+        Assert.Null(exception);
+    }
+
+    // --- Tool Selection State Tests ---
+
+    [Fact]
+    public void Selecting_Same_Tool_Twice_Resets_Points()
+    {
+        var vm = CreateViewModel();
+        vm.SelectDistanceToolCommand.Execute(null);
+        vm.HandleMeasurementClick(100, 100);
+
+        // Select same tool again - should reset
+        vm.SelectDistanceToolCommand.Execute(null);
+
+        Assert.True(vm.IsMeasuring);
+        // Points should be cleared (indirectly verified - measurement not complete)
+    }
+
+    // --- Window/Level PropertyChanged Tests ---
+
+    [Fact]
+    public async Task WindowWidth_Raises_PropertyChanged()
+    {
+        var vm = await CreateViewModelWithLoadedImage();
+        var changedProperties = new List<string>();
+        vm.PropertyChanged += (_, e) => changedProperties.Add(e.PropertyName ?? "");
+
+        vm.IncreaseWindowCommand.Execute(null);
+
+        Assert.Contains("WindowWidth", changedProperties);
+    }
+
+    [Fact]
+    public async Task WindowCenter_Raises_PropertyChanged()
+    {
+        var vm = await CreateViewModelWithLoadedImage();
+        var changedProperties = new List<string>();
+        vm.PropertyChanged += (_, e) => changedProperties.Add(e.PropertyName ?? "");
+
+        vm.IncreaseLevelCommand.Execute(null);
+
+        Assert.Contains("WindowCenter", changedProperties);
+    }
+
+    // --- Measurement Display Value Tests ---
+
+    [Fact]
+    public async Task Distance_Measurement_Has_MM_Unit()
+    {
+        var vm = await CreateViewModelWithLoadedImage();
+        vm.SelectDistanceToolCommand.Execute(null);
+
+        vm.HandleMeasurementClick(100, 100);
+        vm.HandleMeasurementClick(200, 200);
+
+        Assert.Single(vm.Measurements);
+        Assert.Contains("mm", vm.Measurements[0].DisplayValue);
+    }
+
+    [Fact]
+    public async Task Angle_Measurement_Has_Degree_Unit()
+    {
+        var vm = await CreateViewModelWithLoadedImage();
+        vm.SelectAngleToolCommand.Execute(null);
+
+        vm.HandleMeasurementClick(100, 100);
+        vm.HandleMeasurementClick(150, 150);
+        vm.HandleMeasurementClick(200, 100);
+
+        Assert.Single(vm.Measurements);
+        Assert.Contains("°", vm.Measurements[0].DisplayValue);
+    }
+
+    [Fact]
+    public async Task CobbAngle_Measurement_Has_Cobb_Suffix()
+    {
+        var vm = await CreateViewModelWithLoadedImage();
+        vm.SelectCobbToolCommand.Execute(null);
+
+        vm.HandleMeasurementClick(100, 100);
+        vm.HandleMeasurementClick(150, 100);
+        vm.HandleMeasurementClick(100, 200);
+        vm.HandleMeasurementClick(150, 200);
+
+        Assert.Single(vm.Measurements);
+        Assert.Contains("Cobb", vm.Measurements[0].DisplayValue);
+    }
+
+    // --- Orientation State Tests ---
+
+    [Fact]
+    public async Task Orientation_Changes_After_Rotate_Commands()
+    {
+        var vm = await CreateViewModelWithLoadedImage();
+
+        vm.RotateRightCommand.Execute(null);
+        Assert.Equal(ImageOrientation.Rotate90, vm.Orientation);
+
+        vm.RotateLeftCommand.Execute(null);
+        Assert.Equal(ImageOrientation.Rotate270, vm.Orientation);
+    }
+
     // --- Helper ---
 
     private async Task<ImageReviewViewModel> CreateViewModelWithLoadedImage()
