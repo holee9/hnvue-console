@@ -22,41 +22,17 @@ scripts/
 - Protocol Buffers 컴파일러 (protoc) 3.15+
 - gRPC C++ 플러그인 (grpc_cpp_plugin)
 
-### Linux/Ubuntu/Debian
-
-```bash
-sudo apt-get update
-sudo apt-get install -y \
-    protobuf-compiler \
-    libprotobuf-dev \
-    libgrpc++-dev \
-    grpc-plugins
-```
-
-### macOS
-
-```bash
-brew install protobuf grpc
-```
-
 ### Windows (vcpkg)
 
 ```powershell
+# vcpkg로 설치
 vcpkg install protobuf:x64-windows
 vcpkg install grpc:x64-windows
 ```
 
+**참고**: [Windows 개발 환경 설정 가이드](../docs/windows-setup-guide.md)를 참조하세요.
+
 ## 사용 방법
-
-### Linux/macOS
-
-```bash
-# 실행 권한 부여
-chmod +x scripts/generate-proto.sh
-
-# 스크립트 실행
-./scripts/generate-proto.sh
-```
 
 ### Windows (PowerShell)
 
@@ -133,19 +109,23 @@ dotnet build src/HnVue.Ipc.Client/HnVue.Ipc.Client.csproj
 
 **오류**: `protoc not found`
 
-**해결**:
-- Linux: `sudo apt-get install protobuf-compiler`
-- macOS: `brew install protobuf`
-- Windows: vcpkg 또는 수동 설치 후 PATH에 추가
+**해결**: vcpkg로 protobuf 설치 후 PATH에 추가
+```powershell
+vcpkg install protobuf:x64-windows
+# PATH에 C:\path\to\vcpkg\installed\x64-windows\tools\protobuf 추가
+```
 
 ### grpc_cpp_plugin을 찾을 수 없음
 
 **오류**: `grpc_cpp_plugin not found`
 
-**해결**:
-- Linux: `sudo apt-get install grpc-plugins`
-- macOS: `brew install grpc`
-- Windows: vcpkg 설치
+**해결**: vcpkg로 grpc 설치
+```powershell
+vcpkg install grpc:x64-windows
+# PATH에 C:\path\to\vcpkg\installed\x64-windows\tools\grpc 추가
+```
+
+**자세한 설정 방법**: [Windows 개발 환경 설정 가이드](../docs/windows-setup-guide.md)를 참조하세요.
 
 ### import 오류
 

@@ -39,7 +39,6 @@ cmake --build . --target hnvue-ipc-server
 The server executable will be located at:
 - `build/Debug/hnvue-ipc-server.exe` (Windows Debug)
 - `build/Release/hnvue-ipc-server.exe` (Windows Release)
-- `build/hnvue-ipc-server` (Linux)
 
 ### 2. Manual Server Startup (For Development)
 
@@ -121,7 +120,7 @@ If tests fail with "Server not running" message:
 
 If client connection times out:
 
-1. Verify server is running: `netstat -an | grep 50051` (Linux) or `netstat -an | findstr 50051` (Windows)
+1. Verify server is running: `netstat -an | findstr 50051` (Windows)
 2. Check server logs for errors
 3. Verify port 50051 is not used by another process
 

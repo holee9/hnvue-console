@@ -287,7 +287,7 @@ Then when an Arm command is received, the simulator returns an interlock fault s
 Given a CI build host running as a standard non-administrator user
 When the detector simulator and generator simulator are started
 Then both simulators start successfully without requiring elevation
-  And no UAC prompt (Windows) or sudo invocation (Linux) is required
+  And no UAC prompt (Windows) is required
   And all inter-process communication uses unprivileged mechanisms (named pipes, TCP loopback)
 ```
 

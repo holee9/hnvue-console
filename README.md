@@ -79,14 +79,15 @@
 ## 3. 빠른 시작 (Quick Start)
 
 ### 사전 요구 사항
-- **C++**: CMake 3.25+, MSVC (Windows) or GCC (Linux)
+- **C++**: CMake 3.25+, MSVC 2022 (Windows)
 - **C#**: .NET 8 SDK
 - **라이브러리**: vcpkg, OpenCV 4.x, FFTW 3.x
-- **운영체제**: Windows 10/11 (WPF GUI), Linux (비즈니스 로직 개발)
+- **운영체제**: Windows 10/11 (64-bit)
+- **Docker**: Docker Desktop for Windows (테스트용 Orthanc/Python 시뮬레이터)
 
 ### 빌드
 
-```bash
+```powershell
 # C++ Core Engine (이미지 처리, HAL)
 cd libs/hnvue-imaging
 cmake -B build -S .
@@ -98,7 +99,7 @@ dotnet build src/HnVue.Console/HnVue.Console.sln
 
 ### 테스트 실행
 
-```bash
+```powershell
 # 전체 테스트 (1,048개)
 dotnet test
 
@@ -116,7 +117,7 @@ dotnet test --filter "FullyQualifiedName~ViewModels"
 
 ### 애플리케이션 실행
 
-```bash
+```powershell
 # WPF GUI (Windows 전용)
 dotnet run --project src/HnVue.Console/HnVue.Console.csproj
 ```
@@ -207,7 +208,7 @@ dotnet run --project src/HnVue.Console/HnVue.Console.csproj
 
 - **이점**: 물리적 하드웨어 없이 전체 기능 개발 가능
 - **테스트**: 통합 테스트는 HAL 시뮬레이터로 실행
-- **리눅스 개발**: 비즈니스 로직은 크로스 플랫폼 지원
+- **Windows 개발**: 모든 기능이 Windows 환경에서 통합 개발 가능
 
 ### CI/CD with Simulators
 - **Gitea Actions**: 자화된 빌드 및 테스트
@@ -215,15 +216,12 @@ dotnet run --project src/HnVue.Console/HnVue.Console.csproj
 - **테스트 커버리지**: 85%+ 목표
 
 ### 플랫폼 지원
-**✅ Linux 호환 (비즈니스 로직 개발)**
+**✅ Windows 전용 개발 환경**
 - Workflow Engine (351 tests)
 - Dose Management (222 tests)
 - DICOM Services (256 tests)
 - ViewModels (219 tests)
-
-**❌ Windows 전용 (WPF GUI)**
-- XAML Views 및 디자인 타임 렌더링
-- 하드웨어 드라이버 통합
+- WPF GUI 및 하드웨어 드라이버 통합
 
 ---
 
@@ -239,6 +237,10 @@ dotnet run --project src/HnVue.Console/HnVue.Console.csproj
   - 컴포넌트 책임
   - 데이터 흐름
   - 인터페이스 정의
+- **Windows 개발 환경 설정**: [docs/windows-setup-guide.md](docs/windows-setup-guide.md)
+  - 필수 도구 설치
+  - 환경 변수 설정
+  - 검증 절차
 
 ### Phase별 진행 계획
 - **Phase 1 (완료)**: 기반 구축 (2026-03-12)

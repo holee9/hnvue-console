@@ -333,8 +333,8 @@ HnVue Console is a medical X-ray diagnostic device GUI console software implemen
 ## Deployment Architecture
 
 ### Development Environment
-- **Primary**: Linux (cross-platform business logic)
-- **Secondary**: Windows (WPF GUI, hardware drivers)
+- **Primary**: Windows 10/11 (전체 기능 통합 개발)
+- **Target Production**: Windows 10/11 Embedded
 
 ### Production Environment
 - **Target**: Windows 10/11

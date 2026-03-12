@@ -11,7 +11,6 @@ cmake .. -DCMAKE_BUILD_TYPE=Release
 cmake --build . --target hnvue-ipc-server
 
 # Verify executable exists
-ls -la hnvue-ipc-server*  # Linux/Mac
 dir hnvue-ipc-server.exe  # Windows
 ```
 
