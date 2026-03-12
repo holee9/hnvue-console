@@ -1,3 +1,4 @@
+using Grpc.Core;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -11,6 +12,7 @@ namespace HnVue.Console.Services.Adapters;
 public abstract class GrpcAdapterBase : IDisposable
 {
     private readonly GrpcChannel _channel;
+    private readonly ILogger _logger;
     private bool _disposed;
 
     /// <summary>
@@ -22,7 +24,8 @@ public abstract class GrpcAdapterBase : IDisposable
     {
         var address = configuration["GrpcServer:Address"] ?? "http://localhost:50051";
         _channel = GrpcChannel.ForAddress(address);
-        logger.LogInformation("gRPC channel created for {Address}", address);
+        _logger = logger;
+        _logger.LogInformation("gRPC channel created for {Address}", address);
     }
 
     /// <summary>
@@ -32,6 +35,34 @@ public abstract class GrpcAdapterBase : IDisposable
     {
         return (T)Activator.CreateInstance(typeof(T), _channel)!;
     }
+
+    /// <summary>
+    /// @MX:NOTE Tests gRPC channel connectivity by making a lightweight health check.
+    /// Returns true if server responds, false if unreachable or times out.
+    /// </summary>
+    /// <param name="timeoutMs">Connection timeout in milliseconds (default: 2000ms).</param>
+    /// <returns>True if gRPC server is reachable, false otherwise.</returns>
+    protected async Task<bool> TryConnectAsync(int timeoutMs = 2000)
+    {
+        try
+        {
+            // Use channel state to check connectivity
+            using var cts = new System.Threading.CancellationTokenSource(timeoutMs);
+            await _channel.ConnectAsync(cts.Token);
+            var state = _channel.State;
+            return state == ConnectivityState.Ready || state == ConnectivityState.Idle;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "gRPC connectivity check failed");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// @MX:NOTE Gets current channel connectivity state.
+    /// </summary>
+    protected ConnectivityState GetChannelState() => _channel.State;
 
     /// <inheritdoc />
     public void Dispose()

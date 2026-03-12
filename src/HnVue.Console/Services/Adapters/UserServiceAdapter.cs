@@ -185,6 +185,11 @@ public sealed class UserServiceAdapter : GrpcAdapterBase, IUserService
         _ => false
     };
 
+    /// <summary>
+    /// @MX:NOTE Creates an unauthenticated default user for offline/demo mode.
+    /// Returns inactive user with empty credentials to force proper authentication handling.
+    /// UI should detect IsActive=false as offline indicator and prompt for login.
+    /// </summary>
     private static User CreateDefaultUser() => new()
     {
         UserId = string.Empty,

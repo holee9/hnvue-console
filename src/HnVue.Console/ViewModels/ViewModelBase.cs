@@ -12,8 +12,21 @@ namespace HnVue.Console.ViewModels;
 /// </summary>
 public abstract class ViewModelBase : INotifyPropertyChanged, IDisposable
 {
+    private bool _isDemoMode;
+
     /// <inheritdoc/>
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    /// <summary>
+    /// @MX:NOTE Indicates if the ViewModel is operating in demo/offline mode.
+    /// Set by ViewModels when adapters detect offline state or return stub data.
+    /// UI should display visual indicator when true.
+    /// </summary>
+    public bool IsDemoMode
+    {
+        get => _isDemoMode;
+        protected set => SetProperty(ref _isDemoMode, value);
+    }
 
     /// <summary>
     /// Raises the PropertyChanged event.

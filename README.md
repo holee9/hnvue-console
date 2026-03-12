@@ -242,6 +242,39 @@ dotnet test tests/csharp/HnVue.Workflow.IntegrationTests/
 
 ## 최근 업데이트
 
+### 2026-03-12: 프로젝트 계획 대비 구현 교차검증 완료 및 P0 Critical 이슈 수정 ✅
+
+#### 교차검증 결과 (4개 관점 병렬 리뷰)
+- **Security Review**: 하드코딩된 사용자 제거, gRPC 오류 처리 개선
+- **Performance Review**: 스텁 어댑터 오버헤드 최소, 채널 관리 적절
+- **Quality Review**: 어댑터 구현률 16% 확인, TRUST 5 점수 3.8/5.0 산출
+- **UX Review**: 데모 모드 미발견 문제 확인, 오프라인 경고 필요성 확인
+
+#### P0 Critical 이슈 수정 완료
+- **DoseService 오프라인 경고**: `IsOffline` 속성 추가 (IEC 62304 안전 요건 준수)
+- **서비스 상태 인디케이터**: `ViewModelBase.IsDemoMode` 속성, `GrpcAdapterBase.TryConnectAsync()` 추가
+- **하드코딩 제거**: `UserServiceAdapter.CreateDefaultUser()` `IsActive=false` 명시적 설정
+
+#### 어댑터 구현 현황 (13개, 16% 구현률)
+| 상태 | 개수 | 실제 메서드 | 스텁 메서드 |
+|------|------|-------------|------------|
+| Partial | 4개 | 11 | 13 |
+| Stub | 9개 | 0 | 45 |
+
+**Stub 어댑터 목록 (9개)**: Image, Patient, Worklist, User, Dose, AEC, Protocol, AuditLog, QC
+
+#### 테스트 커버리지
+- **Total: 1,048 tests** (219 Console + 222 Dose + 351 Workflow + 256 Dicom)
+- Build: ✅ SUCCESS (0 errors, acceptable warnings)
+
+#### 수정된 파일
+- `src/HnVue.Console/ViewModels/ViewModelBase.cs` (IsDemoMode 속성)
+- `src/HnVue.Console/ViewModels/DoseViewModel.cs` (IsOffline 속성)
+- `src/HnVue.Console/Services/Adapters/GrpcAdapterBase.cs` (TryConnectAsync 메서드)
+- `src/HnVue.Console/Services/Adapters/UserServiceAdapter.cs` (하드코딩 제거)
+
+---
+
 ### 2026-03-11: gRPC Service Adapters 완료 및 Python 시뮬레이터 구조 추가 ✅
 
 #### gRPC Proto 정의 8개 추가

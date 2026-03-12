@@ -27,6 +27,7 @@ public class DoseViewModel : ViewModelBase
         Unit = DoseUnit.MilliGraySquareCm
     };
     private bool _hasAlert;
+    private bool _isOffline = true; // @MX:NOTE Start offline until first successful update
 
     /// <summary>
     /// Initializes a new instance of <see cref="DoseViewModel"/>.
@@ -86,6 +87,17 @@ public class DoseViewModel : ViewModelBase
     }
 
     /// <summary>
+    /// @MX:NOTE Indicates if dose service is in offline/demo mode.
+    /// Returns true when dose values are all zeros or defaults (stub behavior).
+    /// IEC 62304 safety requirement: users must know when radiation monitoring is offline.
+    /// </summary>
+    public bool IsOffline
+    {
+        get => _isOffline;
+        private set => SetProperty(ref _isOffline, value);
+    }
+
+    /// <summary>
     /// Gets or sets the alert message.
     /// </summary>
     public string AlertMessage { get; set; } = string.Empty;
@@ -111,6 +123,9 @@ public class DoseViewModel : ViewModelBase
             var display = await _doseService.GetCurrentDoseDisplayAsync(ct);
             DoseDisplay = display;
 
+            // Check if service is returning stub/zero values
+            IsOffline = DetectOfflineMode(display);
+
             // Subscribe to updates
             await foreach (var update in _doseService.SubscribeDoseUpdatesAsync(ct))
             {
@@ -128,6 +143,9 @@ public class DoseViewModel : ViewModelBase
                     CumulativeDose = cumulativeDose
                 };
 
+                // Update offline status based on received values
+                IsOffline = DetectOfflineMode(DoseDisplay);
+
                 // Check alert thresholds
                 UpdateAlertStatus(update);
 
@@ -138,7 +156,20 @@ public class DoseViewModel : ViewModelBase
         catch (Exception ex)
         {
             Debug.WriteLine($"Dose update failed: {ex.Message}");
+            IsOffline = true;
         }
+    }
+
+    /// <summary>
+    /// @MX:NOTE Detects if dose service is returning offline/stub data.
+    /// Heuristics: all zeros, empty study ID, zero exposure count.
+    /// </summary>
+    private static bool DetectOfflineMode(DoseDisplay display)
+    {
+        return display.CurrentDose.Value == 0m
+            && display.CumulativeDose.Value == 0m
+            && string.IsNullOrEmpty(display.StudyId)
+            && display.ExposureCount == 0;
     }
 
     /// <summary>
