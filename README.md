@@ -6,6 +6,25 @@
 
 ---
 
+## 📋 개요구사항 추적성 매트릭스 (Requirements Traceability Matrix)
+
+> **IEC 62304 Annex D**, **FDA 21 CFR Part 820.30**, **EU MDR Annex IX** 준수
+
+| 문서 | 설명 | 링크 |
+|------|------|------|
+| **RTM (Main)** | 전체 요구사항 추적성 매트릭스 | [docs/rtm.md](docs/rtm.md) |
+| **MRD** | 시장 요구사항 문서 | [docs/mrd.md](docs/mrd.md) |
+| **PRD** | 제품 요구사항 문서 | [docs/prd.md](docs/prd.md) |
+
+### RTM 개요
+- **Requirements Sources**: MRD, PRD, SPEC (10개), Standards (IEC 62304, DICOM, IHE)
+- **Traceability**: FR-ID ↔ Design Artifact ↔ Code File ↔ Test Method ↔ Risk Control
+- **Safety Classification**: IEC 62304 Class A/B/C별 추적 (WORKFLOW=C, DOSE=B, DICOM=B, UI=B, HAL=C)
+- **Verification/Validation**: Design Output 검증 및 임상 평가 증거
+- **Progress Coverage**: 10/10 SPEC 완료 (100%), 1,048개 테스트 통과
+
+---
+
 ## 아키텍처
 
 ### 하이브리드 구조
