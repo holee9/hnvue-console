@@ -1,7 +1,9 @@
 using System.Diagnostics;
 using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
+using FlaUI.Core.Input;
 using FlaUI.UIA3;
+using HnVue.Console.E2E.Tests.Helpers;
 using Xunit;
 
 namespace HnVue.Console.E2E.Tests;
@@ -16,6 +18,7 @@ public abstract class TestBase : IDisposable
     private AutomationBase? _automation;
     private Window? _mainWindow;
     private bool _disposed;
+    private E2ELogger? _logger;
 
     /// <summary>
     /// Gets the main window of the application.
@@ -47,6 +50,11 @@ public abstract class TestBase : IDisposable
         }
     }
 
+    /// <summary>
+    /// Gets the logger instance for the current test.
+    /// </summary>
+    protected E2ELogger Logger => _logger ?? throw new InvalidOperationException("Logger not initialized. Call InitializeLogger first.");
+
     protected TestBase()
     {
         // Determine the application path relative to test output directory
@@ -68,17 +76,31 @@ public abstract class TestBase : IDisposable
     }
 
     /// <summary>
+    /// Initializes the logger for the current test.
+    /// </summary>
+    protected void InitializeLogger(string testName)
+    {
+        _logger = E2ELogger.Create(testName);
+        _logger.LogInfo($"Test initialized. Application path: {_applicationPath}");
+    }
+
+    /// <summary>
     /// Launches the WPF application and attaches to its main window.
     /// </summary>
     protected async Task LaunchApplicationAsync()
     {
+        _logger?.LogPhase("APPLICATION LAUNCH");
+
         if (!File.Exists(_applicationPath))
         {
+            _logger?.LogError("Application executable not found", new FileNotFoundException(_applicationPath));
             throw new FileNotFoundException(
                 $"Application not found at {_applicationPath}. " +
                 "Please build the application before running E2E tests."
             );
         }
+
+        _logger?.LogInfo($"Application found at: {_applicationPath}");
 
         _automation = new UIA3Automation();
 
@@ -86,19 +108,78 @@ public abstract class TestBase : IDisposable
         _automation.ConnectionTimeout = TimeSpan.FromSeconds(10);
         _automation.TransactionTimeout = TimeSpan.FromSeconds(10);
 
-        // Launch the application
-        _application = Application.Launch(_applicationPath);
+        _logger?.LogInfo("Launching application...");
 
-        // Wait for the application to start
-        await Task.Delay(2000);
+        // Launch the application with explicit working directory to ensure
+        // appsettings.json is found correctly
+        // Note: appsettings.json has TLS disabled for E2E testing
+        var applicationDirectory = Path.GetDirectoryName(_applicationPath);
+        _logger?.LogInfo($"Application directory: {applicationDirectory}");
+        _logger?.LogInfo($"Current directory: {Directory.GetCurrentDirectory()}");
+
+        var sw = Stopwatch.StartNew();
+
+        // Use ProcessStartInfo to explicitly set the working directory
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = _applicationPath,
+            UseShellExecute = false,
+            WorkingDirectory = applicationDirectory,  // KEY FIX: Set working directory to app directory
+            CreateNoWindow = false
+        };
+
+        // Start the process
+        var process = Process.Start(startInfo);
+
+        if (process == null)
+        {
+            throw new InvalidOperationException("Failed to start application process.");
+        }
+
+        _logger?.LogInfo($"Process started with ID: {process.Id}");
+
+        // Wait for the process to initialize before attaching FlaUI
+        // This prevents NullReferenceException in Application.Attach()
+        _logger?.LogWait("Waiting for process initialization", TimeSpan.FromMilliseconds(500));
+        await Task.Delay(500);
+
+        // Some additional waiting for the main window to be created
+        if (!process.HasExited)
+        {
+            try
+            {
+                process.WaitForInputIdle(3000); // Wait up to 3 seconds for idle state
+            }
+            catch (InvalidOperationException)
+            {
+                // Process may not have a message loop (console app), ignore
+            }
+        }
+
+        // Attach FlaUI to the running process
+        _application = Application.Attach(process);
+
+        sw.Stop();
+
+        _logger?.LogInfo($"Application launched in {sw.ElapsedMilliseconds:F0}ms (E2E mode enabled)");
+        _logger?.LogInfo($"Process ID: {process.Id}");
+
+        // Additional wait for UI to fully load
+        _logger?.LogWait("Waiting for UI stabilization", TimeSpan.FromMilliseconds(1500));
+        await Task.Delay(1500);
 
         // Find the main window
+        _logger?.LogInfo("Searching for main window...");
         _mainWindow = _application.GetMainWindow(_automation);
 
         if (_mainWindow == null)
         {
+            _logger?.LogError("Failed to find main window after launching application");
             throw new InvalidOperationException("Failed to find main window after launching application.");
         }
+
+        _logger?.LogElementFound("Window", $"MainWindow (Title: {_mainWindow.Title})", true);
+        _logger?.LogInfo($"Main window found with title: {_mainWindow.Title}");
     }
 
     /// <summary>
@@ -119,12 +200,16 @@ public abstract class TestBase : IDisposable
         var element = MainWindow.FindFirstDescendant(cf => cf.ByAutomationId(automationId));
         if (element != null)
         {
+            _logger?.LogElementFound("Button", $"AutomationId={automationId}", true);
             return element.AsButton();
         }
+
+        _logger?.LogElementFound("Button", $"AutomationId={automationId}", false);
 
         // Fallback to text search if provided
         if (fallbackText != null)
         {
+            _logger?.LogInfo($"Falling back to text search for: {fallbackText}");
             return FindButtonByText(fallbackText);
         }
 
@@ -136,7 +221,9 @@ public abstract class TestBase : IDisposable
     /// </summary>
     protected Button? FindButtonByText(string text)
     {
-        return MainWindow.FindFirstDescendant(cf => cf.ByText(text))?.AsButton();
+        var button = MainWindow.FindFirstDescendant(cf => cf.ByText(text))?.AsButton();
+        _logger?.LogElementFound("Button", $"Text={text}", button != null);
+        return button;
     }
 
     /// <summary>
@@ -150,10 +237,44 @@ public abstract class TestBase : IDisposable
             var btn = button.AsButton();
             if (btn != null && btn.Name?.Contains(partialText, StringComparison.OrdinalIgnoreCase) == true)
             {
+                _logger?.LogElementFound("Button", $"PartialText={partialText} (Found: {btn.Name})", true);
                 return btn;
             }
         }
+
+        _logger?.LogElementFound("Button", $"PartialText={partialText}", false);
         return null;
+    }
+
+    /// <summary>
+    /// Clicks a button with logging.
+    /// </summary>
+    protected void ClickButton(Button button, string buttonName)
+    {
+        var automationId = button.Properties.AutomationId.ValueOrDefault;
+        _logger?.LogClick(buttonName, automationId);
+
+        var sw = Stopwatch.StartNew();
+        button.Click();
+        sw.Stop();
+
+        _logger?.LogInfo($"Button clicked in {sw.ElapsedMilliseconds:F0}ms");
+        Wait.UntilInputIsProcessed();
+    }
+
+    /// <summary>
+    /// Clicks an automation element with logging.
+    /// </summary>
+    protected void ClickElement(AutomationElement element, string elementName)
+    {
+        _logger?.LogClick(elementName, element.Properties.AutomationId.ValueOrDefault);
+
+        var sw = Stopwatch.StartNew();
+        element.Click();
+        sw.Stop();
+
+        _logger?.LogInfo($"Element clicked in {sw.ElapsedMilliseconds:F0}ms");
+        Wait.UntilInputIsProcessed();
     }
 
     /// <summary>
@@ -162,7 +283,9 @@ public abstract class TestBase : IDisposable
     protected AutomationElement? FindTextBlockContaining(string partialText)
     {
         var textBlocks = MainWindow.FindAllDescendants(cf => cf.ByControlType(FlaUI.Core.Definitions.ControlType.Text));
-        return textBlocks.FirstOrDefault(tb => tb.Name.Contains(partialText, StringComparison.OrdinalIgnoreCase));
+        var result = textBlocks.FirstOrDefault(tb => tb.Name.Contains(partialText, StringComparison.OrdinalIgnoreCase));
+        _logger?.LogElementFound("TextBlock", $"PartialText={partialText}", result != null);
+        return result;
     }
 
     /// <summary>
@@ -174,44 +297,74 @@ public abstract class TestBase : IDisposable
     {
         timeout ??= TimeSpan.FromSeconds(10);
         var startTime = DateTime.UtcNow;
+        var attemptCount = 0;
+
+        _logger?.LogInfo($"Waiting for element... (Timeout: {timeout.Value.TotalSeconds}s)");
 
         while (DateTime.UtcNow - startTime < timeout)
         {
+            attemptCount++;
             var element = findElement();
             if (element != null)
             {
+                var elapsed = DateTime.UtcNow - startTime;
+                _logger?.LogInfo($"Element found after {attemptCount} attempts ({elapsed.TotalMilliseconds:F0}ms)");
                 return element;
             }
 
             await Task.Delay(200);
         }
 
+        _logger?.LogWarning($"Element not found after {attemptCount} attempts (timeout: {timeout.Value.TotalSeconds}s)");
         return null;
     }
 
     /// <summary>
     /// Takes a screenshot of the main window for debugging purposes.
     /// </summary>
-    protected void CaptureScreenshot(string testName)
+    protected string CaptureScreenshot(string testName, string reason = "Debug")
     {
         try
         {
-            var screenshotPath = Path.Combine(
-                GetSolutionRoot(),
-                "tests",
-                "e2e",
-                "screenshots",
-                $"{testName}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.png"
-            );
+            var solutionRoot = GetSolutionRoot();
+            var screenshotDir = Path.Combine(solutionRoot, "tests", "e2e", "screenshots", testName);
+            Directory.CreateDirectory(screenshotDir);
 
-            Directory.CreateDirectory(Path.GetDirectoryName(screenshotPath)!);
+            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss_fff");
+            var screenshotPath = Path.Combine(screenshotDir, $"{timestamp}_{reason}.png");
 
-            // Note: FlaUI screenshot capture requires additional setup
-            // This is a placeholder for screenshot functionality
+            // Capture screenshot using FlaUI
+            if (_mainWindow != null && _automation != null)
+            {
+                var capture = _mainWindow.Capture();
+                if (capture != null)
+                {
+                    // Save the captured image to file
+                    capture.Save(screenshotPath);
+                }
+            }
+
+            _logger?.LogScreenshot(screenshotPath, reason);
+            return screenshotPath;
         }
-        catch
+        catch (Exception ex)
         {
-            // Ignore screenshot failures
+            _logger?.LogError("Failed to capture screenshot", ex);
+            return string.Empty;
+        }
+    }
+
+    /// <summary>
+    /// Logs an assertion result.
+    /// </summary>
+    protected void LogAssertion(string description, bool passed, string? expected = null, string? actual = null)
+    {
+        _logger?.LogAssertion(description, passed, expected, actual);
+
+        // Capture screenshot on assertion failure
+        if (!passed)
+        {
+            CaptureScreenshot("AssertionFailure", description);
         }
     }
 
@@ -238,33 +391,38 @@ public abstract class TestBase : IDisposable
         {
             _disposed = true;
 
+            _logger?.LogInfo("Disposing test resources...");
+
             try
             {
                 _application?.Close();
+                _logger?.LogInfo("Application closed");
             }
-            catch
+            catch (Exception ex)
             {
-                // Ignore close errors
+                _logger?.LogError("Failed to close application", ex);
             }
 
             try
             {
                 _application?.Dispose();
             }
-            catch
+            catch (Exception ex)
             {
-                // Ignore dispose errors
+                _logger?.LogError("Failed to dispose application", ex);
             }
 
             try
             {
                 _automation?.Dispose();
+                _logger?.LogInfo("Automation disposed");
             }
-            catch
+            catch (Exception ex)
             {
-                // Ignore dispose errors
+                _logger?.LogError("Failed to dispose automation", ex);
             }
 
+            _logger?.Dispose();
             GC.SuppressFinalize(this);
         }
     }

@@ -39,7 +39,7 @@
                     <!-- Patient Filter -->
                     <TextBlock Grid.Column="0">
                         <Run Text="Filter by Patient ID: " FontWeight="SemiBold"/>
-                        <Run Text="(All patients shown when empty)" Style="{StaticResource CaptionTextStyle}"/>
+                        <Run Text="(All patients shown when empty)" Foreground="{DynamicResource SecondaryTextBrush}" FontSize="12"/>
                     </TextBlock>
 
                     <!-- Refresh Button -->
