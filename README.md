@@ -14,13 +14,15 @@
 - **아키텍처**: 하이브리드 (C++ Core + C# WPF GUI)
 - **통신**: gRPC IPC, DICOM 표준
 
-### 현재 상태 (2026-03-12)
+### 현재 상태 (2026-03-14)
 - **SPEC 완료**: 10/10 (100%) ✅
-- **테스트 통과**: 1,048개 ✅
+- **보안 구현**: WORM 저장소 Phase 2-3 완료 ✅
+- **테스트 통과**: 1,048개 (C#), 23/25 (E2E) ✅
   - HnVue.Console.Tests: 219 pass
   - HnVue.Dose.Tests: 222 pass
   - HnVue.Workflow.Tests: 351 pass
   - HnVue.Dicom.Tests: 256 pass
+  - HnVue.Console.E2E.Tests: 23/25 pass
 - **빌드 상태**: 0 errors, acceptable warnings ✅
 
 ### SPEC 완료 목록
@@ -35,6 +37,8 @@
 | SPEC-WORKFLOW-001 | Clinical Workflow Engine | C |
 | SPEC-UI-001 | WPF Console UI (MVVM) | B |
 | SPEC-UI-002 | AsyncRelayCommand Improvements | B |
+| SPEC-SECURITY-001 | 보안 인증 & WORM 저장소 | C (진행 중) |
+| SPEC-INTEGRATION-001 | 통합 테스트 | B (계획 완료) |
 | SPEC-TEST-001 | Test Infrastructure | B |
 
 ---
@@ -250,6 +254,42 @@ dotnet run --project src/HnVue.Console/HnVue.Console.csproj
   - [개발 로드맵](docs/development-roadmap-phase2.md)
   - [보안 규정 준용 계획](docs/cybersecurity-compliance-plan.md)
 
+---
+
+## 6.1 SBOM (Software Bill of Materials)
+
+### 개요
+SPEC-SECURITY-001 FR-SEC-08에 따라 NTIA 최소 요소를 준수하는 SBOM을 자동 생성합니다.
+
+### SBOM 파일
+- **위치**: `components.json` (프로젝트 루트)
+- **형식**: CycloneDX 1.5
+- **NTIA 최소 요소 포함**:
+  1. 모든 컴포넌트 이름
+  2. 모든 컴포넌트 버전
+  3. 모든 공급자 (저자/조직)
+  4. 의존성 관계 (상위/하위)
+  5. SBOM 작성자 이름
+  6. SBOM 생성 타임스탬프
+  7. SBOM 버전 (스키마 버전)
+
+### SBOM 생성 방법
+```powershell
+# 수동 생성
+.\.sbom\generate-sbom.ps1
+
+# NTIA 준수 유효성 검사
+.\.sbom\validate-ntia.ps1
+
+# 빌드 시 자동 생성 (Directory.Build.targets 참조)
+dotnet build
+```
+
+### CVE 스캔
+- **OSV Scanner**: 자동 취약점 스캔 (GitHub Actions)
+- **Dependabot**: 주간 NuGet 패키지 업데이트 PR
+- **보고서**: `.github/workflows/sbom.yml` 참조
+
 ### 규정 준용 문서
 - **RTM**: [docs/rtm.md](docs/rtm.md) - 요구사항 추적성 매트릭스
 - **MRD**: [docs/mrd.md](docs/mrd.md) - 시장 요구사항
@@ -270,6 +310,15 @@ dotnet run --project src/HnVue.Console/HnVue.Console.csproj
 ---
 
 ## 8. 최신 업데이트 (Recent Updates)
+
+### 2026-03-14: WORM 저장소 구현 및 E2E 테스트 안정화 ✅
+- **WORM 저장소 Phase 1-3**: 인터페이스 추상화, Windows Immutable Files, Azure Immutable Blob Storage 구현
+- **IWormStorageProvider**: WORM 저장소 추상화 계층 정의
+- **FileSystemWormStorageProvider**: Windows 파일 시스템 기반 WORM 시뮬레이션 (개발용)
+- **AzureBlobWormStorageProvider**: Azure Blob Storage 기반 진짜 WORM 구현 (운영용, SEC 17a-4 준수)
+- **E2E 테스트 안정화**: TestBase.cs 프로세스 초기화 로직 개선, WorklistView.xaml XAML 스타일 문제 수정 (23/25 통과)
+- **Azure.Storage.Blobs 12.21.0**: WORM 저장소용 패키지 추가
+- **appsettings.Production.json**: Azure WORM 구성 템플릿 추가
 
 ### 2026-03-12: 프로젝트 계획 대비 구현 교차검증 완료 ✅
 - **P0 Critical 이슈 수정**: DoseService 오프라인 경고, 서비스 상태 인디케이터
@@ -305,4 +354,4 @@ Copyright © 2025 abyz-lab. All rights reserved.
 
 ---
 
-**문서 최종 업데이트**: 2026-03-12
+**문서 최종 업데이트**: 2026-03-14
