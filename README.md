@@ -14,9 +14,10 @@
 - **아키텍처**: 하이브리드 (C++ Core + C# WPF GUI)
 - **통신**: gRPC IPC, DICOM 표준
 
-### 현재 상태 (2026-03-14)
+### 현재 상태 (2026-03-16)
 - **SPEC 완료**: 10/10 (100%) ✅
-- **보안 구현**: WORM 저장소 Phase 2-3 완료 ✅
+- **보안 구현**: WORM 저장소 Phase 1-3 + 인증/감사 보안 레이어 완료 ✅
+- **CI/CD**: SAST, DAST, SBOM, Dependency Scan 파이프라인 구축 ✅
 - **테스트 통과**: 1,048개 (C#), 23/25 (E2E) ✅
   - HnVue.Console.Tests: 219 pass
   - HnVue.Dose.Tests: 222 pass
@@ -37,7 +38,7 @@
 | SPEC-WORKFLOW-001 | Clinical Workflow Engine | C |
 | SPEC-UI-001 | WPF Console UI (MVVM) | B |
 | SPEC-UI-002 | AsyncRelayCommand Improvements | B |
-| SPEC-SECURITY-001 | 보안 인증 & WORM 저장소 | C (진행 중) |
+| SPEC-SECURITY-001 | 보안 인증 & WORM 저장소 | C ✅ |
 | SPEC-INTEGRATION-001 | 통합 테스트 | B (계획 완료) |
 | SPEC-TEST-001 | Test Infrastructure | B |
 
@@ -77,6 +78,8 @@
 - **DICOM Services**: C-FIND, N-CREATE, C-STORE 지원
 - **HAL**: HVG, Detector, Safety Interlocks 추상화
 - **MVVM UI**: 16개 ViewModels, WPF 데이터 바인딩
+- **Security Layer**: 인증 Rate Limiting, 보안 감사 로그, 입력 검증 (OWASP)
+- **WORM Storage**: FileSystem(개발) / Azure Blob(운영) 이중화 불변 저장소
 
 ---
 
@@ -215,7 +218,8 @@ dotnet run --project src/HnVue.Console/HnVue.Console.csproj
 - **Windows 개발**: 모든 기능이 Windows 환경에서 통합 개발 가능
 
 ### CI/CD with Simulators
-- **Gitea Actions**: 자화된 빌드 및 테스트
+- **Gitea Actions**: 자동화된 빌드 및 테스트
+- **GitHub Actions**: SAST (CodeQL), DAST, SBOM 생성, Dependency 취약점 스캔
 - **Python 시뮬레이터**: gRPC 기반 HAL 시뮬레이션
 - **테스트 커버리지**: 85%+ 목표
 
@@ -311,6 +315,18 @@ dotnet build
 
 ## 8. 최신 업데이트 (Recent Updates)
 
+### 2026-03-16: 보안 레이어 강화 및 CI/CD 파이프라인 구축 ✅
+- **SecurityValidator**: 입력 값 검증, SQL Injection/XSS 방지 (OWASP Top 10 준수)
+- **AuthenticationRateLimiter**: 로그인 실패 횟수 기반 Rate Limiting (Brute Force 방어)
+- **SecurityAuditLogger**: 보안 이벤트 구조화 감사 로그 (RFC 5424 형식)
+- **GitHub Actions CI 구축**: 4개 워크플로우 추가
+  - `sast.yml`: CodeQL 정적 코드 분석
+  - `dast.yml`: 동적 애플리케이션 보안 테스트
+  - `sbom.yml`: SBOM 자동 생성 및 OSV 취약점 스캔
+  - `dependency-scan.yml`: NuGet 패키지 취약점 자동 감지 (Dependabot)
+- **보안 테스트**: SecurityValidator, AuthenticationRateLimiter, SecurityAuditLogger 단위 테스트 추가
+- **서비스 어댑터 개선**: AuditLog, Dose, Image, Patient 등 9개 어댑터 gRPC 통신 강화
+
 ### 2026-03-14: WORM 저장소 구현 및 E2E 테스트 안정화 ✅
 - **WORM 저장소 Phase 1-3**: 인터페이스 추상화, Windows Immutable Files, Azure Immutable Blob Storage 구현
 - **IWormStorageProvider**: WORM 저장소 추상화 계층 정의
@@ -354,4 +370,4 @@ Copyright © 2025 abyz-lab. All rights reserved.
 
 ---
 
-**문서 최종 업데이트**: 2026-03-14
+**문서 최종 업데이트**: 2026-03-16
