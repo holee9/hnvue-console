@@ -20,6 +20,10 @@ public class MockUserService : IUserService
     private const int LockoutDurationMinutes = 15;
     private const int MinimumPasswordLength = 12;
 
+    // Mock password for development use only — matches test fixture expectations.
+    // Production systems must use proper credential storage.
+    private const string MockPassword = "password123";
+
     public MockUserService()
     {
         _mockUsers = new List<User>
@@ -161,9 +165,10 @@ public class MockUserService : IUserService
             _failedLoginAttempts.TryRemove(username, out _);
         }
 
-        // Mock authentication - accept valid username and password
+        // Mock authentication - validate both username and password.
+        // Only the mock password is accepted; any other value triggers a failed attempt.
         var user = _mockUsers.FirstOrDefault(u => u.UserName.Equals(username, StringComparison.OrdinalIgnoreCase));
-        if (user == null || string.IsNullOrEmpty(password))
+        if (user == null || string.IsNullOrEmpty(password) || password != MockPassword)
         {
             var remaining = RecordFailedAttempt(username);
             return Task.FromResult(new AuthenticationResult
