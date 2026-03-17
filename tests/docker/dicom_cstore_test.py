@@ -152,6 +152,8 @@ def test_dicom_cstore_conformance() -> tuple[bool, str]:
 
 def main():
     """Main test execution."""
+    global ORTHANC_REST_URL, ORTHANC_DICOM_PORT
+
     parser = argparse.ArgumentParser(
         description="DICOM C-STORE Conformance Test"
     )
@@ -175,7 +177,6 @@ def main():
     args = parser.parse_args()
 
     # Update global config from args
-    global ORTHANC_REST_URL, ORTHANC_DICOM_PORT
     ORTHANC_REST_URL = args.orthanc_url
     ORTHANC_DICOM_PORT = args.dicom_port
 
