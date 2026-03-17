@@ -130,7 +130,7 @@ public static class SecurityValidator
     {
         if (string.IsNullOrWhiteSpace(input))
         {
-            return input;
+            return null;
         }
 
         // Remove null bytes and control characters

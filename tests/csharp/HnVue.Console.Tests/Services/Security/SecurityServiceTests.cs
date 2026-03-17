@@ -28,7 +28,7 @@ public class SecurityServiceTests
         // Arrange
         var adminUser = new User
         {
-            UserId = "admin01",
+            UserId = "admin",
             UserName = "System Administrator",
             Role = UserRole.Administrator,
             IsActive = true
@@ -119,7 +119,7 @@ public class SecurityServiceTests
         // Arrange
         var result = await _userService.AuthenticateAsync(
             "System Administrator",
-            "valid_password",
+            "password123",
             "WS-001",
             CancellationToken.None);
 
@@ -142,8 +142,8 @@ public class SecurityServiceTests
     public async Task SPEC_SEC_02_SessionIdIsCryptographicallySecure()
     {
         // Arrange & Act
-        var result1 = await _userService.AuthenticateAsync("user1", "pass1", "WS-001", CancellationToken.None);
-        var result2 = await _userService.AuthenticateAsync("user2", "pass2", "WS-001", CancellationToken.None);
+        var result1 = await _userService.AuthenticateAsync("System Administrator", "password123", "WS-001", CancellationToken.None);
+        var result2 = await _userService.AuthenticateAsync("Dr. House", "password123", "WS-001", CancellationToken.None);
 
         // Assert
         Assert.NotEqual(result1.Session!.SessionId, result2.Session!.SessionId);
@@ -266,7 +266,7 @@ public class SecurityServiceTests
         // Arrange & Act
         var result = await _userService.AuthenticateAsync(
             "System Administrator",
-            "valid_password",
+            "password123",
             "WS-001",
             CancellationToken.None);
 

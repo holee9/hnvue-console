@@ -18,7 +18,7 @@ namespace HnVue.Console.Services;
 public class MockAuditLogService : IAuditLogService
 {
     private readonly ConcurrentDictionary<string, AuditLogEntry> _entries = new();
-    private readonly ConcurrentBag<string> _entryOrder = new();
+    private readonly ConcurrentQueue<string> _entryOrder = new();
     private string? _lastEntryHash;
 
     // SPEC-SECURITY-001: FR-SEC-07 - 6-year retention policy
@@ -128,7 +128,7 @@ public class MockAuditLogService : IAuditLogService
         };
 
         _entries[entryId] = entry;
-        _entryOrder.Add(entryId);
+        _entryOrder.Enqueue(entryId);
         _lastEntryHash = entryHash;
 
         return Task.FromResult(entryId);

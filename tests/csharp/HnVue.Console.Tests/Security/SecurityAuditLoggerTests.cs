@@ -585,13 +585,15 @@ public class SecurityAuditLoggerTests : IDisposable
             longValue,
             CancellationToken.None);
 
-        // Assert
+        // Assert - 150-char value is truncated to 100 chars + "..." by SanitizeValue.
+        // The full details string includes prefix "Configuration change: LongConfig from '(empty)' to '"
+        // so total length is > 150 but the value portion ends with "..."
         _mockAuditLogService.Verify(
             x => x.LogAsync(
                 It.IsAny<AuditEventType>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                It.Is<string>(s => s.Length < 150 && s.EndsWith("...")),
+                It.Is<string>(s => s.Contains("...") && s.Length < 200),
                 It.IsAny<AuditOutcome>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),

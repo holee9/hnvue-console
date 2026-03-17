@@ -25,9 +25,9 @@ public sealed class GrpcSecurityOptions
     /// <summary>
     /// Gets or sets whether mutual TLS (mTLS) is enabled.
     /// When enabled, client must present a valid certificate.
-    /// Default: true for production, false for development.
+    /// Default: false (must be explicitly enabled in production).
     /// </summary>
-    public bool EnableMutualTls { get; set; } = true;
+    public bool EnableMutualTls { get; set; } = false;
 
     /// <summary>
     /// Gets or sets the path to the client certificate (PFX/P12 format).
@@ -101,6 +101,11 @@ public sealed class GrpcSecurityOptions
             }
         }
 
+        if (EnableTls && MinTlsVersion < TlsVersion.Tls13)
+        {
+            return false;
+        }
+
         if (CertificateRotationDays < 1 || CertificateRotationDays > 730)
         {
             return false;
@@ -159,7 +164,8 @@ public sealed class GrpcSecurityOptions
     /// <returns>True if certificate expires within warning threshold.</returns>
     public bool IsCertificateExpiringSoon(X509Certificate2 certificate)
     {
-        var daysUntilExpiration = certificate.NotAfter - DateTime.UtcNow;
+        var notAfterUtc = certificate.NotAfter.ToUniversalTime();
+        var daysUntilExpiration = notAfterUtc - DateTime.UtcNow;
         return daysUntilExpiration.TotalDays <= CertificateExpirationWarningDays;
     }
 

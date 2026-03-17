@@ -27,7 +27,7 @@ public class SecurityValidatorTests
     [InlineData("1.2.840.10008.1.1\r\nattack", false)] // CRLF injection
     [InlineData("1.2.840.10008.1.1\tinjection", false)] // Tab injection
     [InlineData("1.2.840.10008.1.1\0null", false)] // Null byte injection
-    [InlineData("123456789012345678901234567890123456789012345678901234567890", false)] // 65 chars - too long
+    [InlineData("12345678901234567890123456789012345678901234567890123456789012345", false)] // 65 chars - too long
     public void ValidateDicomUid_VariousInputs_ReturnsExpectedResult(string? uid, bool expectedValid)
     {
         // Act
@@ -451,7 +451,7 @@ public class SecurityValidatorTests
     }
 
     [Theory]
-    [InlineData("1.2.840.10008.1.1", 64, 64)] // Exact max length
+    [InlineData("1.2.840.10008.1.1", 1, 64)] // Within valid range
     [InlineData("PAT1", 4, 64)] // Exact min for patient ID
     [InlineData("usr", 3, 128)] // Exact min for username
     public void ValidateBoundaryConditions_AtBoundary_ReturnsTrue(string value, int minLen, int maxLen)

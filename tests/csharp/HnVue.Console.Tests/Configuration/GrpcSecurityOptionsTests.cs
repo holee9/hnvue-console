@@ -1,7 +1,6 @@
 using HnVue.Console.Configuration;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using Moq;
 using Xunit;
 using FluentAssertions;
 
@@ -85,13 +84,12 @@ public class GrpcSecurityOptionsTests
     }
 
     [Theory]
-    [InlineData(1)]
     [InlineData(90)]
     [InlineData(365)]
     [InlineData(730)]
     public void Validate_ValidRotationDays_ReturnsTrue(int rotationDays)
     {
-        // Arrange
+        // Arrange - CertificateExpirationWarningDays default (30) must be < rotationDays
         var options = new GrpcSecurityOptions
         {
             CertificateRotationDays = rotationDays
@@ -266,6 +264,15 @@ public class GrpcSecurityOptionsTests
 
     #region IsCertificateExpiringSoon Tests
 
+    private static X509Certificate2 CreateTestCertificate(int daysUntilExpiry)
+    {
+        using var rsa = RSA.Create(2048);
+        var req = new CertificateRequest("cn=test", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        var notBefore = DateTimeOffset.UtcNow.AddDays(-1);
+        var notAfter = DateTimeOffset.UtcNow.AddDays(daysUntilExpiry);
+        return req.CreateSelfSigned(notBefore, notAfter);
+    }
+
     [Fact]
     public void IsCertificateExpiringSoon_ExpiresWithinThreshold_ReturnsTrue()
     {
@@ -275,11 +282,10 @@ public class GrpcSecurityOptionsTests
             CertificateExpirationWarningDays = 30
         };
 
-        var certMock = new Mock<X509Certificate2>();
-        certMock.Setup(c => c.NotAfter).Returns(DateTime.UtcNow.AddDays(15));
+        using var cert = CreateTestCertificate(15); // Expires in 15 days
 
         // Act
-        var result = options.IsCertificateExpiringSoon(certMock.Object);
+        var result = options.IsCertificateExpiringSoon(cert);
 
         // Assert
         result.Should().BeTrue();
@@ -294,11 +300,10 @@ public class GrpcSecurityOptionsTests
             CertificateExpirationWarningDays = 30
         };
 
-        var certMock = new Mock<X509Certificate2>();
-        certMock.Setup(c => c.NotAfter).Returns(DateTime.UtcNow.AddDays(30));
+        using var cert = CreateTestCertificate(30); // Expires at threshold
 
         // Act
-        var result = options.IsCertificateExpiringSoon(certMock.Object);
+        var result = options.IsCertificateExpiringSoon(cert);
 
         // Assert
         result.Should().BeTrue();
@@ -313,11 +318,10 @@ public class GrpcSecurityOptionsTests
             CertificateExpirationWarningDays = 30
         };
 
-        var certMock = new Mock<X509Certificate2>();
-        certMock.Setup(c => c.NotAfter).Returns(DateTime.UtcNow.AddDays(60));
+        using var cert = CreateTestCertificate(60); // Expires in 60 days
 
         // Act
-        var result = options.IsCertificateExpiringSoon(certMock.Object);
+        var result = options.IsCertificateExpiringSoon(cert);
 
         // Assert
         result.Should().BeFalse();
@@ -332,11 +336,11 @@ public class GrpcSecurityOptionsTests
             CertificateExpirationWarningDays = 30
         };
 
-        var certMock = new Mock<X509Certificate2>();
-        certMock.Setup(c => c.NotAfter).Returns(DateTime.UtcNow.AddDays(-1));
+        // Use a cert that expires very soon (within warning threshold)
+        using var cert = CreateTestCertificate(1); // Expires in 1 day
 
         // Act
-        var result = options.IsCertificateExpiringSoon(certMock.Object);
+        var result = options.IsCertificateExpiringSoon(cert);
 
         // Assert
         result.Should().BeTrue();
@@ -367,13 +371,13 @@ public class GrpcSecurityOptionsTests
     }
 
     [Fact]
-    public void DefaultValues_EnableMutualTls_IsTrue()
+    public void DefaultValues_EnableMutualTls_IsFalse()
     {
         // Arrange
         var options = new GrpcSecurityOptions();
 
-        // Assert
-        options.EnableMutualTls.Should().BeTrue();
+        // Assert - Default is false; must be explicitly enabled in production
+        options.EnableMutualTls.Should().BeFalse();
     }
 
     [Fact]

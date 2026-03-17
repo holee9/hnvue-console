@@ -83,7 +83,16 @@ public class AuditLogServiceTests
     [Fact]
     public async Task SPEC_SEC_06_IntegrityVerificationDetectsTampering()
     {
-        // Arrange
+        // Arrange - Create a log entry so there is something to verify
+        await _auditLogService.LogAsync(
+            AuditEventType.UserLogin,
+            "user01",
+            "Test User",
+            "Integrity check setup",
+            AuditOutcome.Success,
+            ct: CancellationToken.None);
+
+        // Act
         var verificationResult = await _auditLogService.VerifyIntegrityAsync(CancellationToken.None);
 
         // Assert - Verification should succeed for untampered logs

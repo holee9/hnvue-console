@@ -25,9 +25,31 @@ public sealed class ProtocolServiceAdapter : GrpcAdapterBase, IProtocolService
     /// <inheritdoc />
     public async Task<IReadOnlyList<BodyPart>> GetBodyPartsAsync(CancellationToken ct)
     {
-        _logger.LogWarning("gRPC proto not yet defined for {Service}.{Method}", nameof(IProtocolService), nameof(GetBodyPartsAsync));
-        await Task.CompletedTask;
-        return Array.Empty<BodyPart>();
+        try
+        {
+            var client = CreateClient<HnVue.Ipc.ProtocolService.ProtocolServiceClient>();
+            var grpcRequest = new HnVue.Ipc.ListProtocolsRequest();
+
+            var response = await client.ListProtocolsAsync(grpcRequest, cancellationToken: ct);
+
+            var bodyParts = response.Protocols
+                .Select(p => new BodyPart
+                {
+                    Code = p.BodyPart,
+                    DisplayName = p.BodyPart,
+                    DisplayNameKorean = p.BodyPart
+                })
+                .DistinctBy(b => b.Code)
+                .Where(b => !string.IsNullOrEmpty(b.Code))
+                .ToList();
+
+            return bodyParts;
+        }
+        catch (RpcException ex)
+        {
+            _logger.LogWarning(ex, "gRPC call failed for {Service}.{Method}", nameof(IProtocolService), nameof(GetBodyPartsAsync));
+            return Array.Empty<BodyPart>();
+        }
     }
 
     /// <inheritdoc />

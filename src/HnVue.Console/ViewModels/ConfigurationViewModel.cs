@@ -118,22 +118,23 @@ public class ConfigurationViewModel : ViewModelBase
     /// <summary>
     /// Gets a value indicating whether calibration tab is visible.
     /// </summary>
-    public bool IsCalibrationVisible => CurrentUserRole >= UserRole.Service;
+    public bool IsCalibrationVisible =>
+        CurrentUserRole == UserRole.Administrator || CurrentUserRole == UserRole.Service;
 
     /// <summary>
     /// Gets a value indicating whether network tab is visible.
     /// </summary>
-    public bool IsNetworkVisible => CurrentUserRole >= UserRole.Administrator;
+    public bool IsNetworkVisible => CurrentUserRole == UserRole.Administrator;
 
     /// <summary>
     /// Gets a value indicating whether users tab is visible.
     /// </summary>
-    public bool IsUsersVisible => CurrentUserRole >= UserRole.Administrator;
+    public bool IsUsersVisible => CurrentUserRole == UserRole.Administrator;
 
     /// <summary>
     /// Gets a value indicating whether logging tab is visible.
     /// </summary>
-    public bool IsLoggingVisible => CurrentUserRole >= UserRole.Administrator;
+    public bool IsLoggingVisible => CurrentUserRole == UserRole.Administrator;
 
     /// <summary>
     /// Initializes the ViewModel.

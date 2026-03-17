@@ -66,6 +66,8 @@ public class AuthenticationRateLimiter : IRateLimiter
     /// <inheritdoc/>
     public Task<bool> IsAllowedAsync(string key, CancellationToken ct)
     {
+        ct.ThrowIfCancellationRequested();
+
         if (string.IsNullOrWhiteSpace(key))
         {
             return Task.FromResult(false);
@@ -99,6 +101,8 @@ public class AuthenticationRateLimiter : IRateLimiter
     /// <inheritdoc/>
     public Task RecordAttemptAsync(string key, CancellationToken ct)
     {
+        ct.ThrowIfCancellationRequested();
+
         if (string.IsNullOrWhiteSpace(key))
         {
             return Task.CompletedTask;
@@ -149,6 +153,8 @@ public class AuthenticationRateLimiter : IRateLimiter
     /// <inheritdoc/>
     public Task ResetAsync(string key, CancellationToken ct)
     {
+        ct.ThrowIfCancellationRequested();
+
         if (string.IsNullOrWhiteSpace(key))
         {
             return Task.CompletedTask;
