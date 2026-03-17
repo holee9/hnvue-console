@@ -42,16 +42,44 @@ public class MockSystemConfigService : ISystemConfigService
                     },
                     new()
                     {
-                        UserId = "supervisor1",
+                        UserId = "rad01",
                         UserName = "Dr. Smith",
-                        Role = UserRole.Supervisor,
+                        Role = UserRole.Radiologist,
+                        IsActive = true
+                    },
+                    new()
+                    {
+                        UserId = "tech01",
+                        UserName = "Technician Johnson",
+                        Role = UserRole.Technologist,
+                        IsActive = true
+                    },
+                    new()
+                    {
+                        UserId = "phys01",
+                        UserName = "Dr. Quantum",
+                        Role = UserRole.Physicist,
                         IsActive = true
                     },
                     new()
                     {
                         UserId = "operator1",
-                        UserName = "Technician Johnson",
+                        UserName = "Operator Smith",
                         Role = UserRole.Operator,
+                        IsActive = true
+                    },
+                    new()
+                    {
+                        UserId = "viewer01",
+                        UserName = "Viewer Jane",
+                        Role = UserRole.Viewer,
+                        IsActive = true
+                    },
+                    new()
+                    {
+                        UserId = "service01",
+                        UserName = "Service Engineer Davis",
+                        Role = UserRole.Service,
                         IsActive = true
                     }
                 }

@@ -20,6 +20,8 @@ public static class ServiceCollectionExtensions
     /// <param name="configuration">The application configuration.</param>
     public static void AddHnVueConsole(this IServiceCollection services, IConfiguration configuration)
     {
+        var isE2EMode = Environment.GetEnvironmentVariable("HNVUE_E2E_TEST") == "1";
+
         // Register Shell ViewModel
         services.AddTransient<ShellViewModel>();
 
@@ -51,7 +53,18 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISystemConfigService, SystemConfigServiceAdapter>();
         services.AddSingleton<IUserService, UserServiceAdapter>();
         services.AddSingleton<INetworkService, NetworkServiceAdapter>();
-        services.AddSingleton<IAuditLogService, AuditLogServiceAdapter>();
+
+        // In E2E test mode use the in-memory mock to avoid gRPC TCP connection timeouts
+        // (OS default ~20 s) that delay AuditLogView rendering and cause the test to fail.
+        if (isE2EMode)
+        {
+            services.AddSingleton<IAuditLogService, MockAuditLogService>();
+        }
+        else
+        {
+            services.AddSingleton<IAuditLogService, AuditLogServiceAdapter>();
+        }
+
         services.AddSingleton<MeasurementOverlayService>();
 
         // Register Rendering Services

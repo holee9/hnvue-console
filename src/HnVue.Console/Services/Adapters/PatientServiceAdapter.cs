@@ -7,8 +7,7 @@ namespace HnVue.Console.Services.Adapters;
 
 /// <summary>
 /// gRPC adapter for IPatientService.
-/// SPEC-ADAPTER-001: Patient CRUD and search operations.
-/// @MX:NOTE Uses PatientService gRPC for patient registration, search, and updates.
+/// SPEC-UI-001: FR-UI-01 Patient Management.
 /// </summary>
 public sealed class PatientServiceAdapter : GrpcAdapterBase, IPatientService
 {
@@ -29,15 +28,23 @@ public sealed class PatientServiceAdapter : GrpcAdapterBase, IPatientService
         try
         {
             var client = CreateClient<HnVue.Ipc.PatientService.PatientServiceClient>();
-            var response = await client.SearchPatientsAsync(
-                new HnVue.Ipc.SearchPatientsRequest
-                {
-                    Query = request.Query,
-                    MaxResults = request.MaxResults
-                },
-                cancellationToken: ct);
+            var grpcRequest = new HnVue.Ipc.SearchPatientsRequest
+            {
+                Query = request.Query,
+                MaxResults = request.MaxResults
+            };
 
-            var patients = response.Patients.Select(MapToPatient).ToList();
+            var response = await client.SearchPatientsAsync(grpcRequest, cancellationToken: ct);
+
+            var patients = response.Patients.Select(p => new Patient
+            {
+                PatientId = p.PatientId,
+                PatientName = $"{p.FamilyName} {p.GivenName}".Trim(),
+                DateOfBirth = ParseDateOfBirth(p.DateOfBirth),
+                Sex = MapSex(p.Sex),
+                AccessionNumber = null
+            }).ToList();
+
             return new PatientSearchResult
             {
                 Patients = patients,
@@ -61,21 +68,18 @@ public sealed class PatientServiceAdapter : GrpcAdapterBase, IPatientService
         try
         {
             var client = CreateClient<HnVue.Ipc.PatientService.PatientServiceClient>();
-            var patient = new HnVue.Ipc.Patient
+            var grpcRequest = new HnVue.Ipc.RegisterPatientRequest
             {
-                PatientId = registration.PatientId,
-                FamilyName = ExtractFamilyName(registration.PatientName),
-                GivenName = ExtractGivenName(registration.PatientName),
-                DateOfBirth = registration.DateOfBirth.ToString("yyyy-MM-dd"),
-                Sex = MapToProtoSex(registration.Sex)
+                Patient = new HnVue.Ipc.Patient
+                {
+                    PatientId = registration.PatientId,
+                    FamilyName = registration.PatientName,
+                    DateOfBirth = registration.DateOfBirth.ToString("yyyy-MM-dd"),
+                    Sex = MapSexToProto(registration.Sex)
+                }
             };
 
-            await client.RegisterPatientAsync(
-                new HnVue.Ipc.RegisterPatientRequest
-                {
-                    Patient = patient
-                },
-                cancellationToken: ct);
+            await client.RegisterPatientAsync(grpcRequest, cancellationToken: ct);
         }
         catch (RpcException ex)
         {
@@ -89,34 +93,26 @@ public sealed class PatientServiceAdapter : GrpcAdapterBase, IPatientService
         try
         {
             var client = CreateClient<HnVue.Ipc.PatientService.PatientServiceClient>();
-            var patient = new HnVue.Ipc.Patient
+            var grpcRequest = new HnVue.Ipc.UpdatePatientRequest
             {
-                PatientId = request.PatientId
+                PatientId = request.PatientId,
+                UpdatedPatient = new HnVue.Ipc.Patient()
             };
 
-            if (request.PatientName is not null)
+            if (request.PatientName != null)
             {
-                patient.FamilyName = ExtractFamilyName(request.PatientName);
-                patient.GivenName = ExtractGivenName(request.PatientName);
+                grpcRequest.UpdatedPatient.FamilyName = request.PatientName;
             }
-
             if (request.DateOfBirth.HasValue)
             {
-                patient.DateOfBirth = request.DateOfBirth.Value.ToString("yyyy-MM-dd");
+                grpcRequest.UpdatedPatient.DateOfBirth = request.DateOfBirth.Value.ToString("yyyy-MM-dd");
             }
-
             if (request.Sex.HasValue)
             {
-                patient.Sex = MapToProtoSex(request.Sex.Value);
+                grpcRequest.UpdatedPatient.Sex = MapSexToProto(request.Sex.Value);
             }
 
-            await client.UpdatePatientAsync(
-                new HnVue.Ipc.UpdatePatientRequest
-                {
-                    PatientId = request.PatientId,
-                    UpdatedPatient = patient
-                },
-                cancellationToken: ct);
+            await client.UpdatePatientAsync(grpcRequest, cancellationToken: ct);
         }
         catch (RpcException ex)
         {
@@ -130,14 +126,26 @@ public sealed class PatientServiceAdapter : GrpcAdapterBase, IPatientService
         try
         {
             var client = CreateClient<HnVue.Ipc.PatientService.PatientServiceClient>();
-            var response = await client.GetPatientAsync(
-                new HnVue.Ipc.GetPatientRequest
-                {
-                    PatientId = patientId
-                },
-                cancellationToken: ct);
+            var grpcRequest = new HnVue.Ipc.GetPatientRequest
+            {
+                PatientId = patientId
+            };
 
-            return response.Patient is not null ? MapToPatient(response.Patient) : null;
+            var response = await client.GetPatientAsync(grpcRequest, cancellationToken: ct);
+
+            if (response.Patient == null)
+            {
+                return null;
+            }
+
+            return new Patient
+            {
+                PatientId = response.Patient.PatientId,
+                PatientName = $"{response.Patient.FamilyName} {response.Patient.GivenName}".Trim(),
+                DateOfBirth = ParseDateOfBirth(response.Patient.DateOfBirth),
+                Sex = MapSex(response.Patient.Sex),
+                AccessionNumber = null
+            };
         }
         catch (RpcException ex)
         {
@@ -146,28 +154,16 @@ public sealed class PatientServiceAdapter : GrpcAdapterBase, IPatientService
         }
     }
 
-    /// <summary>
-    /// Maps proto Patient to domain Patient model.
-    /// @MX:ANCHOR Central mapping logic for Patient conversion.
-    /// </summary>
-    private static Patient MapToPatient(HnVue.Ipc.Patient proto)
+    private static DateOnly ParseDateOfBirth(string dateOfBirth)
     {
-        var familyName = proto.FamilyName ?? string.Empty;
-        var givenName = proto.GivenName ?? string.Empty;
-        var fullName = string.IsNullOrEmpty(givenName)
-            ? familyName
-            : $"{familyName}^{givenName}";
-
-        return new Patient
+        if (DateOnly.TryParse(dateOfBirth, out var result))
         {
-            PatientId = proto.PatientId,
-            PatientName = fullName,
-            DateOfBirth = DateOnly.TryParse(proto.DateOfBirth, out var dob) ? dob : DateOnly.MinValue,
-            Sex = MapFromProtoSex(proto.Sex)
-        };
+            return result;
+        }
+        return DateOnly.MinValue;
     }
 
-    private static Sex MapFromProtoSex(HnVue.Ipc.PatientSex protoSex)
+    private static Sex MapSex(HnVue.Ipc.PatientSex protoSex)
     {
         return protoSex switch
         {
@@ -178,7 +174,7 @@ public sealed class PatientServiceAdapter : GrpcAdapterBase, IPatientService
         };
     }
 
-    private static HnVue.Ipc.PatientSex MapToProtoSex(Sex sex)
+    private static HnVue.Ipc.PatientSex MapSexToProto(Sex sex)
     {
         return sex switch
         {
@@ -187,23 +183,5 @@ public sealed class PatientServiceAdapter : GrpcAdapterBase, IPatientService
             Sex.Other => HnVue.Ipc.PatientSex.Other,
             _ => HnVue.Ipc.PatientSex.Unknown
         };
-    }
-
-    /// <summary>
-    /// Extracts family name from DICOM-style name (Family^Given).
-    /// </summary>
-    private static string ExtractFamilyName(string fullName)
-    {
-        var parts = fullName.Split('^');
-        return parts.Length > 0 ? parts[0] : fullName;
-    }
-
-    /// <summary>
-    /// Extracts given name from DICOM-style name (Family^Given).
-    /// </summary>
-    private static string ExtractGivenName(string fullName)
-    {
-        var parts = fullName.Split('^');
-        return parts.Length > 1 ? parts[1] : string.Empty;
     }
 }

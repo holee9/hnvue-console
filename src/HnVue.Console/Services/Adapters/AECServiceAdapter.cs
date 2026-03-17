@@ -1,33 +1,40 @@
 using Grpc.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using HnVue.Console.Models;
 using System.Runtime.CompilerServices;
 
 namespace HnVue.Console.Services.Adapters;
 
 /// <summary>
 /// gRPC adapter for IAECService.
-/// SPEC-ADAPTER-001: Automatic Exposure Control monitoring and configuration.
-/// @MX:NOTE Uses AECService gRPC for AEC enable/disable and state streaming.
+/// SPEC-UI-001: FR-UI-11 AEC Mode Toggle.
 /// </summary>
 public sealed class AECServiceAdapter : GrpcAdapterBase, IAECService
 {
     private readonly ILogger<AECServiceAdapter> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="AECServiceAdapter"/>.
+    /// </summary>
     public AECServiceAdapter(IConfiguration configuration, ILogger<AECServiceAdapter> logger)
         : base(configuration, logger)
     {
         _logger = logger;
     }
 
+    /// <inheritdoc />
     public async Task EnableAECAsync(CancellationToken ct)
     {
         try
         {
             var client = CreateClient<HnVue.Ipc.AECService.AECServiceClient>();
-            await client.SetAecEnabledAsync(
-                new HnVue.Ipc.SetAecEnabledRequest { Enabled = true },
-                cancellationToken: ct);
+            var grpcRequest = new HnVue.Ipc.SetAecEnabledRequest
+            {
+                Enabled = true
+            };
+
+            await client.SetAecEnabledAsync(grpcRequest, cancellationToken: ct);
         }
         catch (RpcException ex)
         {
@@ -35,14 +42,18 @@ public sealed class AECServiceAdapter : GrpcAdapterBase, IAECService
         }
     }
 
+    /// <inheritdoc />
     public async Task DisableAECAsync(CancellationToken ct)
     {
         try
         {
             var client = CreateClient<HnVue.Ipc.AECService.AECServiceClient>();
-            await client.SetAecEnabledAsync(
-                new HnVue.Ipc.SetAecEnabledRequest { Enabled = false },
-                cancellationToken: ct);
+            var grpcRequest = new HnVue.Ipc.SetAecEnabledRequest
+            {
+                Enabled = false
+            };
+
+            await client.SetAecEnabledAsync(grpcRequest, cancellationToken: ct);
         }
         catch (RpcException ex)
         {
@@ -50,14 +61,15 @@ public sealed class AECServiceAdapter : GrpcAdapterBase, IAECService
         }
     }
 
+    /// <inheritdoc />
     public async Task<bool> GetAECStateAsync(CancellationToken ct)
     {
         try
         {
             var client = CreateClient<HnVue.Ipc.AECService.AECServiceClient>();
-            var response = await client.GetAecStatusAsync(
-                new HnVue.Ipc.GetAecStatusRequest(),
-                cancellationToken: ct);
+            var grpcRequest = new HnVue.Ipc.GetAecStatusRequest();
+
+            var response = await client.GetAecStatusAsync(grpcRequest, cancellationToken: ct);
             return response.IsEnabled;
         }
         catch (RpcException ex)
@@ -67,14 +79,15 @@ public sealed class AECServiceAdapter : GrpcAdapterBase, IAECService
         }
     }
 
-    public async IAsyncEnumerable<bool> SubscribeAECStateChangesAsync(
-        [EnumeratorCancellation] CancellationToken ct)
+    /// <inheritdoc />
+    public async IAsyncEnumerable<bool> SubscribeAECStateChangesAsync([EnumeratorCancellation] CancellationToken ct)
     {
-        AsyncServerStreamingCall<HnVue.Ipc.AecChangeEvent> call;
+        HnVue.Ipc.AECService.AECServiceClient client;
+        Grpc.Core.AsyncServerStreamingCall<HnVue.Ipc.AecChangeEvent> call;
 
         try
         {
-            var client = CreateClient<HnVue.Ipc.AECService.AECServiceClient>();
+            client = CreateClient<HnVue.Ipc.AECService.AECServiceClient>();
             call = client.SubscribeAecChanges(new HnVue.Ipc.AecChangeSubscribeRequest(), cancellationToken: ct);
         }
         catch (RpcException ex)

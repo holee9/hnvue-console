@@ -18,11 +18,27 @@ public partial class PatientView : UserControl
         var viewModel = App.ServiceProvider?.GetRequiredService<ViewModels.PatientViewModel>();
         DataContext = viewModel;
 
-        // Subscribe to Unloaded event for disposal
-        Loaded += (s, e) =>
+        // Subscribe to Loaded event to wire NavigationRequested after the visual tree is ready
+        Loaded += OnLoaded;
+    }
+
+    /// <summary>
+    /// Handles the Loaded event to wire navigation and disposal.
+    /// </summary>
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        Unloaded += OnUnloaded;
+
+        // Wire PatientViewModel.NavigationRequested to ShellViewModel navigation
+        if (DataContext is ViewModels.PatientViewModel patientVm)
         {
-            Unloaded += OnUnloaded;
-        };
+            var window = Window.GetWindow(this);
+            if (window?.DataContext is ViewModels.ShellViewModel shellVm)
+            {
+                patientVm.NavigationRequested += (_, viewName) =>
+                    shellVm.NavigateCommand.Execute(viewName);
+            }
+        }
     }
 
     /// <summary>

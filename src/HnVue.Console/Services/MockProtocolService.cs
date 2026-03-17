@@ -94,19 +94,19 @@ public class MockProtocolService : IProtocolService
     }
 
     /// <inheritdoc/>
-    public Task<ProtocolSelectionResult> SelectProtocolAsync(ProtocolSelection selection, CancellationToken ct = default)
+    public async Task<ProtocolSelectionResult> SelectProtocolAsync(ProtocolSelection selection, CancellationToken ct = default)
     {
-        var preset = GetProtocolPresetAsync(selection.BodyPartCode, selection.ProjectionCode, ct).Result;
+        var preset = await GetProtocolPresetAsync(selection.BodyPartCode, selection.ProjectionCode, ct).ConfigureAwait(false);
         if (preset == null)
         {
             throw new InvalidOperationException($"Protocol preset not found for {selection.BodyPartCode}/{selection.ProjectionCode}");
         }
 
         Debug.WriteLine($"[MockProtocolService] Protocol selected: {preset.ProtocolId}");
-        return Task.FromResult(new ProtocolSelectionResult
+        return new ProtocolSelectionResult
         {
             Preset = preset,
             IsAecRecommended = false
-        });
+        };
     }
 }

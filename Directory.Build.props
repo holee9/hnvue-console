@@ -81,4 +81,16 @@
     <DebugType>full</DebugType>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
   </PropertyGroup>
+
+  <!-- SBOM Auto-Update Target
+       SPEC-SECURITY-001: FR-SEC-08 - Auto-generate SBOM on build
+       Only runs for the Console project (main entry point) to avoid duplicate runs -->
+  <Target Name="GenerateSbom" AfterTargets="Build" Condition="'$(MSBuildProjectName)'=='HnVue.Console'">
+    <PropertyGroup>
+      <_SbomScript>$(MSBuildProjectDirectory)\..\.sbom\generate-sbom.ps1</_SbomScript>
+    </PropertyGroup>
+    <Exec Command="powershell -ExecutionPolicy Bypass -File &quot;$(_SbomScript)&quot;"
+          Condition="Exists('$(_SbomScript)')"
+          ContinueOnError="true" />
+  </Target>
 </Project>

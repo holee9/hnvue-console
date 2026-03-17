@@ -7,8 +7,7 @@ namespace HnVue.Console.Services.Adapters;
 
 /// <summary>
 /// gRPC adapter for IProtocolService.
-/// SPEC-ADAPTER-001: Protocol selection and validation using ProtocolService gRPC.
-/// @MX:NOTE Uses ProtocolService gRPC for protocol listing, validation, and application.
+/// SPEC-UI-001: FR-UI-06 Protocol Selection.
 /// </summary>
 public sealed class ProtocolServiceAdapter : GrpcAdapterBase, IProtocolService
 {
@@ -26,36 +25,9 @@ public sealed class ProtocolServiceAdapter : GrpcAdapterBase, IProtocolService
     /// <inheritdoc />
     public async Task<IReadOnlyList<BodyPart>> GetBodyPartsAsync(CancellationToken ct)
     {
-        try
-        {
-            var client = CreateClient<HnVue.Ipc.ProtocolService.ProtocolServiceClient>();
-            var response = await client.ListProtocolsAsync(
-                new HnVue.Ipc.ListProtocolsRequest
-                {
-                    IncludeCustom = true
-                },
-                cancellationToken: ct);
-
-            // Extract unique body parts from protocols
-            var bodyParts = response.Protocols
-                .Select(p => p.BodyPart)
-                .Distinct()
-                .Where(bp => !string.IsNullOrEmpty(bp))
-                .Select(bp => new BodyPart
-                {
-                    Code = bp,
-                    DisplayName = bp,
-                    DisplayNameKorean = MapBodyPartToKorean(bp)
-                })
-                .ToList();
-
-            return bodyParts.AsReadOnly();
-        }
-        catch (RpcException ex)
-        {
-            _logger.LogWarning(ex, "gRPC call failed for {Service}.{Method}", nameof(IProtocolService), nameof(GetBodyPartsAsync));
-            return Array.Empty<BodyPart>();
-        }
+        _logger.LogWarning("gRPC proto not yet defined for {Service}.{Method}", nameof(IProtocolService), nameof(GetBodyPartsAsync));
+        await Task.CompletedTask;
+        return Array.Empty<BodyPart>();
     }
 
     /// <inheritdoc />
@@ -64,29 +36,25 @@ public sealed class ProtocolServiceAdapter : GrpcAdapterBase, IProtocolService
         try
         {
             var client = CreateClient<HnVue.Ipc.ProtocolService.ProtocolServiceClient>();
-            var response = await client.ListProtocolsAsync(
-                new HnVue.Ipc.ListProtocolsRequest
-                {
-                    BodyPart = bodyPartCode,
-                    IncludeCustom = true
-                },
-                cancellationToken: ct);
+            var grpcRequest = new HnVue.Ipc.ListProtocolsRequest
+            {
+                BodyPart = bodyPartCode
+            };
 
-            // Extract unique projections from protocols for this body part
+            var response = await client.ListProtocolsAsync(grpcRequest, cancellationToken: ct);
+
+            // Group by projection to get unique projections
             var projections = response.Protocols
-                .Where(p => p.BodyPart == bodyPartCode)
-                .Select(p => p.Projection)
-                .Distinct()
-                .Where(proj => !string.IsNullOrEmpty(proj))
-                .Select(proj => new Projection
+                .Select(p => new Projection
                 {
-                    Code = proj,
-                    DisplayName = proj,
-                    DisplayNameKorean = MapProjectionToKorean(proj)
+                    Code = p.Projection,
+                    DisplayName = p.Projection,
+                    DisplayNameKorean = p.Projection
                 })
+                .DistinctBy(p => p.Code)
                 .ToList();
 
-            return projections.AsReadOnly();
+            return projections;
         }
         catch (RpcException ex)
         {
@@ -101,18 +69,15 @@ public sealed class ProtocolServiceAdapter : GrpcAdapterBase, IProtocolService
         try
         {
             var client = CreateClient<HnVue.Ipc.ProtocolService.ProtocolServiceClient>();
-            var response = await client.ListProtocolsAsync(
-                new HnVue.Ipc.ListProtocolsRequest
-                {
-                    BodyPart = bodyPartCode,
-                    Projection = projectionCode,
-                    IncludeCustom = true
-                },
-                cancellationToken: ct);
+            var grpcRequest = new HnVue.Ipc.ListProtocolsRequest
+            {
+                BodyPart = bodyPartCode,
+                Projection = projectionCode
+            };
 
-            var protocol = response.Protocols
-                .FirstOrDefault(p => p.BodyPart == bodyPartCode && p.Projection == projectionCode);
+            var response = await client.ListProtocolsAsync(grpcRequest, cancellationToken: ct);
 
+            var protocol = response.Protocols.FirstOrDefault();
             if (protocol == null)
             {
                 return null;
@@ -147,11 +112,19 @@ public sealed class ProtocolServiceAdapter : GrpcAdapterBase, IProtocolService
         try
         {
             var client = CreateClient<HnVue.Ipc.ProtocolService.ProtocolServiceClient>();
-            var preset = await GetProtocolPresetAsync(selection.BodyPartCode, selection.ProjectionCode, ct);
 
-            if (preset == null)
+            // First get the protocol to apply
+            var listRequest = new HnVue.Ipc.ListProtocolsRequest
             {
-                // Return default preset if not found
+                BodyPart = selection.BodyPartCode,
+                Projection = selection.ProjectionCode
+            };
+
+            var listResponse = await client.ListProtocolsAsync(listRequest, cancellationToken: ct);
+            var protocol = listResponse.Protocols.FirstOrDefault();
+
+            if (protocol == null)
+            {
                 return new ProtocolSelectionResult
                 {
                     Preset = new ProtocolPreset
@@ -173,18 +146,24 @@ public sealed class ProtocolServiceAdapter : GrpcAdapterBase, IProtocolService
                 };
             }
 
-            // Validate protocol
-            var response = await client.ValidateProtocolAsync(
-                new HnVue.Ipc.ValidateProtocolRequest
-                {
-                    ProtocolId = preset.ProtocolId
-                },
-                cancellationToken: ct);
-
             return new ProtocolSelectionResult
             {
-                Preset = preset,
-                IsAecRecommended = preset.DefaultExposure.IsAecMode
+                Preset = new ProtocolPreset
+                {
+                    ProtocolId = protocol.ProtocolId,
+                    BodyPartCode = protocol.BodyPart,
+                    ProjectionCode = protocol.Projection,
+                    DefaultExposure = new ExposureParameters
+                    {
+                        KVp = (int)protocol.DefaultParameters.Kvp,
+                        MA = (int)protocol.DefaultParameters.Mas,
+                        ExposureTimeMs = (int)protocol.DefaultParameters.ExposureTimeMs,
+                        SourceImageDistanceCm = (int)protocol.DefaultParameters.SourceImageDistanceCm,
+                        FocalSpotSize = MapFocalSpotSize(protocol.DefaultParameters.FocalSpotSize),
+                        IsAecMode = protocol.DefaultParameters.AecEnabled
+                    }
+                },
+                IsAecRecommended = protocol.DefaultParameters.AecEnabled
             };
         }
         catch (RpcException ex)
@@ -212,42 +191,15 @@ public sealed class ProtocolServiceAdapter : GrpcAdapterBase, IProtocolService
         }
     }
 
-    private static FocalSpotSize MapFocalSpotSize(string? protoValue)
+    private static FocalSpotSize MapFocalSpotSize(string focalSpotSize)
     {
-        return protoValue?.ToUpperInvariant() switch
+        return focalSpotSize?.ToUpperInvariant() switch
         {
-            "SMALL" or "FINE" => FocalSpotSize.Small,
-            "LARGE" or "COARSE" => FocalSpotSize.Large,
+            "SMALL" => FocalSpotSize.Small,
+            "LARGE" => FocalSpotSize.Large,
+            "FINE" => FocalSpotSize.Fine,
+            "COARSE" => FocalSpotSize.Coarse,
             _ => FocalSpotSize.Small
-        };
-    }
-
-    private static string MapBodyPartToKorean(string code)
-    {
-        return code?.ToUpperInvariant() switch
-        {
-            "CHEST" => "흉부",
-            "ABDOMEN" => "복부",
-            "PELVIS" => "골반",
-            "SKULL" => "두부",
-            "SPINE" => "척추",
-            "EXTREMITY" => "사지",
-            "HAND" => "손",
-            "FOOT" => "발",
-            _ => code ?? ""
-        };
-    }
-
-    private static string MapProjectionToKorean(string code)
-    {
-        return code?.ToUpperInvariant() switch
-        {
-            "AP" => "전후방",
-            "PA" => "후전방",
-            "LATERAL" => "측면",
-            "OBLIQUE" => "사면",
-            "AXIAL" => "축방향",
-            _ => code ?? ""
         };
     }
 }

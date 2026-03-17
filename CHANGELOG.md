@@ -74,6 +74,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 파일: `.gitea/workflows/ci.yml`, `tests/python/requirements.txt`
   - 내용: Python 테스트 job, DICOM Conformance 테스트, 통합 커버리지 리포트, 85% 임계값 검증
 
+- **docs(security)**: SPEC-SECURITY-001 사이버보안 규정 준용 플랜 추가
+  - 파일: `.moai/specs/SPEC-SECURITY-001/spec.md`
+  - 내용: FDA Section 524B, EU MDR MDCG 2019-16, MFDS 가이드라인 준용
+  - 5대 보안 영역: 사용자 인증/인가, 감사로그, 통신 보안, SBOM 관리, 위협 모델링
+  - 신규 디렉토리: `src/HnVue.Console/Security/`, `docs/security/`, `docs/templates/`
+
+- **docs(regulatory)**: 프로젝트 계획 대비 구현 교차검증 결과 및 P0 Critical 이슈 수정
+  - 파일: `README.md`, `docs/development-roadmap-phase2.md`
+  - 내용: 10/10 SPEC 완료, 1,048 테스트 통과, Phase별 진행 계획서
+
+- **docs(regulatory)**: MRD, PRD, RTM 문서 추가 및 규격 준용 요구사항 추적 매트릭스 생성
+  - 파일: `docs/mrd/`, `docs/prd/`, `docs/rtm/`
+  - 내용: Market Requirements Document, Product Requirements Document, Requirements Traceability Matrix
+
+- **docs(readme)**: Phase별 진행 계획서 및 규정 준용 문서 섹션 추가
+  - 파일: `README.md`
+  - 내용: Phase 1 완료, Phase 2 계획, 규정 준용 섹션 구조화
+
+- **docs(readme)**: FPGA 용어 제거 및 문서 구조 최적화
+  - 파일: `README.md`, `CLAUDE.md`
+  - 내용: Windows-only 개발 환경 전환, 문서 구조 단순화
+
+- **chore(config)**: Windows-only 개발 환경으로 전환
+  - 파일: `.gitignore`, `.moai/config/sections/*.yaml`
+  - 내용: macOS/Linux 관련 패턴 제거, Windows 빌드 설정 최적화
+
+- **fix(e2e)**: TestBase에서 working directory 설정으로 애플리케이션 크래시 해결
+  - 파일: `tests/e2e/HnVue.Console.E2E.Tests/TestBase.cs`
+  - 내용: ProcessStartInfo.WorkingDirectory 명시적 설정, FlaUI Application.Launch vs Attach 테스트
+  - TLS 비활성화된 appsettings.E2E.json 추가
+
+- **docs(testing)**: cross-spec 통합 테스트 계획
+  - 파일: `docs/testing/integration-test-plan.md`
+  - 내용: gRPC 어댑터 간 통합 시나리오, 상태 동기화 테스트, 오류 전파 검증
+  - 어댑터간 의존성 매트릭스 및 테스트 커버리지 목표 (90%+)
+
+- **docs(security)**: 감사로그용 WORM 저장소 구현 계획
+  - 파일: `docs/security/worm-storage-plan.md`
+  - 내용: FDA 21 CFR Part 11, EU MDR, MFDS 준용 WORM(Write Once Read Many) 아키텍처
+  - 단일 감사 이벤트 불변성 보장, 법적 보존 기간(7년) 적용, 무결성 검증 절차
+  - 신규 디렉토리: `src/HnVue.Console/Security/WormStorage/`
+
 ---
 
 ### Added - SPEC-UI-001: WPF Console UI ViewModel 구현 완성

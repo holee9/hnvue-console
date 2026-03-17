@@ -7,28 +7,46 @@ namespace HnVue.Console.Services.Adapters;
 
 /// <summary>
 /// gRPC adapter for IWorklistService.
-/// SPEC-ADAPTER-001: DICOM Modality Worklist (MWL) integration.
-/// @MX:NOTE Uses WorklistService gRPC for MWL query and status updates.
+/// SPEC-UI-001: FR-UI-02 Worklist Display.
 /// </summary>
 public sealed class WorklistServiceAdapter : GrpcAdapterBase, IWorklistService
 {
     private readonly ILogger<WorklistServiceAdapter> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of <see cref="WorklistServiceAdapter"/>.
+    /// </summary>
     public WorklistServiceAdapter(IConfiguration configuration, ILogger<WorklistServiceAdapter> logger)
         : base(configuration, logger)
     {
         _logger = logger;
     }
 
+    /// <inheritdoc />
     public async Task<IReadOnlyList<WorklistItem>> GetWorklistAsync(CancellationToken ct)
     {
         try
         {
             var client = CreateClient<HnVue.Ipc.WorklistService.WorklistServiceClient>();
-            var response = await client.QueryWorklistAsync(
-                new HnVue.Ipc.QueryWorklistRequest { MaxResults = 100 },
-                cancellationToken: ct);
-            return response.Entries.Select(MapToWorklistItem).ToList();
+            var grpcRequest = new HnVue.Ipc.QueryWorklistRequest
+            {
+                MaxResults = 100
+            };
+
+            var response = await client.QueryWorklistAsync(grpcRequest, cancellationToken: ct);
+
+            return response.Entries.Select(e => new WorklistItem
+            {
+                ProcedureId = e.RequestedProcedureId,
+                PatientId = e.Patient?.PatientId ?? string.Empty,
+                PatientName = e.Patient != null ? $"{e.Patient.FamilyName} {e.Patient.GivenName}".Trim() : string.Empty,
+                AccessionNumber = e.AccessionNumber,
+                ScheduledProcedureStepDescription = e.RequestedProcedureDescription,
+                ScheduledDateTime = ParseScheduledDateTime(e.ScheduledDate, e.ScheduledTime),
+                BodyPart = string.Empty,
+                Projection = string.Empty,
+                Status = MapWorklistStatus(e.Status)
+            }).ToList();
         }
         catch (RpcException ex)
         {
@@ -37,20 +55,31 @@ public sealed class WorklistServiceAdapter : GrpcAdapterBase, IWorklistService
         }
     }
 
+    /// <inheritdoc />
     public async Task<WorklistRefreshResult> RefreshWorklistAsync(WorklistRefreshRequest request, CancellationToken ct)
     {
         try
         {
             var client = CreateClient<HnVue.Ipc.WorklistService.WorklistServiceClient>();
-            var grpcRequest = new HnVue.Ipc.QueryWorklistRequest { MaxResults = 100 };
-
-            if (request.Since.HasValue)
+            var grpcRequest = new HnVue.Ipc.QueryWorklistRequest
             {
-                grpcRequest.ScheduledDateStart = request.Since.Value.ToString("yyyy-MM-dd");
-            }
+                MaxResults = 100
+            };
 
             var response = await client.QueryWorklistAsync(grpcRequest, cancellationToken: ct);
-            var items = response.Entries.Select(MapToWorklistItem).ToList();
+
+            var items = response.Entries.Select(e => new WorklistItem
+            {
+                ProcedureId = e.RequestedProcedureId,
+                PatientId = e.Patient?.PatientId ?? string.Empty,
+                PatientName = e.Patient != null ? $"{e.Patient.FamilyName} {e.Patient.GivenName}".Trim() : string.Empty,
+                AccessionNumber = e.AccessionNumber,
+                ScheduledProcedureStepDescription = e.RequestedProcedureDescription,
+                ScheduledDateTime = ParseScheduledDateTime(e.ScheduledDate, e.ScheduledTime),
+                BodyPart = string.Empty,
+                Projection = string.Empty,
+                Status = MapWorklistStatus(e.Status)
+            }).ToList();
 
             return new WorklistRefreshResult
             {
@@ -69,18 +98,19 @@ public sealed class WorklistServiceAdapter : GrpcAdapterBase, IWorklistService
         }
     }
 
+    /// <inheritdoc />
     public async Task SelectWorklistItemAsync(string procedureId, CancellationToken ct)
     {
         try
         {
             var client = CreateClient<HnVue.Ipc.WorklistService.WorklistServiceClient>();
-            await client.UpdateWorklistStatusAsync(
-                new HnVue.Ipc.UpdateWorklistStatusRequest
-                {
-                    WorklistEntryId = procedureId,
-                    NewStatus = HnVue.Ipc.WorklistStatus.InProgress
-                },
-                cancellationToken: ct);
+            var grpcRequest = new HnVue.Ipc.UpdateWorklistStatusRequest
+            {
+                WorklistEntryId = procedureId,
+                NewStatus = HnVue.Ipc.WorklistStatus.InProgress
+            };
+
+            await client.UpdateWorklistStatusAsync(grpcRequest, cancellationToken: ct);
         }
         catch (RpcException ex)
         {
@@ -88,39 +118,29 @@ public sealed class WorklistServiceAdapter : GrpcAdapterBase, IWorklistService
         }
     }
 
-    /// <summary>
-    /// @MX:ANCHOR Proto to domain mapping for WorklistItem.
-    /// </summary>
-    private static WorklistItem MapToWorklistItem(HnVue.Ipc.WorklistEntry entry)
+    private static DateTimeOffset ParseScheduledDateTime(string date, string time)
     {
-        var patientName = entry.Patient is not null
-            ? $"{entry.Patient.FamilyName}^{entry.Patient.GivenName}"
-            : string.Empty;
-
-        var scheduledDate = DateTimeOffset.TryParse($"{entry.ScheduledDate} {entry.ScheduledTime}", out var dt)
-            ? dt
-            : DateTimeOffset.UtcNow;
-
-        return new WorklistItem
+        if (DateOnly.TryParse(date, out var dateOnly) && TimeOnly.TryParse(time, out var timeOnly))
         {
-            ProcedureId = entry.WorklistEntryId,
-            PatientId = entry.Patient?.PatientId ?? string.Empty,
-            PatientName = patientName,
-            AccessionNumber = entry.AccessionNumber,
-            ScheduledProcedureStepDescription = entry.StudyDescription,
-            ScheduledDateTime = scheduledDate,
-            BodyPart = entry.StudyDescription,
-            Projection = entry.Modality,
-            Status = MapFromProtoStatus(entry.Status)
-        };
+            return new DateTimeOffset(dateOnly, timeOnly, TimeSpan.Zero);
+        }
+        if (DateOnly.TryParse(date, out dateOnly))
+        {
+            return new DateTimeOffset(dateOnly, TimeOnly.MinValue, TimeSpan.Zero);
+        }
+        return DateTimeOffset.MinValue;
     }
 
-    private static WorklistStatus MapFromProtoStatus(HnVue.Ipc.WorklistStatus status) => status switch
+    private static WorklistStatus MapWorklistStatus(HnVue.Ipc.WorklistStatus protoStatus)
     {
-        HnVue.Ipc.WorklistStatus.Scheduled => WorklistStatus.Scheduled,
-        HnVue.Ipc.WorklistStatus.InProgress => WorklistStatus.InProgress,
-        HnVue.Ipc.WorklistStatus.Completed => WorklistStatus.Completed,
-        HnVue.Ipc.WorklistStatus.Cancelled or HnVue.Ipc.WorklistStatus.Discontinued => WorklistStatus.Cancelled,
-        _ => WorklistStatus.Scheduled
-    };
+        return protoStatus switch
+        {
+            HnVue.Ipc.WorklistStatus.Scheduled => WorklistStatus.Scheduled,
+            HnVue.Ipc.WorklistStatus.InProgress => WorklistStatus.InProgress,
+            HnVue.Ipc.WorklistStatus.Completed => WorklistStatus.Completed,
+            HnVue.Ipc.WorklistStatus.Cancelled => WorklistStatus.Cancelled,
+            HnVue.Ipc.WorklistStatus.Discontinued => WorklistStatus.Cancelled,
+            _ => WorklistStatus.Scheduled
+        };
+    }
 }

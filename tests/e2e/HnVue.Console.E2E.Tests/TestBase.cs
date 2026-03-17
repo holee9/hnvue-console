@@ -128,6 +128,11 @@ public abstract class TestBase : IDisposable
             CreateNoWindow = false
         };
 
+        // Enable E2E mode so the application uses mock services instead of gRPC adapters.
+        // This prevents TCP connection timeouts (OS default ~20s) from blocking UI rendering
+        // when gRPC server is not running during E2E test execution.
+        startInfo.EnvironmentVariables["HNVUE_E2E_TEST"] = "1";
+
         // Start the process
         var process = Process.Start(startInfo);
 

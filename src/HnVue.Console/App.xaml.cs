@@ -20,12 +20,36 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // Detect E2E test mode via environment variable
+        var isE2EMode = Environment.GetEnvironmentVariable("HNVUE_E2E_TEST") == "1";
+
         // Build configuration
-        var configuration = new ConfigurationBuilder()
+        var configBuilder = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-            .AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true)
-            .Build();
+            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+
+        // Add environment-specific config
+        if (isE2EMode)
+        {
+            configBuilder.AddJsonFile("appsettings.E2E.json", optional: true, reloadOnChange: true);
+        }
+        else
+        {
+            configBuilder.AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true);
+        }
+
+        var configuration = configBuilder.Build();
+
+        // Log E2E mode detection
+        var e2eLog = System.Console.Out;
+        if (isE2EMode)
+        {
+            e2eLog.WriteLine("[E2E MODE] Enabled - Loading appsettings.E2E.json");
+        }
+        else
+        {
+            e2eLog.WriteLine("[NORMAL MODE] Loading default configuration");
+        }
 
         // Configure services
         var services = new ServiceCollection();

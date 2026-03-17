@@ -7,9 +7,7 @@ namespace HnVue.Console.Services.Adapters;
 
 /// <summary>
 /// gRPC adapter for IImageService.
-/// SPEC-ADAPTER-001: Image data operations using ImageService gRPC (streaming only).
-/// @MX:NOTE ImageService proto only supports SubscribeImageStream (server-streaming).
-/// @MX:TODO GetImage, ApplyWindowLevel, SetZoomPan require additional proto definitions.
+/// SPEC-UI-001: FR-UI-03 Image Viewer.
 /// </summary>
 public sealed class ImageServiceAdapter : GrpcAdapterBase, IImageService
 {
@@ -25,66 +23,61 @@ public sealed class ImageServiceAdapter : GrpcAdapterBase, IImageService
     }
 
     /// <inheritdoc />
-    /// @MX:NOTE Proto does not define GetImage. Returns default implementation.
-    public Task<ImageData> GetImageAsync(string imageId, CancellationToken ct)
+    public async Task<ImageData> GetImageAsync(string imageId, CancellationToken ct)
     {
-        _logger.LogWarning("gRPC proto does not define GetImage for {Service}.{Method}", nameof(IImageService), nameof(GetImageAsync));
-        return Task.FromResult(new ImageData
+        _logger.LogWarning("gRPC proto not yet defined for {Service}.{Method}", nameof(IImageService), nameof(GetImageAsync));
+        await Task.CompletedTask;
+        return new ImageData
         {
             ImageId = imageId,
             PixelData = Array.Empty<byte>(),
             Width = 0,
             Height = 0,
-            BitsPerPixel = 0,
-            PixelSpacing = new PixelSpacing { RowSpacingMm = 0m, ColumnSpacingMm = 0m }
-        });
+            BitsPerPixel = 16,
+            PixelSpacing = new PixelSpacing { RowSpacingMm = 0, ColumnSpacingMm = 0 }
+        };
     }
 
     /// <inheritdoc />
-    /// @MX:NOTE Proto does not define GetCurrentImage. Returns default implementation.
-    public Task<ImageData?> GetCurrentImageAsync(string studyId, CancellationToken ct)
+    public async Task<ImageData?> GetCurrentImageAsync(string studyId, CancellationToken ct)
     {
-        _logger.LogWarning("gRPC proto does not define GetCurrentImage for {Service}.{Method}", nameof(IImageService), nameof(GetCurrentImageAsync));
-        return Task.FromResult<ImageData?>(null);
+        _logger.LogWarning("gRPC proto not yet defined for {Service}.{Method}", nameof(IImageService), nameof(GetCurrentImageAsync));
+        await Task.CompletedTask;
+        return null;
     }
 
     /// <inheritdoc />
-    /// @MX:NOTE Proto does not define ApplyWindowLevel. Returns completed task.
-    public Task ApplyWindowLevelAsync(string imageId, WindowLevel windowLevel, CancellationToken ct)
+    public async Task ApplyWindowLevelAsync(string imageId, WindowLevel windowLevel, CancellationToken ct)
     {
-        _logger.LogWarning("gRPC proto does not define ApplyWindowLevel for {Service}.{Method}", nameof(IImageService), nameof(ApplyWindowLevelAsync));
-        return Task.CompletedTask;
+        _logger.LogWarning("gRPC proto not yet defined for {Service}.{Method}", nameof(IImageService), nameof(ApplyWindowLevelAsync));
+        await Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    /// @MX:NOTE Proto does not define SetZoomPan. Returns completed task.
-    public Task SetZoomPanAsync(string imageId, ZoomPan zoomPan, CancellationToken ct)
+    public async Task SetZoomPanAsync(string imageId, ZoomPan zoomPan, CancellationToken ct)
     {
-        _logger.LogWarning("gRPC proto does not define SetZoomPan for {Service}.{Method}", nameof(IImageService), nameof(SetZoomPanAsync));
-        return Task.CompletedTask;
+        _logger.LogWarning("gRPC proto not yet defined for {Service}.{Method}", nameof(IImageService), nameof(SetZoomPanAsync));
+        await Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    /// @MX:NOTE Proto does not define SetOrientation. Returns completed task.
-    public Task SetOrientationAsync(string imageId, ImageOrientation orientation, CancellationToken ct)
+    public async Task SetOrientationAsync(string imageId, ImageOrientation orientation, CancellationToken ct)
     {
-        _logger.LogWarning("gRPC proto does not define SetOrientation for {Service}.{Method}", nameof(IImageService), nameof(SetOrientationAsync));
-        return Task.CompletedTask;
+        _logger.LogWarning("gRPC proto not yet defined for {Service}.{Method}", nameof(IImageService), nameof(SetOrientationAsync));
+        await Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    /// @MX:NOTE Proto does not define ApplyTransform. Returns completed task.
-    public Task ApplyTransformAsync(string imageId, ImageTransform transform, CancellationToken ct)
+    public async Task ApplyTransformAsync(string imageId, ImageTransform transform, CancellationToken ct)
     {
-        _logger.LogWarning("gRPC proto does not define ApplyTransform for {Service}.{Method}", nameof(IImageService), nameof(ApplyTransformAsync));
-        return Task.CompletedTask;
+        _logger.LogWarning("gRPC proto not yet defined for {Service}.{Method}", nameof(IImageService), nameof(ApplyTransformAsync));
+        await Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    /// @MX:NOTE Proto does not define ResetTransform. Returns completed task.
-    public Task ResetTransformAsync(string imageId, CancellationToken ct)
+    public async Task ResetTransformAsync(string imageId, CancellationToken ct)
     {
-        _logger.LogWarning("gRPC proto does not define ResetTransform for {Service}.{Method}", nameof(IImageService), nameof(ResetTransformAsync));
-        return Task.CompletedTask;
+        _logger.LogWarning("gRPC proto not yet defined for {Service}.{Method}", nameof(IImageService), nameof(ResetTransformAsync));
+        await Task.CompletedTask;
     }
 }

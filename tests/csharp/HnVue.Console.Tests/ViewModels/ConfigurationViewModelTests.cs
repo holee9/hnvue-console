@@ -75,7 +75,7 @@ public class ConfigurationViewModelTests : ViewModelTestBase
         // Arrange
         _mockUserService
             .Setup(s => s.GetCurrentUserRoleAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(UserRole.Supervisor);
+            .ReturnsAsync(UserRole.Administrator);
 
         _mockConfigService
             .Setup(s => s.GetConfigAsync(It.IsAny<CancellationToken>()))
@@ -89,14 +89,13 @@ public class ConfigurationViewModelTests : ViewModelTestBase
         await viewModel.InitializeAsync(TestCancellationToken);
 
         // Assert
-        Assert.Equal(UserRole.Supervisor, viewModel.CurrentUserRole);
+        Assert.Equal(UserRole.Administrator, viewModel.CurrentUserRole);
         Assert.NotNull(viewModel.Config);
     }
 
     [Theory]
-    [InlineData(UserRole.ServiceEngineer, true, true, true, true)]
-    [InlineData(UserRole.Supervisor, false, true, false, true)]
-    [InlineData(UserRole.Administrator, false, true, true, true)]
+    [InlineData(UserRole.Service, true, false, false, false)]
+    [InlineData(UserRole.Administrator, true, true, true, true)]
     [InlineData(UserRole.Operator, false, false, false, false)]
     public async Task Role_Based_Visibility_Works_Correctly(
         UserRole role,
@@ -167,7 +166,7 @@ public class ConfigurationViewModelTests : ViewModelTestBase
         // Arrange
         _mockUserService
             .Setup(s => s.GetCurrentUserRoleAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(UserRole.ServiceEngineer);
+            .ReturnsAsync(UserRole.Service);
 
         _mockConfigService
             .Setup(s => s.GetConfigAsync(It.IsAny<CancellationToken>()))

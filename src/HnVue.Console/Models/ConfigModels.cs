@@ -78,13 +78,34 @@ public record User
 
 /// <summary>
 /// User role enumeration.
+/// SPEC-SECURITY-001: FR-SEC-01 Role-Based Access Control (RBAC).
+/// Supports 7 roles as per medical device cybersecurity requirements.
 /// </summary>
 public enum UserRole
 {
-    Operator,
-    Supervisor,
+    /// <summary>Unspecified/Unknown role</summary>
+    Unspecified,
+
+    /// <summary>Full system access - can manage users, configuration, all operations</summary>
     Administrator,
-    ServiceEngineer
+
+    /// <summary>Physician/Radiologist - can sign reports, access patient data</summary>
+    Radiologist,
+
+    /// <summary>Radiologic Technologist - can perform exposures</summary>
+    Technologist,
+
+    /// <summary>Medical Physicist - can perform QC, manage equipment settings</summary>
+    Physicist,
+
+    /// <summary>Basic operator - limited operational access</summary>
+    Operator,
+
+    /// <summary>Read-only access - view data only, no modifications</summary>
+    Viewer,
+
+    /// <summary>Service/Maintenance engineer - calibration and maintenance</summary>
+    Service
 }
 
 /// <summary>

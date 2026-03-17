@@ -49,7 +49,6 @@
                                    VerticalAlignment="Center"
                                    Margin="{StaticResource SmallRightMargin}"/>
                         <DatePicker SelectedDate="{Binding FilterStartDate}"
-                                    Style="{StaticResource BaseComboBoxStyle}"
                                     Width="120"
                                     Margin="{StaticResource SmallRightMargin}"/>
                         <TextBlock Text="To:"
@@ -57,7 +56,6 @@
                                    VerticalAlignment="Center"
                                    Margin="{StaticResource SmallLeftRightMargin}"/>
                         <DatePicker SelectedDate="{Binding FilterEndDate}"
-                                    Style="{StaticResource BaseComboBoxStyle}"
                                     Width="120"/>
                     </StackPanel>
 
