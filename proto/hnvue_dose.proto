@@ -21,6 +21,9 @@ service DoseService {
 
   // Acknowledge a dose alert
   rpc AcknowledgeDoseAlert(AcknowledgeDoseAlertRequest) returns (AcknowledgeDoseAlertResponse);
+
+  // Reset cumulative dose for a study (SPEC-IPC-002: REQ-DOSE-006).
+  rpc ResetStudyDose(ResetStudyDoseRequest) returns (ResetStudyDoseResponse);
 }
 
 message RecordDoseRequest {
@@ -133,4 +136,15 @@ message AcknowledgeDoseAlertResponse {
   bool success = 1;
   IpcError error = 2;
   Timestamp response_timestamp = 3;
+}
+
+message ResetStudyDoseRequest {
+  string study_id = 1;
+  string reason = 2;
+}
+
+message ResetStudyDoseResponse {
+  bool success = 1;
+  string message = 2;
+  IpcError error = 3;
 }

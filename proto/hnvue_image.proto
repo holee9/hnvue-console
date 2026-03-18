@@ -10,6 +10,22 @@ service ImageService {
   // Stream image data after acquisition completes.
   // Core Engine initiates streaming; GUI subscribes.
   rpc SubscribeImageStream(ImageStreamRequest) returns (stream ImageChunk);
+
+  // Get a specific image by image ID (SPEC-IPC-002: REQ-IMG-002).
+  rpc GetImage(GetImageRequest) returns (GetImageResponse);
+}
+
+message GetImageRequest {
+  string image_id = 1;
+}
+
+message GetImageResponse {
+  bytes pixel_data = 1;
+  int32 width = 2;
+  int32 height = 3;
+  int32 bits_per_pixel = 4;
+  string image_id = 5;
+  IpcError error = 6;
 }
 
 message ImageStreamRequest {

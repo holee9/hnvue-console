@@ -171,6 +171,25 @@ public abstract class GrpcAdapterBase : IDisposable
     }
 
     /// <summary>
+    /// SPEC-IPC-002: REQ-INFRA-001 - Command RPC deadline (5 seconds).
+    /// </summary>
+    protected static readonly TimeSpan CommandDeadline = TimeSpan.FromSeconds(5);
+
+    /// <summary>
+    /// SPEC-IPC-002: REQ-INFRA-002 - Image streaming RPC deadline (30 seconds).
+    /// </summary>
+    protected static readonly TimeSpan ImageStreamDeadline = TimeSpan.FromSeconds(30);
+
+    /// <summary>
+    /// Creates CallOptions with the specified deadline.
+    /// SPEC-IPC-002: REQ-INFRA-001/002 - All gRPC calls must have deadlines.
+    /// </summary>
+    /// <param name="deadline">Timeout duration from now.</param>
+    /// <returns>CallOptions with deadline set to UtcNow + deadline.</returns>
+    protected static CallOptions CreateCallOptions(TimeSpan deadline) =>
+        new CallOptions(deadline: DateTime.UtcNow.Add(deadline));
+
+    /// <summary>
     /// @MX:NOTE Tests gRPC channel connectivity by making a lightweight health check.
     /// Returns true if server responds, false if unreachable or times out.
     /// </summary>
