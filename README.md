@@ -124,10 +124,36 @@ dotnet test --filter "FullyQualifiedName~ViewModels"
 
 # Python 테스트 (206개)
 $PYTHON -m pytest tests/ --ignore=tests/csharp --ignore=tests/e2e -q
-
-# E2E UI 자동화 테스트 (62개, Windows 전용)
-dotnet test tests/e2e/HnVue.Console.E2E.Tests/   # 62 tests (FlaUI UIA3)
 ```
+
+### E2E 실증 동작검증 (Proof-of-Operation Verification)
+
+WPF 앱을 **실제 실행**하여 UI 자동 클릭으로 기능 구현을 검증합니다.
+gRPC 서버 없이도 동작 (Mock 서비스 자동 주입). 인터랙티브 Windows 세션 필요.
+
+```powershell
+# ★ 원스텝 검증 (빌드 + 전체 62개 E2E 테스트)
+.\scripts\e2e-verify.ps1 -Build
+
+# 빠른 재검증 (이미 빌드된 경우)
+.\scripts\e2e-verify.ps1
+
+# 특정 뷰만 검증
+.\scripts\e2e-verify.ps1 -Filter "ImageReview"
+.\scripts\e2e-verify.ps1 -Filter "Navigation"
+
+# 직접 실행 (상세 출력)
+dotnet test tests/e2e/HnVue.Console.E2E.Tests/ -c Debug
+```
+
+**검증 커버리지**: 9개 뷰 × 62 테스트케이스 (앱 시작 → 네비게이션 → 각 뷰 렌더링 → 핵심 UI 조작)
+
+| 검증 항목 | 방법 |
+|---------|------|
+| XAML 바인딩 크래시 감지 | 실제 앱 실행 후 뷰 탐색 |
+| 뷰 렌더링 완료 | 핵심 `AutomationId` 요소 존재 확인 |
+| 버튼/컨트롤 동작 | `InvokePattern.Invoke()` 포커스 독립 클릭 |
+| 실패 진단 | 자동 스크린샷 + UIA 트리 덤프 (`tests/e2e/screenshots/`) |
 
 **테스트 리포트**: [docs/test-reports/](docs/test-reports/)
 
@@ -426,4 +452,11 @@ Copyright © 2025 abyz-lab. All rights reserved.
 
 ---
 
-**문서 최종 업데이트**: 2026-03-18 (E2E 테스트 62/62 통과, SPEC 13/13 완료)
+### 2026-03-18: E2E 인프라 강화 (딥싱크 - system-emul-sim 교차 개선) ✅
+- `RequiresDesktopFact`: CI 환경에서 E2E 테스트 자동 스킵 (거짓 실패 방지)
+- `TreeDumper`: 테스트 실패 시 UIA 자동화 트리 텍스트 덤프 (디버거 없이 진단)
+- `WaitHelper`: 독립 유틸리티 클래스 + `HNVUE_E2E_TIMEOUT_MS` 환경변수 오버라이드
+- `RecordTestPassed()`: 실패 테스트에만 자동 스크린샷 캡처
+- `scripts/e2e-verify.ps1`: 원스텝 실증 동작검증 스크립트
+
+**문서 최종 업데이트**: 2026-03-18 (E2E 인프라 강화 + 원스텝 검증 스크립트)
