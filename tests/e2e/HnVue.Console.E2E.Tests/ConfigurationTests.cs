@@ -27,7 +27,7 @@ public class ConfigurationTests : TestBase, IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "Configuration")]
     public async Task Configuration_View_Has_Header()
@@ -40,7 +40,7 @@ public class ConfigurationTests : TestBase, IAsyncLifetime
         header.Should().NotBeNull("System Configuration header should be displayed");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "Configuration")]
     public async Task Configuration_View_Has_User_Role_Display()
@@ -53,7 +53,7 @@ public class ConfigurationTests : TestBase, IAsyncLifetime
         roleText.Should().NotBeNull("Current Role display should be visible");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "Configuration")]
     public async Task Configuration_View_Has_TabControl()
@@ -78,7 +78,7 @@ public class ConfigurationTests : TestBase, IAsyncLifetime
         hasTab.Should().BeTrue("configuration view should have tab sections (Calibration, Network, etc.)");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "Configuration")]
     public async Task Configuration_View_Has_Save_Button()
@@ -91,7 +91,7 @@ public class ConfigurationTests : TestBase, IAsyncLifetime
         saveButton.Should().NotBeNull("Save button should exist in Configuration view");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "Configuration")]
     public async Task Configuration_View_Has_Refresh_Button()

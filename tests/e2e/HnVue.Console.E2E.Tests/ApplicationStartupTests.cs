@@ -28,7 +28,7 @@ public class ApplicationStartupTests : TestBase, IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "ApplicationLaunch")]
     public void Application_Starts_And_Shows_Main_Window()
@@ -47,7 +47,7 @@ public class ApplicationStartupTests : TestBase, IAsyncLifetime
         MainWindow.Title.Should().Be("HnVue Console", "window title should match");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "ApplicationLaunch")]
     public void Main_Window_Has_Navigation_Bar()
@@ -87,7 +87,7 @@ public class ApplicationStartupTests : TestBase, IAsyncLifetime
         auditLogButton.Should().NotBeNull("Audit Log navigation button should exist");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "ApplicationLaunch")]
     public void Main_Window_Has_Status_Bar()
@@ -102,7 +102,7 @@ public class ApplicationStartupTests : TestBase, IAsyncLifetime
         statusBarText.Should().NotBeNull("status bar should show patient info");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "ApplicationLaunch")]
     public void Main_Window_Has_Locale_Selector()
@@ -121,7 +121,7 @@ public class ApplicationStartupTests : TestBase, IAsyncLifetime
         comboBoxes.Should().NotBeEmpty("locale selector combo box should exist");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "ApplicationLaunch")]
     public void Main_Window_Default_View_Is_Patient_Management()

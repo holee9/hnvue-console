@@ -19,6 +19,7 @@ public abstract class TestBase : IDisposable
     private Window? _mainWindow;
     private bool _disposed;
     private E2ELogger? _logger;
+    private bool _testPassed;
 
     /// <summary>
     /// Gets the main window of the application.
@@ -394,6 +395,13 @@ public abstract class TestBase : IDisposable
     }
 
     /// <summary>
+    /// Marks the current test as passed. When called, Dispose skips auto-screenshot and tree dump.
+    /// When NOT called (e.g., test throws), Dispose captures screenshot and UIA tree for diagnosis.
+    /// Pattern: call RecordTestPassed() as the last line of each passing test method.
+    /// </summary>
+    protected void RecordTestPassed() => _testPassed = true;
+
+    /// <summary>
     /// Logs an assertion result.
     /// </summary>
     protected void LogAssertion(string description, bool passed, string? expected = null, string? actual = null)
@@ -429,6 +437,22 @@ public abstract class TestBase : IDisposable
         if (!_disposed)
         {
             _disposed = true;
+
+            // Auto-capture screenshot + tree dump on test failure for diagnosis.
+            // Mirrors system-emul-sim E2ETestBase TAG-004 pattern.
+            if (!_testPassed && _mainWindow != null)
+            {
+                try
+                {
+                    CaptureScreenshot("AutoFailure", "test_failed");
+                    var treeDump = TreeDumper.Dump(_mainWindow);
+                    _logger?.LogInfo($"[Auto-Failure] UIA Tree Dump:\n{treeDump}");
+                }
+                catch
+                {
+                    // Diagnostic failures must not mask the real test failure
+                }
+            }
 
             _logger?.LogInfo("Disposing test resources...");
 

@@ -32,7 +32,7 @@ public class WorklistTests : TestBase, IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "Worklist")]
     public async Task Worklist_View_Has_Refresh_Button()
@@ -47,7 +47,7 @@ public class WorklistTests : TestBase, IAsyncLifetime
         refreshButton.Should().NotBeNull("Refresh button should exist in Worklist view");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "Worklist")]
     public async Task Worklist_View_Has_Procedure_DataGrid()
@@ -68,7 +68,7 @@ public class WorklistTests : TestBase, IAsyncLifetime
         hasDataGrid.Should().BeTrue("worklist DataGrid/Table should exist");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "Worklist")]
     public async Task Worklist_View_Has_Status_Bar()
@@ -81,7 +81,7 @@ public class WorklistTests : TestBase, IAsyncLifetime
         proceduresText.Should().NotBeNull("status bar should show procedure count");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "Worklist")]
     public async Task Refresh_Button_Is_Clickable()
@@ -99,7 +99,7 @@ public class WorklistTests : TestBase, IAsyncLifetime
         Wait.UntilInputIsProcessed();
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "Worklist")]
     public async Task Worklist_DataGrid_Has_Expected_Columns()

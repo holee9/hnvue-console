@@ -27,7 +27,7 @@ public class AcquisitionTests : TestBase, IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "Acquisition")]
     public async Task Acquisition_View_Has_Header()
@@ -40,7 +40,7 @@ public class AcquisitionTests : TestBase, IAsyncLifetime
         header.Should().NotBeNull("Acquisition view header should be displayed");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "Acquisition")]
     public async Task Acquisition_View_Has_Start_Preview_Button()
@@ -53,7 +53,7 @@ public class AcquisitionTests : TestBase, IAsyncLifetime
         startButton.Should().NotBeNull("Start Preview button should exist");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "Acquisition")]
     public async Task Acquisition_View_Has_Stop_Preview_Button()
@@ -66,7 +66,7 @@ public class AcquisitionTests : TestBase, IAsyncLifetime
         stopButton.Should().NotBeNull("Stop Preview button should exist");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "Acquisition")]
     public async Task Acquisition_View_Has_Trigger_Exposure_Button()
@@ -79,7 +79,7 @@ public class AcquisitionTests : TestBase, IAsyncLifetime
         triggerButton.Should().NotBeNull("TRIGGER EXPOSURE button should exist");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "Acquisition")]
     public async Task Acquisition_View_Has_AEC_Control_Panel()
@@ -92,7 +92,7 @@ public class AcquisitionTests : TestBase, IAsyncLifetime
         aecPanel.Should().NotBeNull("AEC Control panel should be visible");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "Acquisition")]
     public async Task Acquisition_View_Has_Protocol_Selection_Panel()
@@ -105,7 +105,7 @@ public class AcquisitionTests : TestBase, IAsyncLifetime
         protocolPanel.Should().NotBeNull("Protocol selection panel should be visible");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "Acquisition")]
     public async Task Acquisition_View_Has_No_Preview_Indicator()
@@ -119,7 +119,7 @@ public class AcquisitionTests : TestBase, IAsyncLifetime
         noPreviewText.Should().NotBeNull("No Preview indicator should be visible when preview is not active");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "Acquisition")]
     public async Task Start_Preview_Button_Is_Clickable()

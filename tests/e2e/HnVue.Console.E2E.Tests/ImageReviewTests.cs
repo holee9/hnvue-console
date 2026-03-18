@@ -27,7 +27,7 @@ public class ImageReviewTests : TestBase, IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "ImageReview")]
     public async Task Diagnostic_Dump_UI_State()
@@ -50,7 +50,7 @@ public class ImageReviewTests : TestBase, IAsyncLifetime
         Assert.True(true); // Always pass - diagnostic only
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "ImageReview")]
     public async Task ImageReview_View_Has_Header()
@@ -63,7 +63,7 @@ public class ImageReviewTests : TestBase, IAsyncLifetime
         header.Should().NotBeNull("Image Review header should be displayed");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "ImageReview")]
     public async Task ImageReview_View_Has_Measurement_Tools_Panel()
@@ -76,7 +76,7 @@ public class ImageReviewTests : TestBase, IAsyncLifetime
         measurementPanel.Should().NotBeNull("Measurement Tools panel should be visible");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "ImageReview")]
     public async Task ImageReview_View_Has_QC_Panel()
@@ -89,7 +89,7 @@ public class ImageReviewTests : TestBase, IAsyncLifetime
         qcPanel.Should().NotBeNull("Quality Control panel should be visible");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "ImageReview")]
     public async Task ImageReview_View_Has_Distance_Tool_Button()
@@ -102,7 +102,7 @@ public class ImageReviewTests : TestBase, IAsyncLifetime
         distanceButton.Should().NotBeNull("Distance tool button should exist");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "ImageReview")]
     public async Task ImageReview_View_Has_Angle_Tool_Button()
@@ -115,7 +115,7 @@ public class ImageReviewTests : TestBase, IAsyncLifetime
         angleButton.Should().NotBeNull("Angle tool button should exist");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "ImageReview")]
     public async Task ImageReview_View_Has_Cobb_Angle_Tool_Button()
@@ -128,7 +128,7 @@ public class ImageReviewTests : TestBase, IAsyncLifetime
         cobbButton.Should().NotBeNull("Cobb Angle tool button should exist");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "ImageReview")]
     public async Task ImageReview_View_Has_Annotation_Tool_Button()
@@ -141,7 +141,7 @@ public class ImageReviewTests : TestBase, IAsyncLifetime
         annotationButton.Should().NotBeNull("Annotation tool button should exist");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "ImageReview")]
     public async Task ImageReview_View_Has_Accept_Image_Button()
@@ -154,7 +154,7 @@ public class ImageReviewTests : TestBase, IAsyncLifetime
         acceptButton.Should().NotBeNull("Accept Image button should exist in QC panel");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "ImageReview")]
     public async Task ImageReview_View_Has_Reject_Image_Button()
@@ -167,7 +167,7 @@ public class ImageReviewTests : TestBase, IAsyncLifetime
         rejectButton.Should().NotBeNull("Reject Image button should exist in QC panel");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "ImageReview")]
     public async Task ImageReview_View_Has_Reprocess_Button()
@@ -180,7 +180,7 @@ public class ImageReviewTests : TestBase, IAsyncLifetime
         reprocessButton.Should().NotBeNull("Request Reprocess button should exist in QC panel");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "ImageReview")]
     public async Task Distance_Tool_Button_Is_Clickable()

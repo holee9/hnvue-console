@@ -22,7 +22,7 @@ public class LocaleSelectionTests : TestBase, IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "LocaleSelection")]
     public void Locale_ComboBox_Exists_In_Status_Bar()
@@ -34,7 +34,7 @@ public class LocaleSelectionTests : TestBase, IAsyncLifetime
         localeComboBox.Should().NotBeNull("locale selector combo box should exist");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "LocaleSelection")]
     public void Locale_ComboBox_Has_Korean_And_English_Options()
@@ -55,7 +55,7 @@ public class LocaleSelectionTests : TestBase, IAsyncLifetime
         comboBox.Collapse();
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "LocaleSelection")]
     public void Locale_Can_Be_Changed_To_English()
@@ -79,7 +79,7 @@ public class LocaleSelectionTests : TestBase, IAsyncLifetime
         }
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "LocaleSelection")]
     public void Locale_Default_Is_Korean()

@@ -27,7 +27,7 @@ public class AuditLogTests : TestBase, IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "AuditLog")]
     public async Task AuditLog_View_Has_Header()
@@ -40,7 +40,7 @@ public class AuditLogTests : TestBase, IAsyncLifetime
         header.Should().NotBeNull("Audit Log header should be displayed");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "AuditLog")]
     public async Task AuditLog_View_Has_Date_Filter_From()
@@ -53,7 +53,7 @@ public class AuditLogTests : TestBase, IAsyncLifetime
         fromLabel.Should().NotBeNull("Date filter 'From:' label should be visible");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "AuditLog")]
     public async Task AuditLog_View_Has_Search_Button()
@@ -66,7 +66,7 @@ public class AuditLogTests : TestBase, IAsyncLifetime
         searchButton.Should().NotBeNull("Search button should exist in Audit Log view");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "AuditLog")]
     public async Task AuditLog_View_Has_Export_Button()
@@ -79,7 +79,7 @@ public class AuditLogTests : TestBase, IAsyncLifetime
         exportButton.Should().NotBeNull("Export button should exist in Audit Log view");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "AuditLog")]
     public async Task AuditLog_View_Has_Log_DataGrid()
@@ -95,7 +95,7 @@ public class AuditLogTests : TestBase, IAsyncLifetime
         hasGrid.Should().BeTrue("audit log DataGrid should be visible");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "AuditLog")]
     public async Task AuditLog_View_Has_Pagination_Controls()
@@ -117,7 +117,7 @@ public class AuditLogTests : TestBase, IAsyncLifetime
         hasPagination.Should().BeTrue("pagination controls should exist in Audit Log view");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "AuditLog")]
     public async Task Search_Button_Is_Clickable()

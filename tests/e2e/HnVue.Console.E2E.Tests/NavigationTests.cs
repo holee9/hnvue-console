@@ -30,7 +30,7 @@ public class NavigationTests : TestBase, IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "Navigation")]
     public async Task Navigate_To_Patient_View()
@@ -55,7 +55,7 @@ public class NavigationTests : TestBase, IAsyncLifetime
         patientHeader.Should().NotBeNull("Patient Management view should be displayed");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "Navigation")]
     public async Task Navigate_To_Worklist_View()
@@ -80,7 +80,7 @@ public class NavigationTests : TestBase, IAsyncLifetime
         worklistHeader.Should().NotBeNull("Modality Worklist view should be displayed");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "Navigation")]
     public async Task Navigate_To_System_Status_View()
@@ -105,7 +105,7 @@ public class NavigationTests : TestBase, IAsyncLifetime
         statusHeader.Should().NotBeNull("System Status view should be displayed");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "Navigation")]
     public async Task Navigate_To_Configuration_View()
@@ -130,7 +130,7 @@ public class NavigationTests : TestBase, IAsyncLifetime
         configHeader.Should().NotBeNull("System Configuration view should be displayed");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "Navigation")]
     public async Task Navigate_To_Audit_Log_View()
@@ -155,7 +155,7 @@ public class NavigationTests : TestBase, IAsyncLifetime
         auditLogHeader.Should().NotBeNull("Audit Log view should be displayed");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "Navigation")]
     public async Task Navigate_Between_Multiple_Views_Sequentially()

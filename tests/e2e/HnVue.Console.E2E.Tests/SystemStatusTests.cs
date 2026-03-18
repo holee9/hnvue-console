@@ -27,7 +27,7 @@ public class SystemStatusTests : TestBase, IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "SystemStatus")]
     public async Task SystemStatus_View_Has_Header()
@@ -40,7 +40,7 @@ public class SystemStatusTests : TestBase, IAsyncLifetime
         header.Should().NotBeNull("System Status header should be displayed");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "SystemStatus")]
     public async Task SystemStatus_View_Has_System_Health_Indicator()
@@ -53,7 +53,7 @@ public class SystemStatusTests : TestBase, IAsyncLifetime
         healthText.Should().NotBeNull("System Health indicator should be visible");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "SystemStatus")]
     public async Task SystemStatus_View_Has_Refresh_Button()
@@ -66,7 +66,7 @@ public class SystemStatusTests : TestBase, IAsyncLifetime
         refreshButton.Should().NotBeNull("Refresh button should exist in System Status view");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "SystemStatus")]
     public async Task SystemStatus_View_Has_Components_Count()
@@ -79,7 +79,7 @@ public class SystemStatusTests : TestBase, IAsyncLifetime
         componentsText.Should().NotBeNull("Components count should be visible in status bar");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "SystemStatus")]
     public async Task Refresh_Button_Is_Clickable()

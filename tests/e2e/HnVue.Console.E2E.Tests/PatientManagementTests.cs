@@ -33,7 +33,7 @@ public class PatientManagementTests : TestBase, IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "PatientManagement")]
     public async Task Patient_View_Has_Search_Controls()
@@ -57,7 +57,7 @@ public class PatientManagementTests : TestBase, IAsyncLifetime
         emergencyButton.Should().NotBeNull("Emergency button should exist");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "PatientManagement")]
     public async Task Patient_View_Has_DataGrid()
@@ -76,7 +76,7 @@ public class PatientManagementTests : TestBase, IAsyncLifetime
         hasDataGrid.Should().BeTrue("patient list DataGrid/Table should exist");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "PatientManagement")]
     public async Task Search_TextBox_Accepts_Input()
@@ -95,7 +95,7 @@ public class PatientManagementTests : TestBase, IAsyncLifetime
         searchTextBox.AsTextBox().Text.Should().Be("Test Patient");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "PatientManagement")]
     public async Task Emergency_Button_Creates_Emergency_Patient()
@@ -117,7 +117,7 @@ public class PatientManagementTests : TestBase, IAsyncLifetime
         worklistHeader.Should().NotBeNull("should navigate to Worklist after emergency registration");
     }
 
-    [Fact]
+    [RequiresDesktopFact]
     [Trait("Category", "E2E")]
     [Trait("UserJourney", "PatientManagement")]
     public async Task Patient_Status_Bar_Shows_Count()
