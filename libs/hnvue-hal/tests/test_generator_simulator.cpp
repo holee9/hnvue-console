@@ -834,3 +834,137 @@ TEST_F(GeneratorSimulatorTest, CallbackInvocationThreadSafe) {
 
     EXPECT_GT(count, 0);
 }
+
+// =============================================================================
+// Decision Coverage Gap Tests (IEC 62304 Class C — 100% decision coverage)
+// =============================================================================
+
+/**
+ * @test ValidateParams: empty focus string accepted when dual-focus hardware present
+ * Covers: has_dual_focus==true && focus.empty() → dual-focus branch NOT entered (valid)
+ */
+TEST_F(GeneratorSimulatorTest, ValidateParams_EmptyFocusAcceptedWithDualFocusHardware) {
+    ExposureParams params;
+    params.kvp = 80.0f;
+    params.ma = 100.0f;
+    params.ms = 100.0f;
+    params.focus = "";  // empty → dual-focus check skipped
+
+    EXPECT_TRUE(simulator_->SetExposureParams(params));
+}
+
+/**
+ * @test ValidateParams: focus validation skipped when has_dual_focus == false
+ * Covers: has_dual_focus==false branch in ValidateParams
+ */
+TEST(GeneratorSimulatorNoDualFocusTest, ValidateParams_FocusValidationSkippedWhenNoDualFocus) {
+    SimulatorConfig config;
+    config.has_dual_focus = false;
+    GeneratorSimulator sim(config);
+
+    ExposureParams params;
+    params.kvp = 80.0f;
+    params.ma = 100.0f;
+    params.ms = 100.0f;
+    params.focus = "any_value";  // any focus accepted when no dual focus
+
+    // Should succeed — focus validation only runs when has_dual_focus == true
+    EXPECT_TRUE(sim.SetExposureParams(params));
+}
+
+/**
+ * @test ValidateParams: AEC_AUTO mode rejected when hardware has no AEC
+ * Covers: aec_mode == AEC_AUTO && !has_aec branch → return false
+ */
+TEST(GeneratorSimulatorNoAecTest, ValidateParams_AecAutoRejectedWhenNoAecHardware) {
+    SimulatorConfig config;
+    config.has_aec = false;
+    GeneratorSimulator sim(config);
+
+    ExposureParams params;
+    params.kvp = 80.0f;
+    params.ma = 100.0f;
+    params.ms = 100.0f;
+    params.aec_mode = AecMode::AEC_AUTO;  // AEC requested but not available
+
+    EXPECT_FALSE(sim.SetExposureParams(params));
+}
+
+/**
+ * @test SetExposureParams: state stays READY when called again in READY state
+ * Covers: state_.load() == GEN_IDLE branch → false (already READY → no re-transition)
+ */
+TEST_F(GeneratorSimulatorTest, SetExposureParams_DoesNotResetStateIfAlreadyReady) {
+    ExposureParams params;
+    params.kvp = 80.0f;
+    params.ma = 100.0f;
+    params.ms = 100.0f;
+
+    // First call: IDLE → READY
+    ASSERT_TRUE(simulator_->SetExposureParams(params));
+    ASSERT_EQ(simulator_->GetStatus().state, GeneratorState::GEN_READY);
+
+    // Second call: already READY → stays READY (no IDLE branch entered)
+    params.kvp = 90.0f;
+    EXPECT_TRUE(simulator_->SetExposureParams(params));
+    EXPECT_EQ(simulator_->GetStatus().state, GeneratorState::GEN_READY);
+}
+
+/**
+ * @test AbortExposure while in ARMED state returns to IDLE
+ * Covers: current_state == GEN_ARMED branch in AbortExposure
+ * Uses long response_latency to catch simulator in ARMED state.
+ */
+TEST(GeneratorSimulatorArmedAbortTest, AbortExposure_DuringArmedState_ReturnsToIdle) {
+    // Use a 500ms arm latency to hold the simulator in ARMED long enough to abort.
+    SimulatorConfig config;
+    config.response_latency = std::chrono::microseconds(500000);  // 500ms
+    GeneratorSimulator sim(config);
+
+    ExposureParams params;
+    params.kvp = 80.0f;
+    params.ma = 100.0f;
+    params.ms = 5000.0f;
+
+    ASSERT_TRUE(sim.SetExposureParams(params));
+
+    // StartExposure transitions READY→ARMED then sleeps 500ms — launch in background
+    std::thread start_thread([&sim]() {
+        sim.StartExposure();
+    });
+
+    // Give the simulator time to enter ARMED state
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+    // Abort while ARMED or EXPOSING
+    sim.AbortExposure();
+
+    if (start_thread.joinable()) {
+        start_thread.join();
+    }
+
+    // After abort state must be IDLE
+    EXPECT_EQ(sim.GetStatus().state, GeneratorState::GEN_IDLE);
+}
+
+/**
+ * @test StartExposure rejected when state is not READY (e.g., already EXPOSING)
+ * Covers: current_state != GEN_READY branch in StartExposure
+ */
+TEST_F(GeneratorSimulatorTest, StartExposure_RejectsWhenAlreadyExposing) {
+    ExposureParams params;
+    params.kvp = 80.0f;
+    params.ma = 100.0f;
+    params.ms = 2000.0f;
+
+    simulator_->SetExposureParams(params);
+    auto first = simulator_->StartExposure();
+    ASSERT_TRUE(first.success);
+
+    // Now simulator is EXPOSING — second StartExposure must fail
+    auto second = simulator_->StartExposure();
+    EXPECT_FALSE(second.success);
+    EXPECT_FALSE(second.error_msg.empty());
+
+    simulator_->AbortExposure();
+}
