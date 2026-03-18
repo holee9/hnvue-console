@@ -146,6 +146,14 @@ gRPC 서버 없이도 동작 (Mock 서비스 자동 주입). 인터랙티브 Win
 dotnet test tests/e2e/HnVue.Console.E2E.Tests/ -c Debug
 ```
 
+**Claude Code 자연어 명령** (CLAUDE.md Section 17 참조):
+
+| 입력 | 실행 |
+|------|------|
+| `e2e` | 전체 E2E 검증 (빌드 없음) |
+| `e2e build` | 빌드 후 전체 E2E 검증 |
+| `e2e filter:ImageReview` | ImageReview 뷰만 검증 |
+
 **검증 커버리지**: 9개 뷰 × 62 테스트케이스 (앱 시작 → 네비게이션 → 각 뷰 렌더링 → 핵심 UI 조작)
 
 | 검증 항목 | 방법 |
