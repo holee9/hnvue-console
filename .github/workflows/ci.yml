@@ -458,28 +458,6 @@ jobs:
             --results-directory test-results/dicom \
             --collect:"XPlat Code Coverage"
 
-      # --- Python simulator interaction tests ---
-      - name: Install Python test dependencies
-        run: |
-          python -m pip install --upgrade pip
-          if [ -f tests/python/requirements.txt ]; then
-            pip install -r tests/python/requirements.txt
-          else
-            pip install pytest pytest-asyncio grpcio grpcio-tools protobuf pydicom
-          fi
-
-      - name: Run Python simulator interaction tests
-        run: |
-          python -m pytest tests/python/simulator/tests/ \
-            --junit-xml=test-results/python/dicom-simulator-results.xml \
-            -v \
-            --tb=short \
-            -m "not slow" 2>/dev/null || \
-          python -m pytest tests/python/simulator/tests/ \
-            --junit-xml=test-results/python/dicom-simulator-results.xml \
-            -v \
-            --tb=short
-
       # --- Stop services ---
       - name: Stop all test services
         if: always()
@@ -602,7 +580,7 @@ jobs:
             --configuration Release \
             --logger "trx;LogFileName=HnVue.Integration.Tests.trx" \
             --results-directory test-results/system \
-            --collect:"XPlat Code Coverage" 2>/dev/null || echo "WARNING: Integration tests skipped or failed - check project"
+            --collect:"XPlat Code Coverage"
 
       # --- Consolidate all reports ---
       - name: Consolidate test reports

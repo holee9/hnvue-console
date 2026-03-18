@@ -167,8 +167,8 @@ All integration tests include regulatory traceability:
 | INT-002 | DRL Alerting Workflow | P0 | Complete | IDoseService |
 | INT-003 | RBAC Enforcement | P0 | Complete | IUserService |
 | INT-004 | Audit Trail Integrity | P0 | Complete | IAuditLogService |
-| INT-005 | PACS Communication Failure | P1 | Planned | IDicomService (requires Docker) |
-| INT-006 | gRPC IPC Connection Failure | P1 | Planned | IIpcService |
+| INT-005 | PACS Communication Failure | P1 | Active (Mock-based) | IImageService, IAuditLogService |
+| INT-006 | gRPC IPC Connection Failure | P1 | Active (Mock-based) | ISystemStatusService, IAuditLogService |
 | INT-007 | Worklist to MPPS Data Consistency | P1 | Planned | IWorklistService, IMppsService (requires Docker) |
 | INT-008 | Image Data Integrity Through Pipeline | P1 | Planned | IImageService, IDicomService (requires Docker) |
 | INT-009 | Concurrent Exposure and Dose Recording | P2 | Planned | IDoseService, IExposureService |
