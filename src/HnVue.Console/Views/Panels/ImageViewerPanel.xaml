@@ -104,8 +104,8 @@
                                Margin="{StaticResource MediumPadding}">
                             <Image.LayoutTransform>
                                 <!-- Apply orientation transform -->
-                                <MultiBinding Converter="{StaticResource OrientationTransformConverter}">
-                                    <Binding Path="Orientation"/>
+                                <MultiBinding Converter="{StaticResource OrientationTransformConverter}" Mode="OneWay">
+                                    <Binding Path="Orientation" Mode="OneWay"/>
                                     <Binding Path="Bitmap" Mode="OneTime"/>
                                 </MultiBinding>
                             </Image.LayoutTransform>
@@ -193,7 +193,7 @@
                     <TextBlock Grid.Column="2"
                                Margin="{StaticResource MediumLeftMargin}">
                         <Run Text="Orientation: " FontWeight="SemiBold"/>
-                        <Run Text="{Binding Orientation, Converter={StaticResource OrientationToStringConverter}}"/>
+                        <Run Text="{Binding Orientation, Converter={StaticResource OrientationToStringConverter}, Mode=OneWay}"/>
                     </TextBlock>
                 </Grid>
             </Border>

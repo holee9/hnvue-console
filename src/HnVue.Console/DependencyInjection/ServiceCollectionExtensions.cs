@@ -54,11 +54,14 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IUserService, UserServiceAdapter>();
         services.AddSingleton<INetworkService, NetworkServiceAdapter>();
 
-        // In E2E test mode use the in-memory mock to avoid gRPC TCP connection timeouts
-        // (OS default ~20 s) that delay AuditLogView rendering and cause the test to fail.
+        // In E2E test mode use in-memory mocks to avoid gRPC TCP connection timeouts
+        // (OS default ~20 s) that delay view rendering and cause tests to fail.
         if (isE2EMode)
         {
             services.AddSingleton<IAuditLogService, MockAuditLogService>();
+            services.AddSingleton<IImageService, MockImageService>();
+            services.AddSingleton<IQCService, MockQCService>();
+            services.AddSingleton<IUserService, MockUserService>();
         }
         else
         {

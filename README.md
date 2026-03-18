@@ -15,16 +15,17 @@
 - **통신**: gRPC IPC, DICOM 표준
 
 ### 현재 상태 (2026-03-18)
-- **SPEC 완료**: 11/13 (85%) ✅
-- **gRPC 어댑터**: ImageServiceAdapter + DoseServiceAdapter 실제 구현 완료 (SPEC-IPC-002) ✅
+- **SPEC 완료**: 13/13 (100%) ✅
+- **gRPC 어댑터**: 13개 전체 실제 구현 완료 ✅
 - **보안 구현**: WORM 저장소 Phase 1-3 + 인증/감사 보안 레이어 완료 ✅
 - **CI/CD**: SAST, DAST, SBOM, Dependency Scan 파이프라인 구축 ✅
-- **테스트 통과**: 1,451개 (C# 622+222+351+256), 206개 (Python) ✅
-  - HnVue.Console.Tests: 622 pass (+8, SPEC-IPC-002 deadline/audit 테스트 포함)
+- **테스트 통과**: 1,451개 (C#), 206개 (Python), **62개 (E2E)** ✅
+  - HnVue.Console.Tests: 622 pass
   - HnVue.Dose.Tests: 222 pass
   - HnVue.Workflow.Tests: 351 pass
   - HnVue.Dicom.Tests: 256 pass
   - Python (simulator/traceability/scripts/coverage_gates): 206 pass
+  - **E2E UI 자동화 테스트: 62/62 pass (전체 뷰 커버)** ✅
 - **빌드 상태**: 0 errors, acceptable warnings ✅
 
 ### SPEC 완료 목록
@@ -41,8 +42,8 @@
 | SPEC-UI-001 | WPF Console UI (MVVM) | B | ✅ 완료 |
 | SPEC-UI-002 | AsyncRelayCommand Improvements | B | ✅ 완료 |
 | SPEC-SECURITY-001 | 보안 인증 & WORM 저장소 | C | ✅ 완료 |
-| SPEC-INTEGRATION-001 | 통합 테스트 | B | 📋 계획 완료 |
-| SPEC-TEST-001 | Test Infrastructure | B | ✅ 완료 |
+| SPEC-INTEGRATION-001 | 통합 테스트 (INT-001~006) | B | ✅ 완료 |
+| SPEC-TEST-001 | Test Infrastructure + E2E 자동화 | B | ✅ 완료 |
 
 ---
 
@@ -109,7 +110,7 @@ dotnet build src/HnVue.Console/HnVue.Console.sln
 ### 테스트 실행
 
 ```powershell
-# C# 전체 테스트 (1,451개)
+# C# 전체 단위/통합 테스트 (1,451개)
 dotnet test
 
 # 개별 테스트 스위트
@@ -123,6 +124,9 @@ dotnet test --filter "FullyQualifiedName~ViewModels"
 
 # Python 테스트 (206개)
 $PYTHON -m pytest tests/ --ignore=tests/csharp --ignore=tests/e2e -q
+
+# E2E UI 자동화 테스트 (62개, Windows 전용)
+dotnet test tests/e2e/HnVue.Console.E2E.Tests/   # 62 tests (FlaUI UIA3)
 ```
 
 **테스트 리포트**: [docs/test-reports/](docs/test-reports/)
@@ -325,6 +329,36 @@ dotnet build
 
 ## 8. 최신 업데이트 (Recent Updates)
 
+### 2026-03-18: E2E UI 자동화 테스트 62/62 전체 통과 ✅
+
+WPF 애플리케이션의 실제 실행 환경에서 UI 자동화 클릭 테스트를 구현하고, 3개의 XAML 크래시 버그를 수정하여 모든 62개 E2E 테스트가 통과합니다.
+
+#### E2E 테스트 커버리지 (62개)
+
+| 뷰 | 테스트 수 | 검증 항목 |
+|----|---------|---------|
+| **Main Window** | 6 | 앱 실행, 네비게이션 바, 상태 바, 로케일 선택기, 기본 뷰 |
+| **Navigation** | 6 | Patient/Worklist/Status/Config/AuditLog 뷰 전환, 다중 순차 이동 |
+| **Patient View** | 5 | 검색 컨트롤, DataGrid, 검색 버튼, 텍스트 입력, 응급 환자 버튼, 상태 바 |
+| **Worklist View** | 4 | 새로고침, DataGrid, 상태 바, 컬럼 헤더 |
+| **Image Review** | 10 | 헤더, 측정 도구 패널, QC 패널, 거리/각도/Cobb/주석 버튼, 수용/거부/재처리 버튼 |
+| **Acquisition** | 7 | 헤더, AEC 패널, 프로토콜 선택, 미리보기 시작/중지, 촬영 트리거, 이미지 없음 표시 |
+| **System Status** | 5 | 헤더, 시스템 상태 인디케이터, 새로고침, 컴포넌트 수 |
+| **Configuration** | 5 | 헤더, 사용자 역할 표시, 탭 컨트롤, 저장, 새로고침 |
+| **Audit Log** | 6 | 헤더, 로그 DataGrid, 날짜 필터, 검색, 내보내기, 페이지네이션 |
+| **Locale** | 4 | 로케일 ComboBox, 한국어/영어 옵션, 영어 전환, 기본값 한국어 |
+
+#### E2E 테스트 기술 스택
+- **FlaUI.UIA3**: Windows UI Automation 기반 WPF 자동화
+- **InvokePattern**: 포커스 독립적 버튼 클릭 (MouseSimulator 대체)
+- **E2E 모드**: `HNVUE_E2E_TEST=1` 환경변수 → gRPC 어댑터를 Mock으로 교체
+- **로그**: `tests/e2e/e2e_logs/` 타임스탬프 기반 상세 실행 로그
+
+#### WPF XAML 버그 수정 (3건)
+1. **TwoWay 바인딩 크래시** (`ImageViewerPanel.xaml`): read-only `Orientation` 프로퍼티에 TwoWay 모드 적용 → `InvalidOperationException` → `Mode=OneWay` 추가
+2. **XamlParseException** (`QCActionPanel.xaml`): `{Binding Converter=...}` Path 누락 → `{Binding Path=., Mode=OneWay}` 수정
+3. **E2E 역할 폴백** (`ServiceCollectionExtensions.cs`): E2E 모드에서 `IUserService` 미목킹 → gRPC 실패 → Operator 역할 폴백 → 탭 숨김 → `MockUserService` 등록 추가
+
 ### 2026-03-18: SPEC-IPC-002 gRPC Adapter 실제 구현 완료 ✅
 - **ImageServiceAdapter**: `GetImage` RPC 구현 (5s deadline), `SubscribeImageStream` 청크 조립 → `ImageData` 반환
   - REQ-IMG-005: gRPC 실패 시 null/예외 반환 (빈 ImageData 반환 금지)
@@ -392,4 +426,4 @@ Copyright © 2025 abyz-lab. All rights reserved.
 
 ---
 
-**문서 최종 업데이트**: 2026-03-18
+**문서 최종 업데이트**: 2026-03-18 (E2E 테스트 62/62 통과, SPEC 13/13 완료)

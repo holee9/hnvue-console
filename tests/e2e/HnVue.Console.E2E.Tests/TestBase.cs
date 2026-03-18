@@ -253,6 +253,8 @@ public abstract class TestBase : IDisposable
 
     /// <summary>
     /// Clicks a button with logging.
+    /// Uses InvokePattern.Invoke() for WPF buttons to ensure focus-independent activation.
+    /// Falls back to mouse simulation if InvokePattern is not available.
     /// </summary>
     protected void ClickButton(Button button, string buttonName)
     {
@@ -260,10 +262,42 @@ public abstract class TestBase : IDisposable
         _logger?.LogClick(buttonName, automationId);
 
         var sw = Stopwatch.StartNew();
-        button.Click();
+        try
+        {
+            // InvokePattern is focus-independent and reliable for WPF Command bindings
+            button.Invoke();
+            _logger?.LogInfo($"Button invoked via InvokePattern in {sw.ElapsedMilliseconds:F0}ms");
+        }
+        catch (Exception)
+        {
+            // Fallback to mouse simulation if InvokePattern not available
+            _mainWindow?.SetForeground();
+            button.Click();
+            _logger?.LogInfo($"Button clicked via mouse simulation in {sw.ElapsedMilliseconds:F0}ms");
+        }
         sw.Stop();
 
-        _logger?.LogInfo($"Button clicked in {sw.ElapsedMilliseconds:F0}ms");
+        Wait.UntilInputIsProcessed();
+    }
+
+    /// <summary>
+    /// Invokes a navigation button using InvokePattern for reliable focus-independent activation.
+    /// </summary>
+    protected async Task InvokeNavigationButtonAsync(string automationId, string buttonName)
+    {
+        var button = await WaitForElementAsync(
+            () => FindButtonByAutomationId(automationId, buttonName),
+            TimeSpan.FromSeconds(5));
+
+        if (button == null)
+        {
+            _logger?.LogWarning($"Navigation button not found: {automationId}");
+            return;
+        }
+
+        _logger?.LogInfo($"Invoking navigation button: {automationId}");
+        ClickButton(button.AsButton(), buttonName);
+        await Task.Delay(1000); // Allow navigation and view rendering
         Wait.UntilInputIsProcessed();
     }
 

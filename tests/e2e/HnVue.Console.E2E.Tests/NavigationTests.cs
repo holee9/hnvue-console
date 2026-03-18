@@ -44,11 +44,9 @@ public class NavigationTests : TestBase, IAsyncLifetime
         LogAssertion("Patient button exists", patientButton != null);
         patientButton.Should().NotBeNull("Patient button should exist");
 
-        // Act - Click using AsButton conversion
+        // Act - use InvokePattern for focus-independent navigation
         Logger.LogNavigation("Unknown", "Patient View");
-        var button = patientButton!.AsButton();
-        button.Click();
-        Wait.UntilInputIsProcessed();
+        ClickButton(patientButton!.AsButton(), "NavigatePatientButton");
         await Task.Delay(800); // Allow navigation to complete and render
 
         // Assert - Use AutomationId for reliable finding
@@ -71,10 +69,9 @@ public class NavigationTests : TestBase, IAsyncLifetime
         LogAssertion("Worklist button exists", worklistButton != null);
         worklistButton.Should().NotBeNull("Worklist button should exist");
 
-        // Act
+        // Act - use InvokePattern for focus-independent navigation
         Logger.LogNavigation("Unknown", "Worklist View");
-        worklistButton!.AsButton().Click();
-        Wait.UntilInputIsProcessed();
+        ClickButton(worklistButton!.AsButton(), "NavigateWorklistButton");
         await Task.Delay(800);
 
         // Assert - Use AutomationId for reliable finding
@@ -97,10 +94,9 @@ public class NavigationTests : TestBase, IAsyncLifetime
         LogAssertion("Status button exists", statusButton != null);
         statusButton.Should().NotBeNull("Status button should exist");
 
-        // Act
+        // Act - use InvokePattern for focus-independent navigation
         Logger.LogNavigation("Unknown", "System Status View");
-        statusButton!.AsButton().Click();
-        Wait.UntilInputIsProcessed();
+        ClickButton(statusButton!.AsButton(), "NavigateStatusButton");
         await Task.Delay(800);
 
         // Assert - Use AutomationId for reliable finding
@@ -123,10 +119,9 @@ public class NavigationTests : TestBase, IAsyncLifetime
         LogAssertion("Config button exists", configButton != null);
         configButton.Should().NotBeNull("Config button should exist");
 
-        // Act
+        // Act - use InvokePattern for focus-independent navigation
         Logger.LogNavigation("Unknown", "Configuration View");
-        configButton!.AsButton().Click();
-        Wait.UntilInputIsProcessed();
+        ClickButton(configButton!.AsButton(), "NavigateConfigButton");
         await Task.Delay(800);
 
         // Assert - Use AutomationId for reliable finding
@@ -149,10 +144,9 @@ public class NavigationTests : TestBase, IAsyncLifetime
         LogAssertion("Audit Log button exists", auditLogButton != null);
         auditLogButton.Should().NotBeNull("Audit Log button should exist");
 
-        // Act
+        // Act - use InvokePattern for focus-independent navigation
         Logger.LogNavigation("Unknown", "Audit Log View");
-        auditLogButton!.AsButton().Click();
-        Wait.UntilInputIsProcessed();
+        ClickButton(auditLogButton!.AsButton(), "NavigateAuditLogButton");
         await Task.Delay(800);
 
         // Assert - Use AutomationId for reliable finding
@@ -175,8 +169,7 @@ public class NavigationTests : TestBase, IAsyncLifetime
         var patientButton = await WaitForElementAsync(
             () => FindButtonByAutomationId("NavigatePatientButton", "Patient"),
             TimeSpan.FromSeconds(5));
-        patientButton!.AsButton().Click();
-        Wait.UntilInputIsProcessed();
+        ClickButton(patientButton!.AsButton(), "NavigatePatientButton");
         await Task.Delay(600);
         var patientHeader = await WaitForElementAsync(() => FindElementByAutomationId("PatientViewHeader"), TimeSpan.FromSeconds(5));
         LogAssertion("Patient view displayed", patientHeader != null);
@@ -186,8 +179,7 @@ public class NavigationTests : TestBase, IAsyncLifetime
         var worklistButton = await WaitForElementAsync(
             () => FindButtonByAutomationId("NavigateWorklistButton", "Worklist"),
             TimeSpan.FromSeconds(5));
-        worklistButton!.AsButton().Click();
-        Wait.UntilInputIsProcessed();
+        ClickButton(worklistButton!.AsButton(), "NavigateWorklistButton");
         await Task.Delay(600);
         var worklistHeader = await WaitForElementAsync(() => FindElementByAutomationId("WorklistViewHeader"), TimeSpan.FromSeconds(5));
         LogAssertion("Worklist view displayed", worklistHeader != null);
@@ -197,8 +189,7 @@ public class NavigationTests : TestBase, IAsyncLifetime
         var statusButton = await WaitForElementAsync(
             () => FindButtonByAutomationId("NavigateStatusButton", "Status"),
             TimeSpan.FromSeconds(5));
-        statusButton!.AsButton().Click();
-        Wait.UntilInputIsProcessed();
+        ClickButton(statusButton!.AsButton(), "NavigateStatusButton");
         await Task.Delay(600);
         var statusHeader = await WaitForElementAsync(() => FindElementByAutomationId("SystemStatusViewHeader"), TimeSpan.FromSeconds(5));
         LogAssertion("System Status view displayed", statusHeader != null);
@@ -208,8 +199,7 @@ public class NavigationTests : TestBase, IAsyncLifetime
         patientButton = await WaitForElementAsync(
             () => FindButtonByAutomationId("NavigatePatientButton", "Patient"),
             TimeSpan.FromSeconds(5));
-        patientButton!.AsButton().Click();
-        Wait.UntilInputIsProcessed();
+        ClickButton(patientButton!.AsButton(), "NavigatePatientButton");
         await Task.Delay(600);
         patientHeader = await WaitForElementAsync(() => FindElementByAutomationId("PatientViewHeader"), TimeSpan.FromSeconds(5));
         LogAssertion("Patient view displayed again", patientHeader != null);

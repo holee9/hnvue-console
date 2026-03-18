@@ -99,7 +99,7 @@
                                     <DataTemplate>
                                         <TextBlock Margin="{StaticResource SmallLeftMargin}">
                                             <Run Text="• "/>
-                                            <Run Text="{Binding Converter={StaticResource RejectionReasonToStringConverter}}"/>
+                                            <Run Text="{Binding Path=., Converter={StaticResource RejectionReasonToStringConverter}, Mode=OneWay}"/>
                                         </TextBlock>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>

@@ -18,13 +18,8 @@ public class WorklistTests : TestBase, IAsyncLifetime
         // Wait for application to fully load
         await Task.Delay(1500);
 
-        // Navigate to Worklist view using AutomationId
-        var worklistButton = await WaitForElementAsync(
-            () => FindButtonByAutomationId("NavigateWorklistButton", "Worklist"),
-            TimeSpan.FromSeconds(5));
-        worklistButton?.Click();
-        await Task.Delay(800); // Allow navigation to complete
-        Wait.UntilInputIsProcessed();
+        // Navigate to Worklist view using InvokePattern for reliable focus-independent activation
+        await InvokeNavigationButtonAsync("NavigateWorklistButton", "Worklist");
 
         // Verify we are on the correct view
         var worklistHeader = await WaitForElementAsync(() => FindTextBlockContaining("Modality Worklist"), TimeSpan.FromSeconds(3));
