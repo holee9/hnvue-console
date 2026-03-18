@@ -109,17 +109,20 @@ dotnet build src/HnVue.Console/HnVue.Console.sln
 ### 테스트 실행
 
 ```powershell
-# 전체 테스트 (1,048개)
+# C# 전체 테스트 (1,451개)
 dotnet test
 
 # 개별 테스트 스위트
-dotnet test tests/csharp/HnVue.Workflow.Tests/
-dotnet test tests/csharp/HnVue.Dose.Tests/
-dotnet test tests/csharp/HnVue.Dicom.Tests/
-dotnet test tests/csharp/HnVue.Console.Tests/
+dotnet test tests/csharp/HnVue.Workflow.Tests/    # 351 tests
+dotnet test tests/csharp/HnVue.Dose.Tests/        # 222 tests
+dotnet test tests/csharp/HnVue.Dicom.Tests/       # 256 tests
+dotnet test tests/csharp/HnVue.Console.Tests/     # 622 tests (gRPC Adapter + Security + UI)
 
 # ViewModel 테스트만 필터링
 dotnet test --filter "FullyQualifiedName~ViewModels"
+
+# Python 테스트 (206개)
+$PYTHON -m pytest tests/ --ignore=tests/csharp --ignore=tests/e2e -q
 ```
 
 **테스트 리포트**: [docs/test-reports/](docs/test-reports/)
@@ -140,7 +143,7 @@ dotnet run --project src/HnVue.Console/HnVue.Console.csproj
 
 - **WPF MVVM 애플리케이션** (C#/.NET 8)
   - 16개 ViewModels, 10+ Views
-  - gRPC 어댑터 13개
+  - gRPC 어댑터 13개 (전체 실제 구현 완료)
   - 의존성 주입 및 서비스 계층
 
 - **Workflow 엔진** (C#/.NET 8)
@@ -189,6 +192,8 @@ dotnet run --project src/HnVue.Console/HnVue.Console.csproj
 | SPEC-WORKFLOW-001 | X-ray exposure control | **Class C** |
 | SPEC-HAL-001 | Hardware abstraction | **Class C** |
 | SPEC-IPC-001 | IPC for exposure control | **Class C** |
+| SPEC-IPC-002 | gRPC Adapter (Dose=Class C) | **Class B/C** |
+| SPEC-SECURITY-001 | 보안 인증 & 감사 로그 | **Class C** |
 | SPEC-DOSE-001 | Dose monitoring/display | **Class B** |
 | SPEC-DICOM-001 | DICOM communication | **Class B** |
 | SPEC-UI-001 | User interface | **Class B** |
@@ -227,10 +232,11 @@ dotnet run --project src/HnVue.Console/HnVue.Console.csproj
 
 ### 플랫폼 지원
 **✅ Windows 전용 개발 환경**
+- HnVue.Console.Tests (622 tests - gRPC Adapter, Security, ViewModels)
 - Workflow Engine (351 tests)
 - Dose Management (222 tests)
 - DICOM Services (256 tests)
-- ViewModels (219 tests)
+- Python: Simulator/RTM/Scripts/Coverage Gates (206 tests)
 - WPF GUI 및 하드웨어 드라이버 통합
 
 ---
@@ -303,11 +309,13 @@ dotnet build
 - **어댑터 감사**: [docs/adapter-audit.md](docs/adapter-audit.md)
 
 ### SPEC 문서
+- [SPEC-IPC-001](.moai/specs/SPEC-IPC-001/spec.md): Inter-Process Communication (gRPC 기반 아키텍처)
+- [SPEC-IPC-002](.moai/specs/SPEC-IPC-002/spec.md): gRPC Adapter 구현 (Image+Dose+Audit, IEC 62304 Class B/C)
 - [SPEC-UI-001](.moai/specs/SPEC-UI-001/spec.md): GUI Console User Interface
 - [SPEC-DOSE-001](.moai/specs/SPEC-DOSE-001/spec.md): Radiation Dose Management
 - [SPEC-WORKFLOW-001](.moai/specs/SPEC-WORKFLOW-001/spec.md): Clinical Workflow Engine
-- [SPEC-IPC-001](.moai/specs/SPEC-IPC-001/spec.md): Inter-Process Communication
 - [SPEC-DICOM-001](.moai/specs/SPEC-DICOM-001/spec.md): DICOM Communication Services
+- [SPEC-SECURITY-001](.moai/specs/SPEC-SECURITY-001/spec.md): 보안 인증 & WORM 저장소
 
 ### 참고 문서
 - [연구 보고서](docs/xray-console-sw-research.md)
@@ -316,6 +324,18 @@ dotnet build
 ---
 
 ## 8. 최신 업데이트 (Recent Updates)
+
+### 2026-03-18: SPEC-IPC-002 gRPC Adapter 실제 구현 완료 ✅
+- **ImageServiceAdapter**: `GetImage` RPC 구현 (5s deadline), `SubscribeImageStream` 청크 조립 → `ImageData` 반환
+  - REQ-IMG-005: gRPC 실패 시 null/예외 반환 (빈 ImageData 반환 금지)
+- **DoseServiceAdapter (IEC 62304 Class C)**: `GetDoseSummary` + `ConfigService` 연동, 안전 fail-safe 적용
+  - REQ-DOSE-007: `GetCurrentDoseDisplayAsync` 실패 시 예외 전파 (0 반환 절대 금지)
+  - REQ-DOSE-008: AlertThreshold 기본값 warning=50mGy / error=100mGy (보수적 값)
+  - `IAuditLogService` 주입: SetAlertThreshold 변경 전/후 값 감사 로그
+- **GrpcAdapterBase**: deadline 정책 추가 (Command=5s, ImageStream=30s, AlertStream=무제한)
+- **AECServiceAdapter**: `IAuditLogService` 주입, EnableAEC/DisableAEC 감사 로그 (fire-and-forget)
+- **Proto 확장**: `hnvue_image.proto`에 `GetImage`, `hnvue_dose.proto`에 `ResetStudyDose` RPC 추가
+- **테스트**: HnVue.Console.Tests 614 → **622** pass (+8: GrpcAdapterBaseDeadlineTests 4, AECServiceAdapterAuditTests 4)
 
 ### 2026-03-16: 보안 레이어 강화 및 CI/CD 파이프라인 구축 ✅
 - **SecurityValidator**: 입력 값 검증, SQL Injection/XSS 방지 (OWASP Top 10 준수)
@@ -372,4 +392,4 @@ Copyright © 2025 abyz-lab. All rights reserved.
 
 ---
 
-**문서 최종 업데이트**: 2026-03-16
+**문서 최종 업데이트**: 2026-03-18
