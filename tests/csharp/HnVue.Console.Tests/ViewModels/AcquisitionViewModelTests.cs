@@ -355,12 +355,14 @@ public class AcquisitionViewModelTests : ViewModelTestBase
     // --- AEC State Changes ---
 
     [Fact]
-    public void AEC_State_Change_Subscribes_To_AEC_Service()
+    public async Task AEC_State_Change_Subscribes_To_AEC_Service()
     {
-        // The AEC subscription is set up in constructor
+        // The AEC subscription is set up in constructor via Task.Run (background).
         var vm = CreateViewModel();
 
-        // Verify that the AEC service subscription was called during construction
+        // Allow the background Task.Run to schedule and invoke the subscription.
+        await Task.Delay(200);
+
         _mockAecService.Verify(s => s.SubscribeAECStateChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -521,10 +523,13 @@ public class AcquisitionViewModelTests : ViewModelTestBase
     // --- Additional Property Tests ---
 
     [Fact]
-    public void Constructor_Subscribes_To_AEC_Service()
+    public async Task Constructor_Subscribes_To_AEC_Service()
     {
-        // AEC service subscription happens during constructor
+        // AEC service subscription happens during constructor via Task.Run (background).
         var vm = CreateViewModel();
+
+        // Allow the background Task.Run to schedule and invoke the subscription.
+        await Task.Delay(200);
 
         _mockAecService.Verify(s => s.SubscribeAECStateChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
