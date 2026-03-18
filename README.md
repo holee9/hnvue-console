@@ -14,33 +14,35 @@
 - **아키텍처**: 하이브리드 (C++ Core + C# WPF GUI)
 - **통신**: gRPC IPC, DICOM 표준
 
-### 현재 상태 (2026-03-16)
-- **SPEC 완료**: 10/10 (100%) ✅
+### 현재 상태 (2026-03-18)
+- **SPEC 완료**: 11/13 (85%) ✅
+- **gRPC 어댑터**: ImageServiceAdapter + DoseServiceAdapter 실제 구현 완료 (SPEC-IPC-002) ✅
 - **보안 구현**: WORM 저장소 Phase 1-3 + 인증/감사 보안 레이어 완료 ✅
 - **CI/CD**: SAST, DAST, SBOM, Dependency Scan 파이프라인 구축 ✅
-- **테스트 통과**: 1,048개 (C#), 23/25 (E2E) ✅
-  - HnVue.Console.Tests: 219 pass
+- **테스트 통과**: 1,451개 (C# 622+222+351+256), 206개 (Python) ✅
+  - HnVue.Console.Tests: 622 pass (+8, SPEC-IPC-002 deadline/audit 테스트 포함)
   - HnVue.Dose.Tests: 222 pass
   - HnVue.Workflow.Tests: 351 pass
   - HnVue.Dicom.Tests: 256 pass
-  - HnVue.Console.E2E.Tests: 23/25 pass
+  - Python (simulator/traceability/scripts/coverage_gates): 206 pass
 - **빌드 상태**: 0 errors, acceptable warnings ✅
 
 ### SPEC 완료 목록
-| SPEC | 설명 | 안전 등급 |
-|------|------|----------|
-| SPEC-INFRA-001 | Build/CI/CD 인프라 | A |
-| SPEC-IPC-001 | gRPC IPC | C |
-| SPEC-HAL-001 | Hardware Abstraction Layer | C |
-| SPEC-IMAGING-001 | Image Processing Pipeline | A |
-| SPEC-DICOM-001 | DICOM Services | B |
-| SPEC-DOSE-001 | Radiation Dose Management | B |
-| SPEC-WORKFLOW-001 | Clinical Workflow Engine | C |
-| SPEC-UI-001 | WPF Console UI (MVVM) | B |
-| SPEC-UI-002 | AsyncRelayCommand Improvements | B |
-| SPEC-SECURITY-001 | 보안 인증 & WORM 저장소 | C ✅ |
-| SPEC-INTEGRATION-001 | 통합 테스트 | B (계획 완료) |
-| SPEC-TEST-001 | Test Infrastructure | B |
+| SPEC | 설명 | 안전 등급 | 상태 |
+|------|------|----------|------|
+| SPEC-INFRA-001 | Build/CI/CD 인프라 | A | ✅ 완료 |
+| SPEC-IPC-001 | gRPC IPC 기반 아키텍처 | C | ✅ 완료 |
+| SPEC-IPC-002 | gRPC Adapter 구현 (Image+Dose+Audit) | B/C | ✅ 완료 |
+| SPEC-HAL-001 | Hardware Abstraction Layer | C | ✅ 완료 |
+| SPEC-IMAGING-001 | Image Processing Pipeline | A | ✅ 완료 |
+| SPEC-DICOM-001 | DICOM Services | B | ✅ 완료 |
+| SPEC-DOSE-001 | Radiation Dose Management | B | ✅ 완료 |
+| SPEC-WORKFLOW-001 | Clinical Workflow Engine | C | ✅ 완료 |
+| SPEC-UI-001 | WPF Console UI (MVVM) | B | ✅ 완료 |
+| SPEC-UI-002 | AsyncRelayCommand Improvements | B | ✅ 완료 |
+| SPEC-SECURITY-001 | 보안 인증 & WORM 저장소 | C | ✅ 완료 |
+| SPEC-INTEGRATION-001 | 통합 테스트 | B | 📋 계획 완료 |
+| SPEC-TEST-001 | Test Infrastructure | B | ✅ 완료 |
 
 ---
 
