@@ -154,6 +154,7 @@ public abstract class LoginTestBase : TestBase
     /// <summary>
     /// Waits for a new top-level window whose title is "HnVue Console" (MainWindow),
     /// which appears after successful login when LoginWindow closes.
+    /// Updates MainWindow reference via SwitchMainWindow so subsequent FindElement calls work.
     /// </summary>
     protected async Task<FlaUI.Core.AutomationElements.Window?> WaitForMainWindowAsync(
         int timeoutMs = 8000)
@@ -163,14 +164,15 @@ public abstract class LoginTestBase : TestBase
         {
             try
             {
-                // After login, FlaUI can find the new top-level window by title
-                var allWindows = MainWindow.FindAllDescendants();
-                // Try to find window by walking the automation tree from the desktop
                 var desktop = Automation.GetDesktop();
                 var windows = desktop.FindAllChildren();
                 var mainWin = windows.FirstOrDefault(w => w.Name == "HnVue Console");
                 if (mainWin != null)
-                    return mainWin.AsWindow();
+                {
+                    var win = mainWin.AsWindow();
+                    SwitchMainWindow(win);
+                    return win;
+                }
             }
             catch
             {
@@ -179,5 +181,38 @@ public abstract class LoginTestBase : TestBase
             await Task.Delay(300);
         }
         return null;
+    }
+
+    /// <summary>
+    /// Performs login via the LoginWindow UI (types username + password, clicks Login),
+    /// waits for MainWindow to appear, and switches the active window reference.
+    /// Returns the MainWindow on success, null on failure.
+    /// </summary>
+    protected async Task<FlaUI.Core.AutomationElements.Window?> PerformLoginAsync(
+        string username, string password)
+    {
+        var usernameBox = await WaitForElementAsync(
+            () => FindElementByAutomationId("UsernameTextBox"),
+            TimeSpan.FromSeconds(5));
+        if (usernameBox == null) return null;
+
+        usernameBox.AsTextBox().Text = username;
+        await Task.Delay(150);
+
+        var passwordBox = FindElementByAutomationId("PasswordBox");
+        if (passwordBox == null) return null;
+
+        passwordBox.Click();
+        await Task.Delay(100);
+        FlaUI.Core.Input.Keyboard.Type(password);
+        await Task.Delay(150);
+
+        var loginButton = FindButtonByAutomationId("LoginButton", "Login");
+        if (loginButton == null) return null;
+
+        ClickButton(loginButton.AsButton(), "Login");
+
+        // Wait for LoginWindow to close and MainWindow to open
+        return await WaitForMainWindowAsync(timeoutMs: 6000);
     }
 }

@@ -419,6 +419,15 @@ public abstract class TestBase : IDisposable
     }
 
     /// <summary>
+    /// Updates the active window reference after a window transition (e.g., LoginWindow → MainWindow).
+    /// Used by login/role-based tests that navigate past the login screen.
+    /// </summary>
+    protected void SwitchMainWindow(Window newMainWindow)
+    {
+        _mainWindow = newMainWindow;
+    }
+
+    /// <summary>
     /// Override to set additional environment variables before launching the application.
     /// Base implementation does nothing; derived classes use this for test-specific config.
     /// </summary>
