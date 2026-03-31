@@ -20,10 +20,10 @@
 
 | 지표 | 현황 |
 |------|------|
-| SPEC 완료 | 13/13 (100%) |
-| C# 테스트 | 1,451 pass |
+| SPEC 완료 | 13/13 + SPEC-UI-003 진행 중 |
+| C# 테스트 | 1,460 pass (631 Console포함) |
 | Python 테스트 | 206 pass |
-| E2E UI 테스트 | 62/62 pass |
+| E2E UI 테스트 | 73/73 pass |
 | gRPC 어댑터 | 13개 전체 구현 완료 |
 | 빌드 상태 | 0 errors |
 
@@ -124,8 +124,8 @@ hnvue-console/
 │   └── ...                           #   command, config, health, aec, qc, audit 등
 │
 ├── tests/                            # 전체 테스트
-│   ├── csharp/                       #   C# 단위/통합 테스트 (1,451개)
-│   │   ├── HnVue.Console.Tests/      #     GUI/ViewModel/Security 테스트 (622)
+│   ├── csharp/                       #   C# 단위/통합 테스트 (1,460개)
+│   │   ├── HnVue.Console.Tests/      #     GUI/ViewModel/Security 테스트 (631)
 │   │   ├── HnVue.Workflow.Tests/     #     워크플로우 엔진 테스트 (351)
 │   │   ├── HnVue.Dicom.Tests/        #     DICOM 프로토콜 테스트 (256)
 │   │   ├── HnVue.Dose.Tests/         #     선량 관리 테스트 (222)
@@ -133,7 +133,7 @@ hnvue-console/
 │   │   ├── HnVue.Dicom.PerformanceTests/  #  성능 벤치마크
 │   │   └── HnVue.Workflow.IntegrationTests/ # 워크플로우 통합 테스트
 │   │
-│   ├── e2e/                          #   E2E UI 자동화 테스트 (62개, FlaUI/UIA3)
+│   ├── e2e/                          #   E2E UI 자동화 테스트 (73개, FlaUI/UIA3)
 │   ├── integration/                  #   시스템 통합 테스트
 │   │   └── HnVue.Integration.Tests/  #     ClinicalWorkflows, Concurrency, DataFlow, Security
 │   ├── python/                       #   Python 테스트 (시뮬레이터)
@@ -216,11 +216,11 @@ dotnet build
 ### 테스트 실행
 
 ```powershell
-# C# 전체 테스트 (1,451개)
+# C# 전체 테스트 (1,460개)
 dotnet test
 
 # 개별 테스트 스위트
-dotnet test tests/csharp/HnVue.Console.Tests/     # 622 tests
+dotnet test tests/csharp/HnVue.Console.Tests/     # 631 tests (LoginViewModel 포함)
 dotnet test tests/csharp/HnVue.Workflow.Tests/     # 351 tests
 dotnet test tests/csharp/HnVue.Dose.Tests/         # 222 tests
 dotnet test tests/csharp/HnVue.Dicom.Tests/        # 256 tests
@@ -237,14 +237,16 @@ python -m pytest tests/ --ignore=tests/csharp --ignore=tests/e2e -q
 WPF 앱을 실제 실행하여 UI 자동 클릭으로 기능 구현을 검증합니다. gRPC 서버 없이도 동작합니다 (Mock 서비스 자동 주입). 인터랙티브 Windows 세션이 필요합니다.
 
 ```powershell
-# 빌드 + 전체 62개 E2E 테스트
+# 빌드 + 전체 73개 E2E 테스트
 .\scripts\e2e-verify.ps1 -Build
 
 # 빠른 재검증 (이미 빌드된 경우)
 .\scripts\e2e-verify.ps1
 
-# 특정 뷰만 검증
+# 특정 영역만 검증
 .\scripts\e2e-verify.ps1 -Filter "ImageReview"
+.\scripts\e2e-verify.ps1 -Filter "RBAC"        # 역할 기반 메뉴 검증
+.\scripts\e2e-verify.ps1 -Filter "Login"       # 로그인 플로우 검증
 ```
 
 ### 애플리케이션 실행
@@ -261,17 +263,19 @@ dotnet run --project src/HnVue.Console/HnVue.Console.csproj
 
 | 계층 | 기술 | 테스트 수 | 설명 |
 |------|------|----------|------|
-| **단위 테스트** | xUnit, Moq | 1,451 | C# 비즈니스 로직, ViewModel, 서비스 |
+| **단위 테스트** | xUnit, Moq | 1,460 | C# 비즈니스 로직, ViewModel, 서비스 |
 | **통합 테스트** | Docker Orthanc | 20+ | DICOM 서버 연동, gRPC 어댑터 |
-| **E2E 테스트** | FlaUI/UIA3 | 62 | WPF UI 자동화 (9개 뷰 전체 커버) |
+| **E2E 테스트** | FlaUI/UIA3 | 73 | WPF UI 자동화 (로그인 + RBAC + 9개 뷰 전체 커버) |
 | **Python 테스트** | pytest | 206 | 시뮬레이터, RTM 추적성, 커버리지 게이트 |
 
-### E2E 검증 커버리지 (62개)
+### E2E 검증 커버리지 (73개)
 
-| 뷰 | 테스트 수 | 핵심 검증 항목 |
-|----|---------|--------------|
+| 영역 | 테스트 수 | 핵심 검증 항목 |
+|------|---------|--------------|
 | Main Window | 6 | 앱 실행, 네비게이션 바, 상태 바 |
 | Navigation | 6 | 뷰 전환, 순차 이동 |
+| **Login / Auth** | **4** | **LoginWindow UI, 유효/무효 로그인, 오류 표시** |
+| **Role-Based Menu** | **7** | **Admin/Technologist/Viewer 역할별 Config·AuditLog 가시성** |
 | Patient | 5 | 검색, DataGrid, 응급 환자 |
 | Worklist | 4 | 새로고침, DataGrid, 상태 |
 | Image Review | 10 | 측정 도구, QC 패널, 수용/거부 |
@@ -393,6 +397,7 @@ CVE 스캔은 GitHub Actions(`sbom.yml`)에서 OSV Scanner로 자동 실행됩�
 | [SPEC-SECURITY-001](.moai/specs/SPEC-SECURITY-001/spec.md) | 보안 인증 & WORM 저장소 | 완료 |
 | [SPEC-INTEGRATION-001](.moai/specs/SPEC-INTEGRATION-001/spec.md) | 통합 테스트 | 완료 |
 | [SPEC-TEST-001](.moai/specs/SPEC-TEST-001/spec.md) | Test Infrastructure + E2E | 완료 |
+| [SPEC-UI-003](.moai/specs/SPEC-UI-003/spec.md) | Login/Auth UI + Role-Based Navigation | 진행 중 (2/5 완료: GAP-11-01, GAP-11-04) |
 
 ### 변경 이력
 
