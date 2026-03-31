@@ -1,0 +1,102 @@
+# SBOM Automation Workflow for HnVue Console
+# SPEC-SECURITY-001: FR-SEC-08 - Software Bill of Materials (SBOM)
+# NTIA Minimum Elements: component name, version, supplier, dependencies
+# CVE scanning integration with OSV and Dependabot
+
+name: SBOM Generation & CVE Scan
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+  release:
+    types: [ created ]
+
+env:
+  DOTNET_VERSION: '8.0.x'
+
+jobs:
+  sbom:
+    name: Generate SBOM & Scan CVEs
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Generate SBOM
+        shell: pwsh
+        run: |
+          .\.sbom\generate-sbom.ps1
+
+      - name: Upload SBOM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: components.json
+          retention-days: 90
+
+      - name: Upload NuGet Lock File
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-locks
+          path: '**/packages.lock.json'
+          retention-days: 90
+
+      # OSV-Scanner for vulnerability detection
+      - name: Install OSV-Scanner
+        shell: pwsh
+        run: |
+          go install github.com/google/osv-scanner/cmd/osv-scanner@latest
+
+      - name: Run OSV Scan
+        shell: pwsh
+        run: |
+          ~\go\bin\osv-scanner --format json --output osv-results.json .
+        continue-on-error: true
+
+      - name: Upload OSV Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: osv-scan-results
+          path: osv-results.json
+          retention-days: 90
+
+      # Dependabot-style PR creation for vulnerable packages
+      - name: Check for Vulnerabilities
+        shell: pwsh
+        run: |
+          if (Test-Path osv-results.json) {
+            $content = Get-Content osv-results.json -Raw
+            if ($content -match '"results"' -and $content -match '"vulnerabilities"') {
+              Write-Host "::warning::Vulnerabilities detected. Review osv-results.json artifact."
+            }
+          }
+
+      # Validate NTIA minimum elements
+      - name: Validate NTIA Compliance
+        shell: pwsh
+        run: |
+          .\.sbom\validate-ntia.ps1
+
+      # Attach SBOM to release (only on release events)
+      - name: Attach SBOM to Release
+        if: github.event_name == 'release'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./components.json
+          asset_name: components.json
+          asset_content_type: application/json

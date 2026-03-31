@@ -163,6 +163,8 @@ secret-*.*
 .claude/.env.local*
 .claude/local/
 .claude/plans/
+.claude/agent-memory/
+.claude/worktrees/
 
 # Skill-specific credentials
 .claude/skills/*/.env*
@@ -172,6 +174,13 @@ secret-*.*
 .claude/skills/*/*/*token*
 # Re-include legitimate skill module files containing "token" in their name
 !.claude/skills/*/modules/*token*.md
+
+# ===========================================
+# Local-Only Files (never sync via git pull)
+# ===========================================
+.moai/status_line.sh
+.moai/memory/
+.moai/worktrees/
 
 # ===========================================
 # Node.js (for docs/Nextra)
@@ -236,14 +245,24 @@ TestResults/
 .moai/reports/
 .moai/plans/
 .moai/backups/
+.moai/cache/
 .moai/config/sections/llm.yaml
 .worktrees/
-
-# Documentation reference files (temporary)
 docs/ref/
-
-# Python test artifacts
 coverage.xml
 junit-python.xml
 **/junit-python.xml
-coverage.json
+
+# Generated test output
+test-results/
+tests/e2e/screenshots/
+tests/e2e/**/e2e_logs/
+
+# Generated reports
+quality_validation_report.md
+
+# SBOM generated output
+components.json
+
+# Empty stub
+note.txt

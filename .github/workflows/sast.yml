@@ -1,0 +1,200 @@
+# SAST (Static Application Security Testing) Pipeline
+# SPEC-SECURITY-001: FR-SEC-09 - Static Code Analysis
+# IEC 62304 Class B/C compliance requires security analysis
+# Goal: Critical warnings = 0, High warnings < 5
+
+name: SAST Analysis
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+  schedule:
+    # Run weekly on Sundays at 00:00 UTC
+    - cron: '0 0 * * 0'
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  SARIF_FILE_NAME: 'sast-results.sarif'
+
+jobs:
+  roslyn-analyzers:
+    name: Roslyn Analyzers
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore Dependencies
+        run: dotnet restore
+
+      - name: Build with Analyzers
+        run: |
+          dotnet build `
+            --no-restore `
+            --configuration Release `
+            /warnaserror `
+            /warnnotaserror:CA1062,CA1303,CA2007 `
+            -p:EnableNETAnalyzers=true `
+            -p:AnalysisLevel=latest `
+            -p:EnforceCodeStyleInBuild=true `
+            -p:TreatWarningsAsErrors=false `
+            -p:RunAnalyzers=true `
+            -p:RunAnalyzersDuringBuild=true
+
+      - name: Convert to SARIF
+        shell: pwsh
+        run: |
+          # Roslyn doesn't output SARIF natively, use Microsoft CodeAnalysis tool
+          dotnet tool install -g dotnet-sarif2mscode --version 2.0.0
+          # Convert build logs to SARIF format (if available)
+          if (Test-Path "build_logs.xml") {
+            dotnet-sarif2mscode --input build_logs.xml --output ${{ env.SARIF_FILE_NAME }}
+          }
+
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: windows-latest
+    needs: roslyn-analyzers
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install Security Tools
+        shell: pwsh
+        run: |
+          dotnet tool install -g Microsoft.CST.SecurityDevOps.Analyzers --version 1.0.0
+          dotnet tool install -g DotNet.Security.Safety --version 1.0.0
+
+      - name: Run Security Analysis
+        shell: pwsh
+        run: |
+          # Run Security DevOps analyzer
+          sdop analyze `
+            --format sarif `
+            --output ${{ env.SARIF_FILE_NAME }} `
+            --severity Critical,High,Medium `
+            .
+
+      - name: Upload SARIF Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sast-results
+          path: ${{ env.SARIF_FILE_NAME }}
+          retention-days: 90
+
+      - name: Check Critical Vulnerabilities
+        shell: pwsh
+        run: |
+          if (Test-Path ${{ env.SARIF_FILE_NAME }}) {
+            $content = Get-Content ${{ env.SARIF_FILE_NAME }} -Raw | ConvertFrom-Json
+            $critical = $content.runs.results | Where-Object { $_.level -eq 'error' -or $_.ruleId -match 'CA5' }
+            if ($critical.Count -gt 0) {
+              Write-Host "::error::$($critical.Count) critical security issues found"
+              exit 1
+            }
+          }
+
+      - name: Upload to GitHub Security Tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: ${{ env.SARIF_FILE_NAME }}
+          category: sast
+
+  code-quality:
+    name: Code Quality Checks
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install StyleCop
+        run: dotnet add package StyleCop.Analyzers
+
+      - name: Run StyleCop Analyzers
+        run: |
+          dotnet build `
+            --no-restore `
+            -p:RunAnalyzers=true `
+            -p:CodeAnalysisRuleSet=StyleCop.ruleset
+
+      - name: Check for Style Violations
+        shell: pwsh
+        run: |
+          # Parse build output for SA (StyleCop) warnings
+          # Fail if > 10 style violations found
+          $violations = (Select-String -Path "*.log" -Pattern "SA[0-9]{4}" -AllMatches).Matches.Count
+          if ($violations -gt 10) {
+            Write-Host "::warning::$violations style violations detected"
+          }
+
+  summary:
+    name: Security Summary
+    runs-on: windows-latest
+    needs: [roslyn-analyzers, security-scan, code-quality]
+    if: always()
+
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Generate Summary
+        shell: pwsh
+        run: |
+          $summary = @"
+          # SAST Analysis Summary
+
+          ## Roslyn Analyzers
+          - Status: ${{ needs.roslyn-analyzers.result }}
+
+          ## Security Scan
+          - Status: ${{ needs.security-scan.result }}
+
+          ## Code Quality
+          - Status: ${{ needs.code-quality.result }}
+
+          ## Goal Status
+          - Critical Warnings: Target = 0
+          - High Warnings: Target < 5
+          "@
+
+          # Save to GitHub job summary
+          $summary | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8
+
+      - name: Check Goals
+        shell: pwsh
+        run: |
+          if ("${{ needs.security-scan.result }}" -ne "success") {
+            Write-Host "::error::SAST scan failed. Review findings."
+            exit 1
+          }

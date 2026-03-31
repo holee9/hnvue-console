@@ -27,9 +27,10 @@ github:
     enable_trust_5: true
     spec_git_workflow: main_direct
 moai:
-    template_version: 2.6.12
+    model_policy: high
+    template_version: 2.8.1
     update_check_frequency: daily
-    version: 2.6.12
+    version: 2.8.1
     version_check:
         cache_ttl_hours: 24
         enabled: true

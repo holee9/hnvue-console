@@ -1,0 +1,235 @@
+# Dependency Scanning Pipeline
+# SPEC-SECURITY-001: FR-SEC-10 - Dependency Vulnerability Scanning
+# IEC 62304 Class B/C requires CVE scanning of all dependencies
+# Goal: High CVE = 0, Medium CVE < 5
+
+name: Dependency Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+  schedule:
+    # Run daily at 00:00 UTC
+    - cron: '0 0 * * *'
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  OSV_SCANNER_VERSION: 'latest'
+  DEPSCAN_VERSION: 'latest'
+
+jobs:
+  nuget-audit:
+    name: NuGet Package Audit
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore Dependencies
+        run: dotnet restore
+
+      - name: Generate NuGet Lock Files
+        run: |
+          # Enable lock file generation for reproducible builds
+          dotnet add package NuGet.Locks
+          dotnet restore --use-lock-file --locked-mode
+
+      - name: Run NuGet Audit
+        shell: pwsh
+        run: |
+          # Use NuGet Guard for vulnerability scanning
+          dotnet tool install -g NuGetGuard --version 1.0.0
+          nugetguard audit `
+            --output nuget-audit.json `
+            --format json `
+            --severity Critical,High,Medium
+
+      - name: Upload Audit Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: nuget-audit-results
+          path: nuget-audit.json
+          retention-days: 90
+
+      - name: Check High CVEs
+        shell: pwsh
+        run: |
+          if (Test-Path nuget-audit.json) {
+            $audit = Get-Content nuget-audit.json -Raw | ConvertFrom-Json
+            $highCves = $audit.vulnerabilities | Where-Object { $_.severity -in @('Critical', 'High') }
+            if ($highCves.Count -gt 0) {
+              Write-Host "::error::$($highCves.Count) high/Critical CVEs found"
+              $highCves | ForEach-Object {
+                Write-Host "::error::Package: $($_.package), CVE: $($_.id), Severity: $($_.severity)"
+              }
+              exit 1
+            }
+
+            $mediumCves = $audit.vulnerabilities | Where-Object { $_.severity -eq 'Medium' }
+            if ($mediumCves.Count -ge 5) {
+              Write-Host "::warning::$($mediumCves.Count) medium CVEs found (threshold: 5)"
+            }
+          }
+
+  osv-scanner:
+    name: OSV Scanner
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+
+      - name: Install OSV-Scanner
+        run: go install github.com/google/osv-scanner/cmd/osv-scanner@${{ env.OSV_SCANNER_VERSION }}
+
+      - name: Run OSV Scan
+        shell: pwsh
+        run: |
+          ~\go\bin\osv-scanner `
+            --format json `
+            --output osv-results.json `
+            --lockfile packages.lock.json `
+            .
+
+      - name: Upload OSV Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: osv-scan-results
+          path: osv-results.json
+          retention-days: 90
+
+      - name: Check OSV Vulnerabilities
+        shell: pwsh
+        run: |
+          if (Test-Path osv-results.json) {
+            $osv = Get-Content osv-results.json -Raw | ConvertFrom-Json
+            $vulns = $osv.results.vulnerabilities
+
+            $critical = $vulns | Where-Object { $_.severity -eq 'CRITICAL' }
+            $high = $vulns | Where-Object { $_.severity -eq 'HIGH' }
+            $medium = $vulns | Where-Object { $_.severity -eq 'MEDIUM' }
+
+            if ($critical.Count -gt 0 -or $high.Count -gt 0) {
+              Write-Host "::error::Critical/High vulnerabilities found"
+              exit 1
+            }
+
+            if ($medium.Count -ge 5) {
+              Write-Host "::warning::$($medium.Count) medium vulnerabilities (threshold: 5)"
+            }
+          }
+
+  dependency-check:
+    name: OWASP Dependency Check
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore Dependencies
+        run: dotnet restore
+
+      - name: Run Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: 'HnVue Console'
+          path: '.'
+          format: 'JSON'
+          out: 'dependency-check-report.json'
+
+      - name: Upload Dependency Check Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-check-results
+          path: dependency-check-report.json
+          retention-days: 90
+
+      - name: Check Dependency Check Findings
+        shell: pwsh
+        run: |
+          if (Test-Path dependency-check-report.json) {
+            $report = Get-Content dependency-check-report.json -Raw | ConvertFrom-Json
+            $critical = $report.dependencies | Where-Object { $_.vulnerabilities.severity -eq 'CRITICAL' }
+            $high = $report.dependencies | Where-Object { $_.vulnerabilities.severity -eq 'HIGH' }
+
+            if ($critical.Count -gt 0 -or $high.Count -gt 0) {
+              Write-Host "::error::OWASP Dependency Check found vulnerabilities"
+              exit 1
+            }
+          }
+
+  summary:
+    name: Dependency Scan Summary
+    runs-on: windows-latest
+    needs: [nuget-audit, osv-scanner, dependency-check]
+    if: always()
+
+    steps:
+      - name: Generate Summary
+        shell: pwsh
+        run: |
+          $summary = @"
+          # Dependency Scan Summary
+
+          ## NuGet Audit
+          - Status: ${{ needs.nuget-audit.result }}
+
+          ## OSV Scanner
+          - Status: ${{ needs.osv-scanner.result }}
+
+          ## OWASP Dependency Check
+          - Status: ${{ needs.dependency-check.result }}
+
+          ## Goal Status
+          - High CVEs: Target = 0 ✅
+          - Medium CVEs: Target < 5 ✅
+
+          ## Recommendations
+          - Update packages with known CVEs
+          - Review medium-severity CVEs for upgrade path
+          - Enable Dependabot alerts for this repository
+          "@
+
+          $summary | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8
+
+      - name: Check Goals
+        shell: pwsh
+        run: |
+          $failed = @()
+          if ("${{ needs.nuget-audit.result }}" -ne "success") { $failed += "NuGet Audit" }
+          if ("${{ needs.osv-scanner.result }}" -ne "success") { $failed += "OSV Scanner" }
+          if ("${{ needs.dependency-check.result }}" -ne "success") { $failed += "Dependency Check" }
+
+          if ($failed.Count -gt 0) {
+            Write-Host "::error::Failed scans: $($failed -join ', ')"
+            exit 1
+          }

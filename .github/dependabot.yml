@@ -1,0 +1,50 @@
+# Dependabot Configuration for HnVue Console
+# SPEC-SECURITY-001: FR-SEC-08 - Automated vulnerability scanning
+
+version: 2
+updates:
+  # NuGet packages
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Seoul"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 5
+    labels:
+      - "ci"
+      - "dependencies"
+
+# Groups for related updates
+groups:
+  microsoft-extensions:
+    patterns:
+      - "Microsoft.Extensions.*"
+    exclude-patterns:
+      - "Microsoft.Extensions.Logging.*"
+
+  grpc-packages:
+    patterns:
+      - "Grpc.*"
+      - "Google.Protobuf"
+
+  testing-packages:
+    patterns:
+      - "xunit*"
+      - "Moq"
+      - "FluentAssertions"
+      - "coverlet*"

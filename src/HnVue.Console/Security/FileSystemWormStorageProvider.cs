@@ -148,8 +148,13 @@ public sealed partial class FileSystemWormStorageProvider(
         }
 
         // Determine date range to scan
-        var startDate = filter.StartDate ?? DateTimeOffset.MinValue;
-        var endDate = filter.EndDate ?? DateTimeOffset.MaxValue;
+        // Use safe boundary values to avoid DateTimeOffset overflow with local timezone offsets
+        var startDate = filter.StartDate.HasValue
+            ? new DateTimeOffset(filter.StartDate.Value.UtcDateTime.Date, TimeSpan.Zero)
+            : new DateTimeOffset(DateTime.MinValue.AddDays(1), TimeSpan.Zero);
+        var endDate = filter.EndDate.HasValue
+            ? new DateTimeOffset(filter.EndDate.Value.UtcDateTime.Date.AddDays(1), TimeSpan.Zero)
+            : new DateTimeOffset(DateTime.MaxValue.AddDays(-1), TimeSpan.Zero);
 
         // Scan date directories within range
         foreach (var dateDir in auditBaseDir.EnumerateDirectories())
@@ -161,7 +166,7 @@ public sealed partial class FileSystemWormStorageProvider(
             }
 
             // Skip directories outside filter range
-            if (dateDirDate < startDate.Date || dateDirDate > endDate.Date.AddDays(1))
+            if (dateDirDate < startDate || dateDirDate >= endDate)
             {
                 continue;
             }
@@ -335,15 +340,17 @@ public sealed partial class FileSystemWormStorageProvider(
             }
 
             // Delete entire directory if older than cutoff
-            if (dateDirDate < cutoffDate.Date)
+            if (dateDirDate < new DateTimeOffset(cutoffDate.UtcDateTime.Date, TimeSpan.Zero))
             {
                 try
                 {
                     logger.LogInformation("Deleting expired audit directory: {DirPath} (date: {Date})",
                         dateDir.FullName, dateDirDate);
 
+                    // Count files before deleting the directory
+                    var fileCount = (int)dateDir.EnumerateFiles("*.audit").Count();
                     dateDir.Delete(recursive: true);
-                    deletedCount += (int)dateDir.EnumerateFiles("*.audit").Count();
+                    deletedCount += fileCount;
                 }
                 catch (Exception ex)
                 {
