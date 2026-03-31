@@ -4,6 +4,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using HnVue.Console.DependencyInjection;
+using HnVue.Console.Shell;
+using HnVue.Console.Services;
+using HnVue.Console.ViewModels;
 
 namespace HnVue.Console;
 
@@ -67,6 +70,44 @@ public partial class App : Application
         _logger = _serviceProvider.GetRequiredService<ILogger<App>>();
 
         _logger.LogInformation("HnVue Console application started");
+
+        // Show LoginWindow or auto-login depending on mode.
+        // HNVUE_E2E_TEST=1 → auto-login unless HNVUE_E2E_SHOW_LOGIN=1 is also set.
+        // HNVUE_E2E_SHOW_LOGIN=1 allows E2E login-flow tests to exercise LoginWindow.
+        var showLoginInE2E = Environment.GetEnvironmentVariable("HNVUE_E2E_SHOW_LOGIN") == "1";
+        if (isE2EMode && !showLoginInE2E)
+        {
+            // E2E mode: create admin session automatically so existing E2E tests are unaffected.
+            AutoLoginForE2E();
+        }
+        else
+        {
+            var loginViewModel = _serviceProvider.GetRequiredService<LoginViewModel>();
+            var loginWindow = new LoginWindow(loginViewModel);
+            loginWindow.Show();
+        }
+    }
+
+    /// <summary>
+    /// Creates an admin session and opens MainWindow directly for E2E test runs.
+    /// This avoids requiring all existing E2E tests to perform login steps.
+    /// </summary>
+    private void AutoLoginForE2E()
+    {
+        var sessionContext = _serviceProvider!.GetRequiredService<ISessionContext>();
+        var userService = _serviceProvider!.GetRequiredService<IUserService>();
+
+        // Authenticate synchronously on startup using mock service (no gRPC in E2E mode).
+        var result = userService.AuthenticateAsync(
+            "System Administrator", "password123", "E2E-WS", CancellationToken.None)
+            .GetAwaiter().GetResult();
+
+        if (result.Success && result.Session != null)
+        {
+            sessionContext.SetSession(result.Session);
+        }
+
+        new MainWindow().Show();
     }
 
     protected override void OnExit(ExitEventArgs e)

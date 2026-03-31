@@ -102,11 +102,13 @@
                             Style="{StaticResource NavigationButtonStyle}"
                             Command="{Binding NavigateCommand}"
                             CommandParameter="Config"
+                            Visibility="{Binding CanAccessAdminSections, Converter={StaticResource BoolToVisibilityConverter}}"
                             AutomationProperties.AutomationId="NavigateConfigButton"/>
                     <Button Content="Audit Log"
                             Style="{StaticResource NavigationButtonStyle}"
                             Command="{Binding NavigateCommand}"
                             CommandParameter="AuditLog"
+                            Visibility="{Binding CanAccessAdminSections, Converter={StaticResource BoolToVisibilityConverter}}"
                             AutomationProperties.AutomationId="NavigateAuditLogButton"/>
                 </StackPanel>
 

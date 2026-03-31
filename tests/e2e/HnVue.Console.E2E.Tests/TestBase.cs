@@ -134,6 +134,9 @@ public abstract class TestBase : IDisposable
         // when gRPC server is not running during E2E test execution.
         startInfo.EnvironmentVariables["HNVUE_E2E_TEST"] = "1";
 
+        // Allow derived test classes to set additional environment variables.
+        ConfigureEnvironmentVariables(startInfo);
+
         // Start the process
         var process = Process.Start(startInfo);
 
@@ -414,6 +417,12 @@ public abstract class TestBase : IDisposable
             CaptureScreenshot("AssertionFailure", description);
         }
     }
+
+    /// <summary>
+    /// Override to set additional environment variables before launching the application.
+    /// Base implementation does nothing; derived classes use this for test-specific config.
+    /// </summary>
+    protected virtual void ConfigureEnvironmentVariables(ProcessStartInfo startInfo) { }
 
     private static string GetSolutionRoot()
     {

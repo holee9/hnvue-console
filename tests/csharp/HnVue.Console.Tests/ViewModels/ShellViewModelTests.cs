@@ -1,3 +1,4 @@
+using HnVue.Console.Services;
 using HnVue.Console.Tests.TestHelpers;
 using HnVue.Console.ViewModels;
 using Moq;
@@ -15,7 +16,7 @@ public class ShellViewModelTests : ViewModelTestBase
     public void Can_Be_Constructed()
     {
         // Arrange & Act
-        var viewModel = new ShellViewModel();
+        var viewModel = new ShellViewModel(new SessionContext());
 
         // Assert
         Assert.NotNull(viewModel);
@@ -26,7 +27,7 @@ public class ShellViewModelTests : ViewModelTestBase
     public void Implements_INotifyPropertyChanged()
     {
         // Arrange
-        var viewModel = new ShellViewModel();
+        var viewModel = new ShellViewModel(new SessionContext());
         var callCount = 0;
         viewModel.PropertyChanged += (s, e) => callCount++;
 
@@ -41,7 +42,7 @@ public class ShellViewModelTests : ViewModelTestBase
     public void CurrentView_Can_Be_Set()
     {
         // Arrange
-        var viewModel = new ShellViewModel();
+        var viewModel = new ShellViewModel(new SessionContext());
         var changedProperties = GetChangedProperties(viewModel, () => viewModel.CurrentView = "Test");
 
         // Assert
@@ -53,7 +54,7 @@ public class ShellViewModelTests : ViewModelTestBase
     public void NavigateCommand_Updates_CurrentView()
     {
         // Arrange
-        var viewModel = new ShellViewModel();
+        var viewModel = new ShellViewModel(new SessionContext());
 
         // Act
         viewModel.NavigateCommand.Execute("Worklist");
@@ -66,7 +67,7 @@ public class ShellViewModelTests : ViewModelTestBase
     public void NavigateCommand_Cannot_Navigate_To_Acquisition_When_Error()
     {
         // Arrange
-        var viewModel = new ShellViewModel();
+        var viewModel = new ShellViewModel(new SessionContext());
         viewModel.OverallStatus = SystemStatus.Error;
 
         // Assert

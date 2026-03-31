@@ -1,0 +1,100 @@
+<Window x:Class="HnVue.Console.Shell.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="HnVue Console — Login"
+        Height="420"
+        Width="440"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource BackgroundBrush}"
+        Foreground="{StaticResource ForegroundBrush}"
+        AutomationProperties.AutomationId="LoginWindow">
+
+    <Grid Margin="40">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="24"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="8"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="16"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="8"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="16"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Title -->
+        <StackPanel Grid.Row="0" HorizontalAlignment="Center">
+            <TextBlock Text="HnVue Console"
+                       Style="{StaticResource HeaderTextStyle}"
+                       HorizontalAlignment="Center"/>
+            <TextBlock Text="Sign In"
+                       Style="{StaticResource SubheaderTextStyle}"
+                       HorizontalAlignment="Center"
+                       Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <!-- Username Label -->
+        <TextBlock Grid.Row="2"
+                   Text="Username"
+                   Style="{StaticResource BodyTextStyle}"/>
+
+        <!-- Username TextBox -->
+        <TextBox Grid.Row="4"
+                 Text="{Binding Username, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                 Padding="8,6"
+                 FontSize="14"
+                 AutomationProperties.AutomationId="UsernameTextBox"/>
+
+        <!-- Password Label -->
+        <TextBlock Grid.Row="6"
+                   Text="Password"
+                   Style="{StaticResource BodyTextStyle}"/>
+
+        <!-- PasswordBox — code-behind copies to ViewModel.Password on Login -->
+        <PasswordBox Grid.Row="8"
+                     x:Name="PasswordBox"
+                     Padding="8,6"
+                     FontSize="14"
+                     AutomationProperties.AutomationId="PasswordBox"/>
+
+        <!-- Error Message (visible when HasError = true) -->
+        <TextBlock Grid.Row="10"
+                   Text="{Binding ErrorMessage}"
+                   Foreground="OrangeRed"
+                   FontSize="12"
+                   TextWrapping="Wrap"
+                   Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}"
+                   AutomationProperties.AutomationId="LoginErrorText"/>
+
+        <!-- Remaining Attempts (visible when HasError = true) -->
+        <TextBlock Grid.Row="11"
+                   FontSize="11"
+                   Foreground="Gray"
+                   Margin="0,4,0,0"
+                   Visibility="{Binding HasError, Converter={StaticResource BoolToVisibilityConverter}}"
+                   AutomationProperties.AutomationId="RemainingAttemptsText">
+            <Run Text="Remaining attempts: "/>
+            <Run Text="{Binding RemainingAttempts, Mode=OneWay}"/>
+        </TextBlock>
+
+        <!-- Login Button -->
+        <Button Grid.Row="12" Margin="0,20,0,0"
+                Content="Login"
+                Click="OnLoginButtonClick"
+                IsEnabled="{Binding IsBusy, Converter={StaticResource BoolToInverseConverter}}"
+                Height="40"
+                FontSize="15"
+                FontWeight="SemiBold"
+                Background="{StaticResource PrimaryBrush}"
+                Foreground="{StaticResource WhiteBrush}"
+                BorderThickness="0"
+                AutomationProperties.AutomationId="LoginButton"/>
+    </Grid>
+</Window>

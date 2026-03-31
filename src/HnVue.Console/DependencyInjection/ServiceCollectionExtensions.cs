@@ -22,8 +22,14 @@ public static class ServiceCollectionExtensions
     {
         var isE2EMode = Environment.GetEnvironmentVariable("HNVUE_E2E_TEST") == "1";
 
+        // Register Session Context (singleton — shared across all ViewModels)
+        services.AddSingleton<ISessionContext, SessionContext>();
+
         // Register Shell ViewModel
         services.AddTransient<ShellViewModel>();
+
+        // Register Login ViewModel
+        services.AddTransient<LoginViewModel>();
 
         // Register ViewModels (Transient lifetime)
         services.AddTransient<PatientViewModel>();

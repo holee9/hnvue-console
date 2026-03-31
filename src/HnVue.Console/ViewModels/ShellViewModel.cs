@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using HnVue.Console.Commands;
+using HnVue.Console.Models;
+using HnVue.Console.Services;
 
 namespace HnVue.Console.ViewModels;
 
@@ -9,11 +11,24 @@ namespace HnVue.Console.ViewModels;
 /// </summary>
 public class ShellViewModel : ViewModelBase
 {
+    private readonly ISessionContext _sessionContext;
+
     private string _currentView = "Patient";
     private string _currentPatientName = "No patient selected";
     private string _currentStudyId = "";
     private int _selectedLocaleIndex = 0;
     private SystemStatus _overallStatus = SystemStatus.Unknown;
+
+    /// <summary>Gets the current user's role for role-based navigation visibility (GAP-11-04).</summary>
+    public UserRole CurrentUserRole => _sessionContext.CurrentRole;
+
+    /// <summary>Gets whether Config/AuditLog sections are visible for the current user's role.</summary>
+    public bool CanAccessAdminSections =>
+        _sessionContext.CurrentRole is UserRole.Administrator or UserRole.Service;
+
+    /// <summary>Gets the current user display name for the status bar.</summary>
+    public string CurrentUserDisplayName =>
+        _sessionContext.CurrentSession?.User?.UserName ?? "Not signed in";
 
     /// <summary>
     /// Gets the navigation command.
@@ -74,8 +89,9 @@ public class ShellViewModel : ViewModelBase
     /// <summary>
     /// Initializes a new instance of <see cref="ShellViewModel"/>.
     /// </summary>
-    public ShellViewModel()
+    public ShellViewModel(ISessionContext sessionContext)
     {
+        _sessionContext = sessionContext;
         NavigateCommand = new RelayCommand<object?>(p => ExecuteNavigate(p), CanNavigate);
     }
 
