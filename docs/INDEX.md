@@ -33,13 +33,6 @@
 | [hnvue-templates/](templates/hnvue-templates/) | IEC 62304 규제 문서 템플릿 |
 | [security/](templates/security/) | 의료기기 사이버보안 문서 템플릿 |
 
-## 로드맵 (docs/)
-
-| 문서 | 설명 |
-|------|------|
-| [development-roadmap-phase2.md](development-roadmap-phase2.md) | Phase 2 개발 로드맵 (MFDS 인허가 준비) |
-| [cybersecurity-compliance-plan.md](cybersecurity-compliance-plan.md) | 사이버보안 규정 준용 계획 |
-
 ## 테스트 리포트 (docs/test-reports/)
 
 빌드/테스트 실행 시 자동 생성되는 리포트입니다.

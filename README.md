@@ -73,8 +73,8 @@ hnvue-console/
 │   ├── HnVue.Console/                #   WPF MVVM 애플리케이션
 │   │   ├── ViewModels/               #     ViewModel 16개 (MVVM 패턴)
 │   │   ├── Views/                    #     XAML 뷰 9개 + Panels/ 7개
-│   │   ├── Services/                 #     서비스 인터페이스 12개 + Mock 구현체
-│   │   ├── Security/                 #     인증, 감사 로그, 입력 검증
+│   │   ├── Services/                 #     서비스 인터페이스 + Adapters/ (gRPC 13개)
+│   │   ├── Security/                 #     인증, 감사 로그, WORM 저장소, 입력 검증
 │   │   ├── Converters/               #     XAML 값 변환기
 │   │   ├── Dialogs/                  #     모달 다이얼로그 (환자 등록/편집)
 │   │   ├── Commands/                 #     AsyncRelayCommand, RelayCommand
@@ -108,9 +108,7 @@ hnvue-console/
 │   │   ├── Queue/                    #     전송 큐 + 재시도 로직
 │   │   └── Facade/                   #     통합 DICOM 서비스 API
 │   │
-│   └── HnVue.Ipc.Client/            #   gRPC IPC 클라이언트
-│       ├── Adapters/                 #     서비스 어댑터 13개
-│       └── GrpcAdapterBase.cs        #     Deadline 정책 (5s/30s)
+│   └── HnVue.Ipc.Client/            #   gRPC IPC 클라이언트 (Proto 스텁 생성)
 │
 ├── libs/                             # C++ 네이티브 라이브러리
 │   ├── hnvue-hal/                    #   HAL (HVG, Detector, Safety Interlocks)
@@ -131,12 +129,13 @@ hnvue-console/
 │   │   ├── HnVue.Workflow.Tests/     #     워크플로우 엔진 테스트 (351)
 │   │   ├── HnVue.Dicom.Tests/        #     DICOM 프로토콜 테스트 (256)
 │   │   ├── HnVue.Dose.Tests/         #     선량 관리 테스트 (222)
-│   │   ├── HnVue.Dicom.IntegrationTests/    Docker Orthanc 통합 테스트
-│   │   ├── HnVue.Dicom.PerformanceTests/    성능 벤치마크
-│   │   └── HnVue.Workflow.IntegrationTests/ 워크플로우 통합 테스트
+│   │   ├── HnVue.Dicom.IntegrationTests/  #  Docker Orthanc 통합 테스트
+│   │   ├── HnVue.Dicom.PerformanceTests/  #  성능 벤치마크
+│   │   └── HnVue.Workflow.IntegrationTests/ # 워크플로우 통합 테스트
 │   │
 │   ├── e2e/                          #   E2E UI 자동화 테스트 (62개, FlaUI/UIA3)
-│   ├── integration/                  #   시스템 통합 테스트 (INT-001~006)
+│   ├── integration/                  #   시스템 통합 테스트
+│   │   └── HnVue.Integration.Tests/  #     ClinicalWorkflows, Concurrency, DataFlow, Security
 │   ├── python/                       #   Python 테스트 (시뮬레이터)
 │   ├── cpp/                          #   C++ GTest 테스트
 │   ├── traceability/                 #   RTM 추적성 검증 (rtm.csv, rtm_report.html)
@@ -160,7 +159,7 @@ hnvue-console/
 │   ├── build-all.ps1                 #   전체 빌드
 │   ├── run-tests.ps1                 #   전체 테스트 실행
 │   ├── e2e-verify.ps1                #   E2E 실증 동작검증
-│   ├── generate-proto.ps1            #   Proto 코드 생성 (Windows)
+│   ├── generate-proto.sh             #   Proto 코드 생성
 │   └── certs/                        #   개발용 TLS 인증서 생성
 │
 ├── .sbom/                            # SBOM 생성/검증 도구
@@ -176,9 +175,10 @@ hnvue-console/
 │
 ├── .moai/                            # MoAI 오케스트레이션 (Claude Code)
 │   ├── specs/                        #   SPEC 문서 13개 (요구사항/계획/인수 기준)
-│   ├── project/                      #   프로젝트 메타 (product, structure, tech)
+│   ├── project/                      #   프로젝트 메타 (product, structure, tech, codemaps)
 │   ├── config/                       #   MoAI 설정
-│   └── design/                       #   설계 문서
+│   ├── docs/                         #   개발 가이드 (HAL 시뮬레이터, IPC 구현 등)
+│   └── templates/                    #   보안 문서 템플릿
 │
 ├── HnVue.sln                         # .NET 솔루션 파일
 ├── CMakeLists.txt                    # C++ 빌드 최상위 설정
